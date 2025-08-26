@@ -1,0 +1,63 @@
+version: '3.8'
+
+# 开发环境配置 - 只启动数据库服务
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: tripsum-postgres-dev
+    environment:
+      POSTGRES_DB: tripsum
+      POSTGRES_USER: tripsum_user
+      POSTGRES_PASSWORD: tripsum_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - tripsum-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: tripsum-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - tripsum-dev
+
+  minio:
+    image: minio/minio:latest
+    container_name: tripsum-minio-dev
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - tripsum-dev
+
+  # 可选：Adminer数据库管理工具
+  adminer:
+    image: adminer
+    container_name: tripsum-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - tripsum-dev
+
+networks:
+  tripsum-dev:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  minio_dev_data:

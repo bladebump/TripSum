@@ -1,0 +1,57 @@
+# 构建阶段
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# 安装依赖
+RUN npm ci --only=production && \
+    npm install -g prisma && \
+    npx prisma generate
+
+# 复制源代码
+COPY . .
+
+# 编译TypeScript
+RUN npm run build
+
+# 运行阶段
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安装必要的系统包
+RUN apk add --no-cache \
+    curl \
+    openssl \
+    && rm -rf /var/cache/apk/*
+
+# 创建非root用户
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# 复制构建产物
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
+
+# 创建必要的目录
+RUN mkdir -p uploads/receipts logs && \
+    chown -R nodejs:nodejs uploads logs
+
+# 切换到非root用户
+USER nodejs
+
+# 暴露端口
+EXPOSE 3000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# 启动命令
+CMD ["node", "dist/app.js"]

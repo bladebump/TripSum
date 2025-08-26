@@ -1,47 +1,192 @@
 version: '3.8'
 
 services:
+  # PostgreSQL 数据库
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: tripsum-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: tripsum
       POSTGRES_USER: tripsum_user
       POSTGRES_PASSWORD: tripsum_password
+      POSTGRES_INIT_DB_ARGS: "--encoding=UTF-8"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - tripsum-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tripsum_user -d tripsum"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Redis 缓存
   redis:
     image: redis:7-alpine
     container_name: tripsum-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - tripsum-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # MinIO 对象存储
   minio:
-    image: minio/minio
+    image: minio/minio:latest
     container_name: tripsum-minio
+    restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000:9000"     # API端口
+      - "9001:9001"     # 控制台端口
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_DEFAULT_BUCKETS: tripsum
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
     networks:
       - tripsum-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: tripsum-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://tripsum_user:tripsum_password@postgres:5432/tripsum?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this}
+      JWT_EXPIRES_IN: 7d
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-secret}
+      JWT_REFRESH_EXPIRES_IN: 30d
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: tripsum
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    networks:
+      - tripsum-network
+    command: |
+      sh -c "
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        npm start
+      "
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    container_name: tripsum-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    ports:
+      - "5173:80"
+    networks:
+      - tripsum-network
+
+  # Nginx 反向代理（可选，用于生产环境）
+  nginx:
+    image: nginx:alpine
+    container_name: tripsum-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - tripsum-network
+    profiles:
+      - production
+
+  # 数据备份服务（可选）
+  backup:
+    image: postgres:15-alpine
+    container_name: tripsum-backup
+    depends_on:
+      - postgres
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    environment:
+      PGHOST: postgres
+      PGUSER: tripsum_user
+      PGPASSWORD: tripsum_password
+      PGDATABASE: tripsum
+    networks:
+      - tripsum-network
+    profiles:
+      - backup
+    command: |
+      sh -c "
+        echo '0 2 * * * /backup.sh' | crontab - &&
+        crond -f
+      "
 
 networks:
   tripsum-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
   minio_data:
+    driver: local
+  nginx_logs:
+    driver: local
