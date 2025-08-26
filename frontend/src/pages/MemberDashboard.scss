@@ -1,0 +1,65 @@
+.member-dashboard-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  .dashboard-content {
+    padding: 12px;
+
+    .adm-card {
+      margin-bottom: 12px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+
+      .summary-item {
+        text-align: center;
+
+        .value {
+          font-size: 20px;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .label {
+          font-size: 12px;
+          color: #999;
+          margin-top: 4px;
+        }
+      }
+    }
+
+    .balance-detail {
+      .balance-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+    }
+
+    .chart-card {
+      .recharts-wrapper {
+        margin: 0 auto;
+      }
+
+      .recharts-pie-label-text {
+        font-size: 12px;
+      }
+    }
+
+    .debt-item {
+      font-size: 14px;
+
+      .debt-detail {
+        margin-left: 16px;
+        margin-top: 4px;
+        color: #666;
+        font-size: 13px;
+      }
+    }
+  }
+}

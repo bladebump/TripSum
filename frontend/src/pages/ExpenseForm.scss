@@ -1,0 +1,19 @@
+.expense-form-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  .form-content {
+    padding: 16px;
+    
+    .adm-form {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    
+    .form-footer {
+      margin-top: 20px;
+      padding: 0 16px 20px;
+    }
+  }
+}

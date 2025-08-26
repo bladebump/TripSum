@@ -1,0 +1,68 @@
+.trip-list-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  .trip-list-content {
+    padding: 12px;
+    min-height: calc(100vh - 45px);
+  }
+
+  .trip-card {
+    margin-bottom: 12px;
+    
+    .trip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+      }
+    }
+    
+    .trip-description {
+      color: #666;
+      font-size: 14px;
+      margin: 8px 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .trip-info {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: #999;
+      margin-top: 12px;
+      
+      span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+    }
+    
+    .trip-balance {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      
+      &.positive {
+        background: #e6f7ff;
+        color: #1890ff;
+      }
+      
+      &.negative {
+        background: #fff1f0;
+        color: #ff4d4f;
+      }
+    }
+  }
+}

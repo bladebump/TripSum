@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique @db.VarChar(50)
+  email        String   @unique @db.VarChar(100)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  avatarUrl    String?  @map("avatar_url") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  createdTrips       Trip[]            @relation("TripCreator")
+  tripMemberships    TripMember[]
+  paidExpenses       Expense[]         @relation("ExpensePayer")
+  createdExpenses    Expense[]         @relation("ExpenseCreator")
+  expenseShares      ExpenseParticipant[]
+  settlementsFrom    Settlement[]      @relation("SettlementFrom")
+  settlementsTo      Settlement[]      @relation("SettlementTo")
+
+  @@map("users")
+}
+
+model Trip {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime? @map("end_date")
+  initialFund Decimal   @default(0) @map("initial_fund") @db.Decimal(10, 2)
+  currency    String    @default("CNY") @db.VarChar(3)
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  creator     User         @relation("TripCreator", fields: [createdBy], references: [id])
+  members     TripMember[]
+  categories  Category[]
+  expenses    Expense[]
+  settlements Settlement[]
+
+  @@map("trips")
+}
+
+model TripMember {
+  id       String   @id @default(uuid())
+  tripId   String   @map("trip_id")
+  userId   String   @map("user_id")
+  role     String   @default("member") @db.VarChar(20) // admin, member
+  joinDate DateTime @default(now()) @map("join_date")
+  isActive Boolean  @default(true) @map("is_active")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([tripId, userId])
+  @@map("trip_members")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(50)
+  icon      String?  @db.VarChar(50)
+  color     String?  @db.VarChar(7)
+  tripId    String   @map("trip_id")
+  isDefault Boolean  @default(false) @map("is_default")
+
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@map("categories")
+}
+
+model Expense {
+  id           String   @id @default(uuid())
+  tripId       String   @map("trip_id")
+  amount       Decimal  @db.Decimal(10, 2)
+  categoryId   String?  @map("category_id")
+  payerId      String   @map("payer_id")
+  description  String?  @db.Text
+  expenseDate  DateTime @map("expense_date")
+  receiptUrl   String?  @map("receipt_url") @db.Text
+  aiParsedData Json?    @map("ai_parsed_data")
+  createdBy    String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  trip         Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  category     Category?            @relation(fields: [categoryId], references: [id])
+  payer        User                 @relation("ExpensePayer", fields: [payerId], references: [id])
+  creator      User                 @relation("ExpenseCreator", fields: [createdBy], references: [id])
+  participants ExpenseParticipant[]
+
+  @@map("expenses")
+}
+
+model ExpenseParticipant {
+  id              String  @id @default(uuid())
+  expenseId       String  @map("expense_id")
+  userId          String  @map("user_id")
+  shareAmount     Decimal? @map("share_amount") @db.Decimal(10, 2)
+  sharePercentage Decimal? @map("share_percentage") @db.Decimal(5, 2)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([expenseId, userId])
+  @@map("expense_participants")
+}
+
+model Settlement {
+  id         String    @id @default(uuid())
+  tripId     String    @map("trip_id")
+  fromUserId String    @map("from_user_id")
+  toUserId   String    @map("to_user_id")
+  amount     Decimal   @db.Decimal(10, 2)
+  isSettled  Boolean   @default(false) @map("is_settled")
+  settledAt  DateTime? @map("settled_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  trip     Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  fromUser User @relation("SettlementFrom", fields: [fromUserId], references: [id])
+  toUser   User @relation("SettlementTo", fields: [toUserId], references: [id])
+
+  @@map("settlements")
+}

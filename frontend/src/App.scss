@@ -1,0 +1,159 @@
+:root {
+  --adm-color-primary: #667eea;
+  --adm-color-success: #52c41a;
+  --adm-color-warning: #faad14;
+  --adm-color-danger: #ff4d4f;
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+}
+
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+
+  .app-content {
+    flex: 1;
+    padding-bottom: 50px;
+    padding-bottom: calc(50px + var(--safe-area-inset-bottom));
+  }
+
+  .app-tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #f0f0f0;
+    padding-bottom: var(--safe-area-inset-bottom);
+    z-index: 999;
+  }
+}
+
+.adm-nav-bar {
+  background: white;
+  
+  &-title {
+    font-size: 17px;
+    font-weight: 500;
+  }
+}
+
+.adm-card {
+  border-radius: 8px;
+  overflow: hidden;
+  
+  .adm-card-header {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .adm-card-body {
+    padding: 12px 16px;
+  }
+}
+
+.adm-list {
+  --border-inner: 0;
+  --border-top: 0;
+  --border-bottom: 0;
+  
+  .adm-list-item {
+    padding: 12px 16px;
+    
+    &:not(:last-child) {
+      border-bottom: 1px solid #f0f0f0;
+    }
+  }
+}
+
+.adm-form {
+  .adm-form-item {
+    padding: 12px 0;
+  }
+  
+  .adm-form-item-label {
+    font-size: 15px;
+    color: #333;
+    min-width: 80px;
+  }
+}
+
+.adm-button {
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  
+  &-large {
+    height: 48px;
+  }
+}
+
+.adm-floating-bubble {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  &-button {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 28px !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+  }
+}
+
+.adm-toast-main {
+  .adm-toast-text {
+    font-size: 14px;
+  }
+}
+
+.adm-dialog {
+  .adm-dialog-header {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  
+  .adm-dialog-content {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  
+  .adm-dialog-footer {
+    .adm-dialog-action-row {
+      .adm-dialog-button {
+        font-size: 16px;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.adm-tabs {
+  .adm-tabs-tab-list {
+    background: white;
+    
+    .adm-tabs-tab {
+      font-size: 15px;
+      padding: 12px;
+    }
+    
+    .adm-tabs-tab-active {
+      color: var(--adm-color-primary);
+      font-weight: 600;
+    }
+    
+    .adm-tabs-tab-line {
+      background: var(--adm-color-primary);
+      height: 3px;
+    }
+  }
+}
+
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}

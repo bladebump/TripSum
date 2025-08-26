@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: tripsum-postgres
+    environment:
+      POSTGRES_DB: tripsum
+      POSTGRES_USER: tripsum_user
+      POSTGRES_PASSWORD: tripsum_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tripsum-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: tripsum-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - tripsum-network
+
+  minio:
+    image: minio/minio
+    container_name: tripsum-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - tripsum-network
+
+networks:
+  tripsum-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
