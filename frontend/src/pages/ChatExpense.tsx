@@ -53,7 +53,7 @@ interface ParseResult {
 const ChatExpense: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { currentTrip, members, fetchTripDetail, fetchMembers } = useTripStore()
+  const { trips, currentTrip, members, fetchTrips, fetchTripDetail, fetchMembers } = useTripStore()
   const { createExpense } = useExpenseStore()
   const { user } = useAuthStore()
   
@@ -81,6 +81,11 @@ const ChatExpense: React.FC = () => {
       loadData()
     }
   }, [tripId])
+
+  useEffect(() => {
+    // 加载用户的所有行程列表
+    fetchTrips()
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
@@ -115,6 +120,27 @@ const ChatExpense: React.FC = () => {
       timestamp: new Date()
     }
     setMessages(prev => [...prev, newMessage])
+  }
+
+  const handleTripChange = (selectedTripIds: string[]) => {
+    const newTripId = selectedTripIds[0]
+    if (newTripId && newTripId !== tripId) {
+      // 如果有对话记录，询问是否保留
+      if (messages.length > 1) { // 排除初始系统消息
+        Dialog.confirm({
+          title: '切换行程',
+          content: '切换到新行程后，当前对话记录将被清空。是否继续？',
+          confirmText: '确认切换',
+          cancelText: '取消',
+          onConfirm: () => {
+            navigate(`/trips/${newTripId}/expense/new`)
+          }
+        })
+      } else {
+        // 没有对话记录，直接切换
+        navigate(`/trips/${newTripId}/expense/new`)
+      }
+    }
   }
 
   const handleSend = async () => {
@@ -441,6 +467,29 @@ const ChatExpense: React.FC = () => {
   return (
     <div className="chat-expense-page">
       <NavBar onBack={() => navigate(-1)}>AI智能记账</NavBar>
+
+      {/* 行程选择器 */}
+      {trips.length > 1 ? (
+        <div className="trip-selector-container">
+          <div className="trip-selector-label">当前记账行程:</div>
+          <Selector
+            options={trips.map(trip => ({
+              label: `${trip.name} (${formatCurrency(trip.initialFund || 0)})`,
+              value: trip.id!
+            }))}
+            value={tripId ? [tripId] : []}
+            onChange={handleTripChange}
+            columns={1}
+          />
+        </div>
+      ) : (
+        <div className="trip-selector-container">
+          <div className="trip-info">
+            <span className="trip-name">{currentTrip?.name}</span>
+            <span className="trip-fund">基金: {formatCurrency(currentTrip?.initialFund || 0)}</span>
+          </div>
+        </div>
+      )}
 
       <div className="messages-container">
         {messages.map(message => (
