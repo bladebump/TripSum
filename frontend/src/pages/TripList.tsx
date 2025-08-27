@@ -28,6 +28,8 @@ const TripList: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [startDateVisible, setStartDateVisible] = useState(false)
+  const [endDateVisible, setEndDateVisible] = useState(false)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -173,9 +175,17 @@ const TripList: React.FC = () => {
               label="开始日期"
               rules={[{ required: true, message: '请选择开始日期' }]}
               trigger="onConfirm"
-              getValueProps={(value) => ({ value })}
+              onClick={() => setStartDateVisible(true)}
             >
-              <DatePicker>
+              <DatePicker 
+                precision="day"
+                visible={startDateVisible}
+                onClose={() => setStartDateVisible(false)}
+                onConfirm={(date) => {
+                  form.setFieldValue('startDate', date)
+                  setStartDateVisible(false)
+                }}
+              >
                 {(value) => value ? formatDate(value) : '请选择'}
               </DatePicker>
             </Form.Item>
@@ -183,9 +193,17 @@ const TripList: React.FC = () => {
               name="endDate"
               label="结束日期"
               trigger="onConfirm"
-              getValueProps={(value) => ({ value })}
+              onClick={() => setEndDateVisible(true)}
             >
-              <DatePicker>
+              <DatePicker 
+                precision="day"
+                visible={endDateVisible}
+                onClose={() => setEndDateVisible(false)}
+                onConfirm={(date) => {
+                  form.setFieldValue('endDate', date)
+                  setEndDateVisible(false)
+                }}
+              >
                 {(value) => value ? formatDate(value) : '请选择'}
               </DatePicker>
             </Form.Item>
@@ -202,6 +220,8 @@ const TripList: React.FC = () => {
             onClick: () => {
               form.resetFields()
               setShowCreateDialog(false)
+              setStartDateVisible(false)
+              setEndDateVisible(false)
             }
           },
           {
