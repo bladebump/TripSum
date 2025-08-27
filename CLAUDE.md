@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TripSum (旅算) is a travel expense-splitting application designed for small groups. It helps friends easily record shared expenses during trips and uses intelligent algorithms to calculate settlement amounts, achieving zero-sum settlement.
 
+### Key Features Implemented
+- **Smart Expense Recording**: Natural language AI parsing for expense input
+- **Virtual Member Support**: Add non-registered users to trip calculations
+- **Modular AI Architecture**: Intent-first parsing system (expense/member/mixed/settlement/unknown)
+- **Optimized UI/UX**: Direct action buttons replacing hidden ActionSheet interactions
+- **Real-time Balance Calculation**: Automatic debt optimization and settlement suggestions
+- **Admin Controls**: Trip deletion with confirmation dialogs and permission-based UI rendering
+
 ## Tech Stack
 
 ### Frontend
@@ -71,17 +79,23 @@ docker-compose down      # Stop all services
 ## Code Architecture
 
 ### Frontend Structure
-- **src/pages/** - Page components (Login, Register, Home, TripList, TripDetail, ExpenseForm, etc.)
+- **src/pages/** - Page components (Login, Register, Home, TripList, TripDetail, ExpenseForm, ChatExpense, AddMember, etc.)
 - **src/components/** - Reusable React components
+  - **confirmation/** - Modular confirmation dialogs (BaseConfirm, MemberConfirm, MixedIntentConfirm)
+  - **common/** - Layout, Loading, ErrorBoundary, PrivateRoute components
 - **src/services/** - API service layer (api.ts base, auth/trip/expense/ai services)
 - **src/stores/** - Zustand stores for auth, trip, and expense state management
 
 ### Backend Structure
 - **src/controllers/** - Request handlers (auth, trip, expense, calculation, ai)
 - **src/services/** - Business logic layer
+  - **ai.intent.service.ts** - Intent classification using OpenAI API
+  - **ai.member.parser.ts** - Member parsing and validation
+  - **ai.unified.parser.ts** - Coordinate between intent recognition and specialized parsers
 - **src/routes/** - API route definitions
 - **src/middleware/** - Auth, validation, error handling, file upload
-- **src/validators/** - Joi validation schemas
+- **src/validators/** - Joi validation schemas including ai.validator.ts
+- **src/types/** - TypeScript type definitions including ai.types.ts
 - **prisma/** - Database schema and migrations
 
 ### Database Schema (Prisma)
@@ -127,16 +141,35 @@ Frontend uses Vite environment variables:
 
 ## Key Development Notes
 
-1. Database operations use Prisma ORM - modify schema.prisma and run migrations
-2. AI features integrate with OpenAI GPT-4 for expense parsing and categorization
-3. Authentication uses JWT with refresh token rotation
-4. File uploads stored in MinIO with metadata in PostgreSQL
-5. Real-time sync handled via Socket.io websockets
-6. Mobile-first UI using Ant Design Mobile components
-7. Settlement calculation uses optimized debt reduction algorithm
+1. **Database operations** use Prisma ORM - modify schema.prisma and run migrations
+2. **AI features** integrate with OpenAI GPT-4 using modular intent-first architecture
+   - Intent classification → Specialized parsing → Unified coordination
+   - Supports expense, member, mixed, settlement, and unknown intents
+3. **Authentication** uses JWT with refresh token rotation and secure token handling
+4. **File uploads** stored in MinIO with metadata in PostgreSQL
+5. **Real-time sync** handled via Socket.io websockets for live updates
+6. **Mobile-first UI** using Ant Design Mobile with optimized touch interactions
+7. **Settlement calculation** uses optimized debt reduction algorithm
+8. **Virtual members** supported for non-registered users in trip calculations
+9. **Permission-based UI rendering** - admin vs member role functionality
+10. **Code quality** - all TypeScript warnings resolved, ESLint compliant
+
+## UI/UX Improvements Implemented
+- **TripDetail Page**: Replaced hidden ActionSheet with visible bottom action button grid
+- **Permission-based Actions**: 3 buttons for regular users, 5 for admins
+- **Dangerous Actions**: Delete button with red styling and confirmation dialogs  
+- **Fixed Positioning**: Bottom action buttons always visible, no scrolling required
+- **Touch-optimized**: Minimum 80px button height with 12px gaps to prevent mis-taps
 
 ## Testing Approach
-- Backend: Jest for unit tests (npm run test)
-- Frontend: Component testing setup pending
-- Manual testing via development servers
-- 如果要测试运行项目端的话告让用户运行，而不是自己运行后台进程
+- **Backend**: Jest for unit tests (npm run test)
+- **Frontend**: Component testing setup pending
+- **Manual Testing**: Development servers for end-to-end workflows
+- **AI Features**: Test plans documented for member addition and mixed intents
+- **UI Interactions**: Comprehensive test scenarios for improved UX patterns
+- 如果要测试运行项目端的话让用户运行，而不是自己运行后台进程
+
+## Known Issues & Limitations
+- **Multi-trip Expense Recording**: When user has multiple trips, the "Add Expense" button always navigates to the first trip. Requires trip selection mechanism.
+- **ESLint Configuration**: No .eslintrc file found in frontend - linting relies on TypeScript compiler checks
+- **AI Parsing Accuracy**: Dependent on OpenAI API key configuration and model quality
