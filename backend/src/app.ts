@@ -33,7 +33,7 @@ app.use('/api', routes)
 
 app.use(errorHandler)
 
-app.get('/health', (req, res) => {
+app.get('/health', (_, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() })
 })
 

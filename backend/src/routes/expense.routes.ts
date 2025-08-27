@@ -2,20 +2,14 @@ import { Router } from 'express'
 import multer from 'multer'
 import { expenseController } from '../controllers/expense.controller'
 import { authenticate } from '../middleware/auth.middleware'
-import { validate, validateQuery } from '../middleware/validation.middleware'
-import {
-  createExpenseSchema,
-  updateExpenseSchema,
-  expenseQuerySchema,
-} from '../validators/expense.validator'
 
 const router = Router()
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, 'uploads/receipts/')
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
     cb(null, uniqueSuffix + '-' + file.originalname)
   },
@@ -26,7 +20,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|pdf/
     const isValid = allowedTypes.test(file.mimetype)
     if (isValid) {

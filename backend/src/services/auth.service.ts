@@ -1,4 +1,4 @@
-import { PrismaClient, User } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt'
 
@@ -26,8 +26,8 @@ export class AuthService {
       },
     })
 
-    const token = generateToken({ userId: user.id, email: user.email })
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email })
+    const token = generateToken(user.id)
+    const refreshToken = generateRefreshToken(user.id)
 
     return {
       user: {
@@ -55,8 +55,8 @@ export class AuthService {
       throw new Error('邮箱或密码错误')
     }
 
-    const token = generateToken({ userId: user.id, email: user.email })
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email })
+    const token = generateToken(user.id)
+    const refreshToken = generateRefreshToken(user.id)
 
     return {
       user: {
@@ -82,8 +82,8 @@ export class AuthService {
         throw new Error('用户不存在')
       }
 
-      const newToken = generateToken({ userId: user.id, email: user.email })
-      const newRefreshToken = generateRefreshToken({ userId: user.id, email: user.email })
+      const newToken = generateToken(user.id)
+      const newRefreshToken = generateRefreshToken(user.id)
 
       return {
         token: newToken,

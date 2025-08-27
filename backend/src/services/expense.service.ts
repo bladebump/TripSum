@@ -1,4 +1,4 @@
-import { PrismaClient, Expense, Prisma } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { io } from '../app'
 
 const prisma = new PrismaClient()

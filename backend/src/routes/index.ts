@@ -7,7 +7,7 @@ import { authenticate } from '../middleware/auth.middleware'
 import { expenseController } from '../controllers/expense.controller'
 import { calculationController } from '../controllers/calculation.controller'
 import { validateQuery } from '../middleware/validation.middleware'
-import { expenseQuerySchema, settlementSchema } from '../validators/expense.validator'
+import { expenseQuerySchema } from '../validators/expense.validator'
 import { upload } from '../middleware/upload.middleware'
 
 const router = Router()

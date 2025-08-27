@@ -1,7 +1,7 @@
 import { Response } from 'express'
 import { AuthenticatedRequest } from '../types'
 import { tripService } from '../services/trip.service'
-import { sendSuccess, sendError, sendPaginatedResponse } from '../utils/response'
+import { sendSuccess, sendError } from '../utils/response'
 
 export class TripController {
   async createTrip(req: AuthenticatedRequest, res: Response) {

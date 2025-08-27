@@ -10,12 +10,13 @@ export const authenticate = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     const authHeader = req.headers.authorization
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return sendError(res, '401', '未提供认证令牌', 401)
+      sendError(res, '401', '未提供认证令牌', 401)
+      return
     }
 
     const token = authHeader.substring(7)
@@ -28,7 +29,8 @@ export const authenticate = async (
       })
 
       if (!user) {
-        return sendError(res, '401', '用户不存在', 401)
+        sendError(res, '401', '用户不存在', 401)
+        return
       }
 
       req.user = user
@@ -36,16 +38,18 @@ export const authenticate = async (
       
       next()
     } catch (error) {
-      return sendError(res, '401', '无效或过期的令牌', 401)
+      sendError(res, '401', '无效或过期的令牌', 401)
+      return
     }
   } catch (error) {
-    return sendError(res, '500', '认证过程出错', 500)
+    sendError(res, '500', '认证过程出错', 500)
+    return
   }
 }
 
 export const optionalAuth = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {

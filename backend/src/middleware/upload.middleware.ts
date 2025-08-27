@@ -5,7 +5,7 @@ import { uploadFile } from '../config/minio'
 
 const storage = multer.memoryStorage()
 
-const fileFilter = (req: any, file: any, cb: any) => {
+const fileFilter = (_req: any, file: any, cb: any) => {
   const allowedTypes = /jpeg|jpg|png|gif|pdf/
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
   const mimetype = allowedTypes.test(file.mimetype)

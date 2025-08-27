@@ -3,12 +3,13 @@ import { ObjectSchema } from 'joi'
 import { sendError } from '../utils/response'
 
 export const validate = (schema: ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const { error } = schema.validate(req.body)
     
     if (error) {
       const message = error.details[0].message
-      return sendError(res, '400', message, 400)
+      sendError(res, '400', message, 400)
+      return
     }
     
     next()
@@ -16,12 +17,13 @@ export const validate = (schema: ObjectSchema) => {
 }
 
 export const validateQuery = (schema: ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const { error } = schema.validate(req.query)
     
     if (error) {
       const message = error.details[0].message
-      return sendError(res, '400', message, 400)
+      sendError(res, '400', message, 400)
+      return
     }
     
     next()
@@ -29,12 +31,13 @@ export const validateQuery = (schema: ObjectSchema) => {
 }
 
 export const validateParams = (schema: ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const { error } = schema.validate(req.params)
     
     if (error) {
       const message = error.details[0].message
-      return sendError(res, '400', message, 400)
+      sendError(res, '400', message, 400)
+      return
     }
     
     next()

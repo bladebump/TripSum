@@ -7,7 +7,7 @@ interface Error {
   stack?: string
 }
 
-const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || 500
   const message = err.message || 'Internal Server Error'
 

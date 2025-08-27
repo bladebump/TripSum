@@ -1,4 +1,4 @@
-import { PrismaClient, Trip, TripMember, User } from '@prisma/client'
+import { PrismaClient, Trip } from '@prisma/client'
 import { io } from '../app'
 
 const prisma = new PrismaClient()
@@ -173,7 +173,7 @@ export class TripService {
   }
 
   async updateTrip(tripId: string, userId: string, data: Partial<CreateTripData>) {
-    const member = await this.checkTripPermission(tripId, userId, 'admin')
+    await this.checkTripPermission(tripId, userId, 'admin')
 
     const trip = await prisma.trip.update({
       where: { id: tripId },
@@ -186,7 +186,7 @@ export class TripService {
   }
 
   async deleteTrip(tripId: string, userId: string) {
-    const member = await this.checkTripPermission(tripId, userId, 'admin')
+    await this.checkTripPermission(tripId, userId, 'admin')
 
     await prisma.trip.delete({
       where: { id: tripId },
