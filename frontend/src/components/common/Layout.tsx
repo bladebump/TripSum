@@ -14,7 +14,7 @@ const Layout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated } = useAuthStore()
-  const { currentTrip, trips } = useTripStore()
+  const { trips } = useTripStore()
   const [hasTrip, setHasTrip] = useState(false)
   
   useEffect(() => {

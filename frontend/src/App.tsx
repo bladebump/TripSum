@@ -10,6 +10,7 @@ import ExpenseForm from './pages/ExpenseForm'
 import ChatExpense from './pages/ChatExpense'
 import MemberDashboard from './pages/MemberDashboard'
 import Settlement from './pages/Settlement'
+import AddMember from './pages/AddMember'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
@@ -78,6 +79,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Settlement />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="trips/:id/members/add"
+                element={
+                  <PrivateRoute>
+                    <AddMember />
                   </PrivateRoute>
                 }
               />

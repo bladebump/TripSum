@@ -1,0 +1,85 @@
+.add-member-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  .current-members {
+    padding: 16px;
+    background: white;
+    margin-bottom: 8px;
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .member-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  .no-permission {
+    padding: 40px 16px;
+    text-align: center;
+    color: #999;
+    font-size: 16px;
+  }
+
+  .tab-content {
+    padding: 16px;
+    background: white;
+    min-height: calc(100vh - 200px);
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .member-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+
+      .adm-input {
+        flex: 1;
+      }
+
+      .adm-button {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+      }
+    }
+  }
+
+  .adm-list-item-content {
+    cursor: pointer;
+    
+    &:active {
+      background-color: #f8f8f8;
+    }
+  }
+
+  .adm-tabs-content {
+    background: transparent;
+  }
+
+  .adm-tabs-tab-wrapper {
+    background: white;
+    border-bottom: 1px solid #eee;
+  }
+}

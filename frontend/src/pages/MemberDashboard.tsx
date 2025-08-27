@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { NavBar, Card, List, ProgressBar, Tag } from 'antd-mobile'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useTripStore } from '@/stores/trip.store'
 import tripService from '@/services/trip.service'
-import { formatCurrency, formatPercentage } from '@/utils/format'
+import { formatCurrency } from '@/utils/format'
 import Loading from '@/components/common/Loading'
 import './MemberDashboard.scss'
 
@@ -15,7 +15,7 @@ const MemberDashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { balances, fetchBalances } = useExpenseStore()
-  const { currentTrip, members } = useTripStore()
+  const { members } = useTripStore()
   const [statistics, setStatistics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -127,7 +127,7 @@ const MemberDashboard: React.FC = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {pieData.map((entry: any, index: number) => (
+                  {pieData.map((_: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

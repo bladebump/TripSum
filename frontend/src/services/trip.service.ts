@@ -1,5 +1,5 @@
 import api from './api'
-import { ApiResponse, Trip, TripMember, CreateTripData, PaginationResult } from '@/types'
+import { ApiResponse, Trip, TripMember, CreateTripData } from '@/types'
 import { transformTripData } from '@/utils/dataTransform'
 
 class TripService {

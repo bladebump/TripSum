@@ -4,8 +4,7 @@ import {
   Expense, 
   CreateExpenseData, 
   BalanceCalculation, 
-  SettlementSummary,
-  Settlement
+  SettlementSummary
 } from '@/types'
 import { transformExpenseData, transformBalanceData, transformSettlementData } from '@/utils/dataTransform'
 

@@ -10,14 +10,10 @@ import {
   Tag,
   Toast,
   Dialog,
-  ActionSheet,
   SwipeAction
 } from 'antd-mobile'
 import { 
-  AddOutline, 
-  TeamOutline, 
-  PieOutline,
-  PayCircleOutline 
+  AddOutline
 } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
@@ -30,11 +26,12 @@ import './TripDetail.scss'
 const TripDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { currentTrip, members, fetchTripDetail, fetchMembers } = useTripStore()
+  const { currentTrip, members, fetchTripDetail, fetchMembers, deleteTrip } = useTripStore()
   const { expenses, fetchExpenses, deleteExpense } = useExpenseStore()
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState('expenses')
   const [loading, setLoading] = useState(true)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -72,36 +69,31 @@ const TripDetail: React.FC = () => {
     })
   }
 
-  const showActionMenu = () => {
-    ActionSheet.show({
-      actions: [
-        {
-          text: '添加支出',
-          key: 'expense',
-          onClick: () => navigate(`/trips/${id}/expense/new`)
-        },
-        {
-          text: '查看成员',
-          key: 'members',
-          onClick: () => setActiveTab('members')
-        },
-        {
-          text: '查看统计',
-          key: 'dashboard',
-          onClick: () => navigate(`/trips/${id}/dashboard`)
-        },
-        {
-          text: '结算',
-          key: 'settlement',
-          onClick: () => navigate(`/trips/${id}/settlement`)
+  const handleDeleteTrip = async () => {
+    Dialog.confirm({
+      content: `确定要删除行程"${currentTrip?.name}"吗？\n\n删除后将无法恢复，包括所有支出记录和成员信息。`,
+      onConfirm: async () => {
+        try {
+          setDeleteLoading(true)
+          await deleteTrip(id!)
+          Toast.show('行程已删除')
+          navigate('/trips')
+        } catch (error) {
+          Toast.show('删除失败，请重试')
+        } finally {
+          setDeleteLoading(false)
         }
-      ],
-      cancelText: '取消'
+      }
     })
   }
 
+
   if (loading || !currentTrip) {
     return <Loading text="加载中..." />
+  }
+
+  if (deleteLoading) {
+    return <Loading text="正在删除行程..." />
   }
 
   const isAdmin = members.find(m => m.userId === user?.id)?.role === 'admin'
@@ -228,7 +220,7 @@ const TripDetail: React.FC = () => {
 
             {isAdmin && (
               <div className="add-member-btn">
-                <Button block color="primary" onClick={() => Toast.show('添加成员功能开发中')}>
+                <Button block color="primary" onClick={() => navigate(`/trips/${id}/members/add`)}>
                   添加成员
                 </Button>
               </div>
@@ -237,12 +229,45 @@ const TripDetail: React.FC = () => {
         </Tabs.Tab>
       </Tabs>
 
+      {/* 操作按钮网格 */}
+      <div className="action-buttons-grid">
+        <div className="action-button" onClick={() => navigate(`/trips/${id}/expense/new`)}>
+          <div className="action-icon">📝</div>
+          <div className="action-text">添加支出</div>
+        </div>
+        
+        <div className="action-button" onClick={() => navigate(`/trips/${id}/dashboard`)}>
+          <div className="action-icon">📊</div>
+          <div className="action-text">查看统计</div>
+        </div>
+        
+        <div className="action-button" onClick={() => navigate(`/trips/${id}/settlement`)}>
+          <div className="action-icon">💰</div>
+          <div className="action-text">结算</div>
+        </div>
+
+        {isAdmin && (
+          <>
+            <div className="action-button" onClick={() => navigate(`/trips/${id}/members/add`)}>
+              <div className="action-icon">👥</div>
+              <div className="action-text">添加成员</div>
+            </div>
+            
+            <div className="action-button danger" onClick={handleDeleteTrip}>
+              <div className="action-icon">🗑️</div>
+              <div className="action-text">删除行程</div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* 简化的浮动按钮，仅用于快速添加支出 */}
       <FloatingBubble
         style={{
           '--initial-position-bottom': '80px',
           '--initial-position-right': '24px',
         }}
-        onClick={showActionMenu}
+        onClick={() => navigate(`/trips/${id}/expense/new`)}
       >
         <AddOutline fontSize={28} />
       </FloatingBubble>

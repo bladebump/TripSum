@@ -1,4 +1,4 @@
-import { Expense, ExpenseParticipant } from '@/types'
+import { Expense } from '@/types'
 
 export const calculateTotalExpenses = (expenses: Expense[]): number => {
   return expenses.reduce((sum, expense) => sum + expense.amount, 0)

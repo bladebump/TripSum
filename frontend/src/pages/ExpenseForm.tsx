@@ -9,7 +9,6 @@ import {
   Selector,
   ImageUploader,
   Toast,
-  List,
   Checkbox,
   Radio,
   Space,
@@ -20,7 +19,7 @@ import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useAuthStore } from '@/stores/auth.store'
 import aiService from '@/services/ai.service'
-import { formatDate, formatCurrency } from '@/utils/format'
+import { formatDate } from '@/utils/format'
 import { validateAmount } from '@/utils/validation'
 import './ExpenseForm.scss'
 
@@ -51,7 +50,7 @@ const ExpenseForm: React.FC = () => {
         fetchMembers(tripId!)
       ])
       // 默认选中所有成员
-      setSelectedMembers(members.map(m => m.userId))
+      setSelectedMembers(members.map(m => m.userId).filter(id => id !== undefined) as string[])
     } catch (error) {
       Toast.show('加载失败')
       navigate(-1)
@@ -155,7 +154,7 @@ const ExpenseForm: React.FC = () => {
         participants
       }
 
-      const receipt = fileList[0]?.file as File | undefined
+      const receipt = fileList[0] && 'file' in fileList[0] ? (fileList[0] as any).file as File : undefined
 
       if (expenseId) {
         await updateExpense(expenseId, expenseData, receipt)
@@ -190,7 +189,7 @@ const ExpenseForm: React.FC = () => {
             label="金额"
             rules={[{ required: true, message: '请输入金额' }]}
           >
-            <Input type="number" placeholder="0.00" prefix="¥" />
+            <Input type="number" placeholder="0.00" />
           </Form.Item>
 
           <Form.Item
@@ -255,7 +254,7 @@ const ExpenseForm: React.FC = () => {
           </Form.Item>
 
           <Form.Item label="分摊方式">
-            <Radio.Group value={splitMethod} onChange={setSplitMethod}>
+            <Radio.Group value={splitMethod} onChange={(val) => setSplitMethod(val as 'equal' | 'custom' | 'percentage')}>
               <Space direction="vertical">
                 <Radio value="equal">平均分摊</Radio>
                 <Radio value="custom">自定义金额</Radio>
@@ -267,24 +266,26 @@ const ExpenseForm: React.FC = () => {
           <Form.Item label="参与者">
             <Checkbox.Group
               value={selectedMembers}
-              onChange={setSelectedMembers}
+              onChange={(val) => setSelectedMembers(val as string[])}
             >
               <Space direction="vertical">
                 {members.map(member => (
                   <Checkbox key={member.userId} value={member.userId}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span>{member.isVirtual ? member.displayName : member.user?.username}</span>
-                      {splitMethod === 'custom' && selectedMembers.includes(member.userId) && (
+                      {splitMethod === 'custom' && member.userId && selectedMembers.includes(member.userId) && (
                         <Input
                           type="number"
                           placeholder="金额"
                           style={{ width: 100 }}
-                          value={customAmounts[member.userId]}
+                          value={member.userId ? (customAmounts[member.userId]?.toString() || '0') : '0'}
                           onChange={(val) => {
-                            setCustomAmounts({
-                              ...customAmounts,
-                              [member.userId]: parseFloat(val) || 0
-                            })
+                            if (member.userId) {
+                              setCustomAmounts({
+                                ...customAmounts,
+                                [member.userId]: parseFloat(val) || 0
+                              })
+                            }
                           }}
                         />
                       )}
@@ -301,6 +302,7 @@ const ExpenseForm: React.FC = () => {
               onChange={setFileList}
               maxCount={1}
               accept="image/*"
+              upload={async (file) => ({ url: URL.createObjectURL(file) })}
             />
           </Form.Item>
         </Form>

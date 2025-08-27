@@ -1,6 +1,7 @@
 .trip-detail-page {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: 160px; // 为操作按钮和浮动按钮留出空间
 
   .trip-summary {
     padding: 12px;
@@ -97,5 +98,103 @@
     .add-member-btn {
       margin-top: 20px;
     }
+  }
+
+  // 操作按钮网格样式
+  .action-buttons-grid {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    z-index: 999;
+
+    .action-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 8px;
+      border-radius: 8px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 80px;
+      justify-content: center;
+
+      &:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+      }
+
+      &:active {
+        transform: translateY(0);
+        background: #dee2e6;
+      }
+
+      &.danger {
+        border-color: #ff4d4f;
+        background: #fff2f0;
+        color: #ff4d4f;
+
+        &:hover {
+          background: #ffece8;
+          border-color: #ff7875;
+        }
+
+        &:active {
+          background: #ffa39e;
+        }
+      }
+
+      .action-icon {
+        font-size: 24px;
+        margin-bottom: 6px;
+        line-height: 1;
+      }
+
+      .action-text {
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.2;
+        color: inherit;
+      }
+
+      // 管理员按钮特殊处理
+      &:nth-child(4), &:nth-child(5) {
+        grid-column: span 1;
+      }
+    }
+
+    // 当有5个按钮时，调整布局
+    &:has(.action-button:nth-child(5)) {
+      grid-template-columns: repeat(5, 1fr);
+
+      .action-button {
+        min-height: 70px;
+        padding: 12px 4px;
+
+        .action-icon {
+          font-size: 20px;
+          margin-bottom: 4px;
+        }
+
+        .action-text {
+          font-size: 11px;
+        }
+      }
+    }
+  }
+
+  // 调整浮动按钮位置，避免与操作按钮重叠
+  .adm-floating-bubble {
+    bottom: 140px !important;
   }
 }
