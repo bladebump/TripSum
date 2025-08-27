@@ -25,11 +25,15 @@ export interface Trip {
 export interface TripMember {
   id: string
   tripId: string
-  userId: string
+  userId?: string
   role: 'admin' | 'member'
   joinDate: string
   isActive: boolean
-  user: User
+  isVirtual?: boolean
+  displayName?: string
+  createdBy?: string
+  user?: User
+  creator?: User
   totalPaid?: number
   balance?: number
 }

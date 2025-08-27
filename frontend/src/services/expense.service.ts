@@ -7,6 +7,7 @@ import {
   SettlementSummary,
   Settlement
 } from '@/types'
+import { transformExpenseData, transformBalanceData, transformSettlementData } from '@/utils/dataTransform'
 
 class ExpenseService {
   async createExpense(tripId: string, expenseData: CreateExpenseData, receipt?: File): Promise<Expense> {
@@ -17,12 +18,12 @@ class ExpenseService {
         expenseData
       )
       if (data.success && data.data) {
-        return data.data
+        return transformExpenseData(data.data)
       }
     } else {
       const { data } = await api.post<ApiResponse<Expense>>(`/trips/${tripId}/expenses`, expenseData)
       if (data.success && data.data) {
-        return data.data
+        return transformExpenseData(data.data)
       }
     }
     throw new Error('创建支出失败')
@@ -41,7 +42,10 @@ class ExpenseService {
       { params }
     )
     if (data.success && data.data) {
-      return data.data
+      return {
+        expenses: data.data.expenses.map(expense => transformExpenseData(expense)),
+        pagination: data.data.pagination
+      }
     }
     throw new Error('获取支出列表失败')
   }
@@ -49,7 +53,7 @@ class ExpenseService {
   async getExpenseDetail(expenseId: string): Promise<Expense> {
     const { data } = await api.get<ApiResponse<Expense>>(`/expenses/${expenseId}`)
     if (data.success && data.data) {
-      return data.data
+      return transformExpenseData(data.data)
     }
     throw new Error('获取支出详情失败')
   }
@@ -62,12 +66,12 @@ class ExpenseService {
         expenseData
       )
       if (data.success && data.data) {
-        return data.data
+        return transformExpenseData(data.data)
       }
     } else {
       const { data } = await api.put<ApiResponse<Expense>>(`/expenses/${expenseId}`, expenseData)
       if (data.success && data.data) {
-        return data.data
+        return transformExpenseData(data.data)
       }
     }
     throw new Error('更新支出失败')
@@ -83,7 +87,7 @@ class ExpenseService {
   async getBalances(tripId: string): Promise<BalanceCalculation[]> {
     const { data } = await api.get<ApiResponse<BalanceCalculation[]>>(`/trips/${tripId}/balances`)
     if (data.success && data.data) {
-      return data.data
+      return data.data.map(balance => transformBalanceData(balance))
     }
     throw new Error('获取余额信息失败')
   }
@@ -91,7 +95,7 @@ class ExpenseService {
   async calculateSettlement(tripId: string): Promise<SettlementSummary> {
     const { data } = await api.post<ApiResponse<SettlementSummary>>(`/trips/${tripId}/calculate`)
     if (data.success && data.data) {
-      return data.data
+      return transformSettlementData(data.data)
     }
     throw new Error('计算结算方案失败')
   }

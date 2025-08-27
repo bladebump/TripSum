@@ -84,7 +84,7 @@ const ExpenseForm: React.FC = () => {
       
       if (result.participants && result.participants.length > 0) {
         const participantIds = result.participants
-          .map(p => members.find(m => m.user.username === p.username)?.userId)
+          .map(p => members.find(m => !m.isVirtual && m.user?.username === p.username)?.userId)
           .filter(Boolean) as string[]
         setSelectedMembers(participantIds)
         
@@ -92,8 +92,8 @@ const ExpenseForm: React.FC = () => {
           setSplitMethod('custom')
           const amounts: Record<string, number> = {}
           result.participants.forEach(p => {
-            const member = members.find(m => m.user.username === p.username)
-            if (member && p.shareAmount) {
+            const member = members.find(m => !m.isVirtual && m.user?.username === p.username)
+            if (member && member.userId && p.shareAmount) {
               amounts[member.userId] = p.shareAmount
             }
           })
@@ -201,10 +201,12 @@ const ExpenseForm: React.FC = () => {
           >
             <Selector
               columns={2}
-              options={members.map(m => ({
-                label: m.user.username,
-                value: m.userId
-              }))}
+              options={members
+                .filter(m => m.userId)
+                .map(m => ({
+                  label: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || 'Unknown'),
+                  value: m.userId!
+                }))}
             />
           </Form.Item>
 
@@ -271,7 +273,7 @@ const ExpenseForm: React.FC = () => {
                 {members.map(member => (
                   <Checkbox key={member.userId} value={member.userId}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{member.user.username}</span>
+                      <span>{member.isVirtual ? member.displayName : member.user?.username}</span>
                       {splitMethod === 'custom' && selectedMembers.includes(member.userId) && (
                         <Input
                           type="number"

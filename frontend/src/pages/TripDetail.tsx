@@ -204,10 +204,12 @@ const TripDetail: React.FC = () => {
                   key={member.id}
                   prefix={
                     <div className="member-avatar">
-                      {member.user.username[0].toUpperCase()}
+                      {member.isVirtual 
+                        ? (member.displayName?.[0] || '虚').toUpperCase()
+                        : (member.user?.username?.[0] || 'U').toUpperCase()}
                     </div>
                   }
-                  description={member.user.email}
+                  description={member.isVirtual ? '虚拟成员' : member.user?.email}
                   extra={
                     <div>
                       {member.role === 'admin' && <Tag color="primary">管理员</Tag>}
@@ -219,7 +221,7 @@ const TripDetail: React.FC = () => {
                     </div>
                   }
                 >
-                  {member.user.username}
+                  {member.isVirtual ? member.displayName : member.user?.username}
                 </List.Item>
               ))}
             </List>

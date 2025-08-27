@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   NavBar, 
@@ -17,6 +17,7 @@ import {
 } from 'antd-mobile'
 import { AddOutline } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { formatDate, formatCurrency, getTripStatus, getTripStatusText, getTripStatusColor } from '@/utils/format'
 import Empty from '@/components/common/Empty'
 import Loading from '@/components/common/Loading'
@@ -25,22 +26,29 @@ import './TripList.scss'
 const TripList: React.FC = () => {
   const navigate = useNavigate()
   const { trips, loading, pagination, fetchTrips, createTrip } = useTripStore()
+  const { isAuthenticated } = useAuthStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [startDateVisible, setStartDateVisible] = useState(false)
   const [endDateVisible, setEndDateVisible] = useState(false)
   const [form] = Form.useForm()
+  const initialLoadDone = useRef(false)
 
   useEffect(() => {
-    loadTrips()
-  }, [])
+    // 只在认证后且未初始加载时加载数据
+    if (isAuthenticated && !initialLoadDone.current) {
+      initialLoadDone.current = true
+      loadTrips()
+    }
+  }, [isAuthenticated])
 
   const loadTrips = async (page = 1) => {
     try {
       await fetchTrips({ page, limit: 10 })
       setHasMore(page < pagination.totalPages)
     } catch (error) {
+      console.error('Failed to load trips:', error)
       Toast.show('加载失败')
     }
   }

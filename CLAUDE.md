@@ -139,3 +139,4 @@ Frontend uses Vite environment variables:
 - Backend: Jest for unit tests (npm run test)
 - Frontend: Component testing setup pending
 - Manual testing via development servers
+- 如果要测试运行项目端的话告让用户运行，而不是自己运行后台进程

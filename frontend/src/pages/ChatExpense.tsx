@@ -212,10 +212,12 @@ const ChatExpense: React.FC = () => {
         description: values.description,
         expenseDate: values.expenseDate.toISOString(),
         categoryId: values.categoryId,
-        participants: members.map(m => ({
-          userId: m.userId,
-          shareAmount: finalAmount / members.length // 暂时平均分摊
-        }))
+        participants: members
+          .filter(m => m.userId)
+          .map(m => ({
+            userId: m.userId!,
+            shareAmount: finalAmount / members.filter(m => m.userId).length // 暂时平均分摊
+          }))
       }
 
       await createExpense(tripId!, expenseData)
@@ -330,10 +332,12 @@ const ChatExpense: React.FC = () => {
             >
               <Selector
                 columns={2}
-                options={members.map(m => ({
-                  label: m.user.username,
-                  value: m.userId
-                }))}
+                options={members
+                  .filter(m => m.userId)
+                  .map(m => ({
+                    label: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || 'Unknown'),
+                    value: m.userId!
+                  }))}
               />
             </Form.Item>
 

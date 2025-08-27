@@ -14,21 +14,12 @@ const Layout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated } = useAuthStore()
-  const { currentTrip, trips, fetchTrips } = useTripStore()
+  const { currentTrip, trips } = useTripStore()
   const [hasTrip, setHasTrip] = useState(false)
   
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchTrips({ limit: 1 }).then(() => {
-        // trips会在store中更新，不需要在这里设置
-      }).catch(() => {
-        console.error('Failed to fetch trips')
-      })
-    }
-  }, [isAuthenticated])
-  
-  useEffect(() => {
-    // 单独监听trips变化来更新hasTrip状态
+    // 监听trips变化来更新hasTrip状态
+    // 不在这里调用fetchTrips，避免与TripList组件冲突
     setHasTrip(trips.length > 0)
   }, [trips])
   
