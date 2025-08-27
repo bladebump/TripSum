@@ -43,9 +43,26 @@ const TripList: React.FC = () => {
     }
   }, [isAuthenticated])
 
+  // 添加页面聚焦时的数据刷新
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isAuthenticated && initialLoadDone.current) {
+        console.log('页面重新聚焦，刷新行程数据')
+        loadTrips(1)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [isAuthenticated])
+
   const loadTrips = async (page = 1) => {
     try {
+      console.log('开始加载行程数据，页面：', page)
       await fetchTrips({ page, limit: 10 })
+      console.log('行程数据加载完成，当前行程数量：', trips.length)
       setHasMore(page < pagination.totalPages)
     } catch (error) {
       console.error('Failed to load trips:', error)
@@ -75,12 +92,14 @@ const TripList: React.FC = () => {
       
       Toast.show({
         icon: 'success',
-        content: '创建成功'
+        content: '创建成功，点击行程卡片进入详情'
       })
       setShowCreateDialog(false)
       form.resetFields()
-      navigate(`/trips/${trip.id}`)
+      // 不立即跳转，让用户在列表页看到新创建的行程
+      console.log('行程创建成功：', trip)
     } catch (error: any) {
+      console.error('创建行程失败：', error)
       Toast.show({
         icon: 'fail',
         content: error.message || '创建失败'
@@ -235,7 +254,7 @@ const TripList: React.FC = () => {
           {
             key: 'confirm',
             text: '创建',
-            color: 'primary',
+            // color: 'primary',
             disabled: createLoading,
             onClick: handleCreateTrip
           }

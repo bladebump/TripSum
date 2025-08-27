@@ -49,9 +49,20 @@ export const useTripStore = create<TripState>((set, get) => ({
   fetchTrips: async (params) => {
     set({ loading: true })
     try {
+      console.log('fetchTrips 调用参数：', params)
       const response = await tripService.getUserTrips(params)
-      set({ trips: response.trips, pagination: response.pagination, loading: false })
+      console.log('fetchTrips 服务器响应：', response)
+      
+      const { trips: currentTrips } = get()
+      const isFirstPage = !params?.page || params.page === 1
+      
+      // 如果是第一页，直接替换；如果是分页，则追加
+      const newTrips = isFirstPage ? response.trips : [...currentTrips, ...response.trips]
+      
+      console.log('fetchTrips 更新后的trips数量：', newTrips.length)
+      set({ trips: newTrips, pagination: response.pagination, loading: false })
     } catch (error) {
+      console.error('fetchTrips 错误：', error)
       set({ loading: false })
       throw error
     }
@@ -71,11 +82,18 @@ export const useTripStore = create<TripState>((set, get) => ({
   createTrip: async (data) => {
     set({ loading: true })
     try {
+      console.log('createTrip 开始创建行程：', data)
       const trip = await tripService.createTrip(data)
+      console.log('createTrip 创建成功，返回数据：', trip)
+      
       const { trips } = get()
-      set({ trips: [trip, ...trips], loading: false })
+      const newTrips = [trip, ...trips]
+      console.log('createTrip 更新trips列表，新数量：', newTrips.length)
+      
+      set({ trips: newTrips, loading: false })
       return trip
     } catch (error) {
+      console.error('createTrip 创建失败：', error)
       set({ loading: false })
       throw error
     }
