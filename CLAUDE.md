@@ -147,8 +147,10 @@ Frontend uses Vite environment variables:
 1. **Database operations** use Prisma ORM - modify schema.prisma and run migrations
 2. **Fund Management System**:
    - Members contribute to fund pool via `contribution` field in TripMember
-   - Balance calculation: `contribution + totalPaid - totalShare`
-   - Positive balance = others owe them, Negative = they owe others
+   - Smart payment recognition: Admin payments = fund pool, Others = reimbursement
+   - Balance calculation: `contribution + reimbursements - shares`
+   - Expense tracking via `isPaidFromFund` boolean field
+   - Real-time fund pool status with balance tracking
 3. **AI features** integrate with OpenAI GPT-4 using modular intent-first architecture
    - Intent classification → Specialized parsing → Unified coordination
    - Supports expense, member, mixed, settlement, and unknown intents
@@ -180,12 +182,14 @@ Frontend uses Vite environment variables:
 
 ## Recent Improvements (v1.3.0)
 
-### Fund Contribution System
-- Added `contribution` field to TripMember model for tracking fund payments
-- Created member service and routes for updating contributions
-- Modified balance calculation to include contributions
-- Updated UI to display fund pool and individual contributions
-- Changed income recording from negative expenses to contribution updates
+### Fund Management System (基金池模式)
+- **Contribution Tracking**: Added `contribution` field to TripMember for fund pre-collection
+- **Smart Payment Recognition**: AI identifies who paid (admin = fund pool, others = reimbursement needed)
+- **Dual Payment Modes**:
+  - Fund Pool Payment: When admin pays (default)
+  - Member Reimbursement: When non-admin pays (tracked as `isPaidFromFund = false`)
+- **Balance Formula**: `Balance = Contribution + Reimbursements - Shares`
+- **Fund Pool Status**: Real-time tracking of pool balance, expenses, and reimbursements
 
 ### AI Calculator Integration
 - Implemented calculator tool in `/backend/src/utils/calculator.ts`

@@ -70,10 +70,17 @@ export class AIService {
         }
       ]
 
+      // 找出管理员
+      const adminMember = members.find(m => m.role === 'admin')
+      const adminName = adminMember ? 
+        (adminMember.isVirtual ? adminMember.displayName : adminMember.name) : 
+        '管理员'
+      
       const prompt = `
         你是一个智能账单解析助手。请使用calculate工具进行所有数学计算，不要自己心算。
         
         团队成员：${memberNames}（共${members.length}人）
+        管理员：${adminName}
         消费描述：${description}
         
         计算规则：
@@ -81,6 +88,12 @@ export class AIService {
         2. "每人X元"：使用calculate('multiply', X, 人数)计算总金额
         3. 收入场景记为负数
         4. 所有金额计算必须使用calculate工具
+        
+        付款人识别规则：
+        1. "张三付了X元" → payerName: "张三"
+        2. "李四请客" → payerName: "李四"
+        3. 没有明确付款人时 → payerName: "${adminName}"（管理员默认付款）
+        4. "我付了"需要根据上下文判断是谁
         
         请返回JSON格式：
         {
@@ -96,10 +109,10 @@ export class AIService {
           "category": "类别（餐饮/交通/住宿/娱乐/购物/收入/其他）",
           "confidence": 置信度（0-1之间的数字）,
           "isIncome": 是否为收入（true/false）,
-          "payerId": "付款人名字"
+          "payerName": "付款人名字（默认为管理员）"
         }
         
-        识别规则：
+        参与者识别规则：
         1. "ABC三人消费"：只有ABC参与，计算时用3人
         2. "除了D都参与"：排除D，计算时用总人数-1
         3. "每人100元"：这是每人金额，需要乘以人数得总额
@@ -156,6 +169,22 @@ export class AIService {
 
       const result = JSON.parse(completion.choices[0].message.content || '{}')
 
+      // 匹配付款人ID
+      if (result.payerName) {
+        const payerMember = members.find(
+          (m) => m.name && m.name.toLowerCase() === result.payerName.toLowerCase()
+        )
+        if (payerMember) {
+          result.payerId = payerMember.id
+        }
+      } else {
+        // 如果没有识别出付款人，默认使用管理员
+        if (adminMember) {
+          result.payerId = adminMember.id
+          result.payerName = adminName
+        }
+      }
+
       // 匹配参与者ID
       if (result.participants && result.participants.length > 0) {
         for (const participant of result.participants) {
@@ -193,7 +222,8 @@ export class AIService {
         category: result.category,
         confidence: result.confidence || 0.5,
         isIncome: result.isIncome || false,
-        payerId: result.payerId
+        payerId: result.payerId,
+        payerName: result.payerName
       } as any // 临时解决类型问题
     } catch (error) {
       console.error('AI解析错误:', error)

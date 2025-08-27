@@ -4,10 +4,12 @@ import { sendError } from '../utils/response'
 
 export const validate = (schema: ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
+    console.log('验证请求体:', JSON.stringify(req.body))
     const { error } = schema.validate(req.body)
     
     if (error) {
       const message = error.details[0].message
+      console.error('验证失败:', message, '请求体:', req.body)
       sendError(res, '400', message, 400)
       return
     }

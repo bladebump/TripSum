@@ -25,6 +25,19 @@ export class ExpenseService {
       await this.checkTripMembership(tripId, data.payerId)
     }
 
+    // 判断是否为基金池支付
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        members: {
+          where: { role: 'admin', isActive: true }
+        }
+      }
+    })
+    
+    const adminMember = trip?.members[0]
+    const isPaidFromFund = adminMember?.userId === data.payerId
+
     const participants = data.participants || []
     
     if (participants.length === 0) {
@@ -71,6 +84,7 @@ export class ExpenseService {
         description: data.description,
         expenseDate: data.expenseDate,
         receiptUrl: data.receiptUrl,
+        isPaidFromFund,
         createdBy,
         participants: {
           create: participants.map((p) => ({

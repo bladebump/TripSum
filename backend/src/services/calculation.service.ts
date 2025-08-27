@@ -38,11 +38,15 @@ export class CalculationService {
     for (const expense of expenses) {
       // 只计算支出（正数），不计算收入（负数）
       if (expense.amount.toNumber() > 0) {
-        const payer = balanceMap.get(expense.payerId)
-        if (payer) {
-          payer.totalPaid += expense.amount.toNumber()
+        // 只有非基金池支付的才计入个人垫付
+        if (!expense.isPaidFromFund) {
+          const payer = balanceMap.get(expense.payerId)
+          if (payer) {
+            payer.totalPaid += expense.amount.toNumber()
+          }
         }
 
+        // 所有参与者都需要分摊
         for (const participant of expense.participants) {
           if (!participant.userId) continue // 跳过虚拟成员
           const user = balanceMap.get(participant.userId)
@@ -153,7 +157,7 @@ export class CalculationService {
   }
 
   async getTripStatistics(tripId: string) {
-    const [expenses, categories] = await Promise.all([
+    const [expenses, categories, trip] = await Promise.all([
       prisma.expense.findMany({
         where: { tripId },
         include: {
@@ -163,9 +167,33 @@ export class CalculationService {
       prisma.category.findMany({
         where: { tripId },
       }),
+      prisma.trip.findUnique({
+        where: { id: tripId },
+        include: {
+          members: {
+            where: { isActive: true }
+          }
+        }
+      })
     ])
 
     const totalExpenses = expenses.reduce(
+      (sum, exp) => sum + exp.amount.toNumber(),
+      0
+    )
+    
+    // 计算基金池状态
+    const totalContributions = trip?.members.reduce(
+      (sum, member) => sum + member.contribution.toNumber(),
+      0
+    ) || 0
+    
+    const fundExpenses = expenses.filter(e => e.isPaidFromFund).reduce(
+      (sum, exp) => sum + exp.amount.toNumber(),
+      0
+    )
+    
+    const memberPaidExpenses = expenses.filter(e => !e.isPaidFromFund).reduce(
       (sum, exp) => sum + exp.amount.toNumber(),
       0
     )
@@ -223,6 +251,12 @@ export class CalculationService {
       averagePerPerson: members > 0 ? totalExpenses / members : 0,
       categoryBreakdown,
       dailyExpenses,
+      fundStatus: {
+        totalContributions,      // 总缴纳
+        fundExpenses,           // 基金池支出
+        memberPaidExpenses,     // 成员垫付
+        currentBalance: totalContributions - fundExpenses - memberPaidExpenses  // 基金池余额
+      }
     }
   }
 }

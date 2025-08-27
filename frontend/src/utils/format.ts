@@ -17,8 +17,10 @@ export const formatRelativeTime = (date: string | Date): string => {
   return dayjs(date).fromNow()
 }
 
-export const formatCurrency = (amount: number, currency = '¥'): string => {
-  return `${currency}${amount.toFixed(2)}`
+export const formatCurrency = (amount: number | string, currency = '¥'): string => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  if (isNaN(numAmount)) return `${currency}0.00`
+  return `${currency}${numAmount.toFixed(2)}`
 }
 
 export const formatPercentage = (value: number): string => {

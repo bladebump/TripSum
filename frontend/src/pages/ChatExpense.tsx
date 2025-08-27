@@ -238,6 +238,11 @@ const ChatExpense: React.FC = () => {
       responseContent += `💰 金额：${formatCurrency(displayAmount)}${data.isIncome ? ' (收入)' : ''}\n`
     }
     
+    if (data.payerName) {
+      const isAdmin = members.find(m => m.role === 'admin' && m.name === data.payerName)
+      responseContent += `💳 付款人：${data.payerName}${isAdmin ? '（基金池）' : '（垫付）'}\n`
+    }
+    
     if (data.category) {
       responseContent += `📋 类别：${data.category}\n`
     }
@@ -324,7 +329,7 @@ const ChatExpense: React.FC = () => {
       form.setFieldsValue({
         amount: displayAmount,
         description: parsedData.description || '',
-        payerId: user?.id,
+        payerId: parsedData.payerId || user?.id, // 使用AI识别的付款人
         expenseDate: new Date(),
         categoryId: currentTrip?.categories?.find(c => c.name === parsedData.category)?.id || ''
       })
@@ -342,12 +347,26 @@ const ChatExpense: React.FC = () => {
       // 基金缴纳 - 批量更新成员的contribution
       const { memberService } = await import('@/services/member.service')
       
-      const contributions = incomeData.contributors.map((contributor: any) => ({
-        memberId: members.find(m => (m.userId || m.id) === contributor.userId)?.id,
-        contribution: contributor.amount
-      })).filter((c: any) => c.memberId)
+      const contributions = incomeData.contributors.map((contributor: any) => {
+        // 找到对应的成员
+        const member = members.find(m => {
+          // 对于真实用户，匹配userId
+          if (!m.isVirtual && m.userId === contributor.userId) return true
+          // 对于虚拟成员，匹配id
+          if (m.isVirtual && m.id === contributor.userId) return true
+          return false
+        })
+        
+        if (!member) return null
+        
+        return {
+          memberId: member.id, // 使用TripMember的id
+          contribution: contributor.amount
+        }
+      }).filter((c: any) => c !== null)
       
       if (contributions.length > 0) {
+        console.log('提交的contributions数据:', contributions)
         await memberService.batchUpdateContributions(tripId!, contributions)
       }
       
@@ -394,7 +413,7 @@ const ChatExpense: React.FC = () => {
 
       const expenseData = {
         amount: finalAmount,
-        payerId: values.payerId,
+        payerId: parsedData?.payerId || values.payerId, // 优先使用AI识别的付款人
         description: values.description,
         expenseDate: values.expenseDate.toISOString(),
         categoryId: values.categoryId,

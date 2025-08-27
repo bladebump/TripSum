@@ -8,7 +8,7 @@ export class MemberController {
   async updateContribution(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { tripId, memberId } = req.params
+      const { id: tripId, memberId } = req.params
       const { contribution } = req.body
 
       logger.info('更新成员基金缴纳:', { tripId, memberId, contribution })
@@ -31,10 +31,15 @@ export class MemberController {
   async batchUpdateContributions(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { tripId } = req.params
+      const { id: tripId } = req.params
       const { contributions } = req.body
 
-      logger.info('批量更新成员基金缴纳:', { tripId, count: contributions.length })
+      logger.info('批量更新成员基金缴纳:', { 
+        tripId, 
+        count: contributions?.length,
+        contributions: JSON.stringify(contributions),
+        body: JSON.stringify(req.body)
+      })
 
       const result = await memberService.batchUpdateContributions(
         tripId,
@@ -52,7 +57,7 @@ export class MemberController {
   async getMembers(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { tripId } = req.params
+      const { id: tripId } = req.params
 
       const members = await memberService.getTripMembers(tripId, userId)
       

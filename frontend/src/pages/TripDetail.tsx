@@ -204,7 +204,7 @@ const TripDetail: React.FC = () => {
                   description={
                     <div>
                       {member.isVirtual ? '虚拟成员' : member.user?.email}
-                      {member.contribution > 0 && (
+                      {member.contribution && Number(member.contribution) > 0 && (
                         <div style={{ marginTop: 4 }}>
                           基金缴纳: {formatCurrency(member.contribution)}
                         </div>
