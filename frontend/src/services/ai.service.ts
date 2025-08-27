@@ -11,6 +11,7 @@ interface ParseExpenseResult {
   }>
   category?: string
   confidence: number
+  isIncome?: boolean
 }
 
 interface CategorizeResult {

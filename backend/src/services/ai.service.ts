@@ -17,7 +17,10 @@ export class AIService {
         include: { user: true },
       })
 
-      const memberNames = members.map((m) => m.user.username).join(', ')
+      const memberNames = members
+        .filter((m) => m.user) // 过滤掉虚拟成员
+        .map((m) => m.user!.username)
+        .join(', ')
 
       const prompt = `
         你是一个智能账单解析助手。请分析以下消费描述，识别参与者和金额。
@@ -27,21 +30,24 @@ export class AIService {
         
         请返回JSON格式：
         {
-          "amount": 金额（数字，如果没有明确金额返回null）,
+          "amount": 金额（数字，收入用负数，支出用正数，如果没有明确金额返回null）,
           "participants": [
             {
               "username": "参与者名字",
               "shareAmount": 应分摊金额（如果平均分摊可以省略）
             }
           ],
-          "category": "消费类别（餐饮/交通/住宿/娱乐/购物/其他）",
-          "confidence": 置信度（0-1之间的数字）
+          "category": "类别（餐饮/交通/住宿/娱乐/购物/收入/其他）",
+          "confidence": 置信度（0-1之间的数字）,
+          "isIncome": 是否为收入（true/false）
         }
         
         注意：
         1. 如果描述中没有明确的参与者，返回空数组
         2. 如果无法确定金额，amount返回null
         3. 根据描述内容判断最合适的类别
+        4. 识别收入场景如"收到钱"、"退款"、"报销"等，金额用负数表示
+        5. 正常消费支出用正数金额
       `
 
       const completion = await openai.chat.completions.create({
@@ -65,7 +71,7 @@ export class AIService {
       if (result.participants && result.participants.length > 0) {
         for (const participant of result.participants) {
           const member = members.find(
-            (m) => m.user.username.toLowerCase() === participant.username.toLowerCase()
+            (m) => m.user && m.user.username.toLowerCase() === participant.username.toLowerCase()
           )
           if (member) {
             participant.userId = member.userId
@@ -78,7 +84,8 @@ export class AIService {
         participants: result.participants,
         category: result.category,
         confidence: result.confidence || 0.5,
-      }
+        isIncome: result.isIncome || false,
+      } as any // 临时解决类型问题
     } catch (error) {
       console.error('AI解析错误:', error)
       return {
@@ -154,7 +161,8 @@ export class AIService {
       })
 
       const memberInfo = members
-        .map((m) => `${m.user.username} (ID: ${m.userId})`)
+        .filter((m) => m.user) // 过滤掉虚拟成员
+        .map((m) => `${m.user!.username} (ID: ${m.userId})`)
         .join(', ')
 
       const prompt = `
@@ -205,11 +213,13 @@ export class AIService {
       if (!result.participants || result.participants.length === 0) {
         return {
           splitMethod: 'equal',
-          participants: members.map((m) => ({
-            userId: m.userId,
-            username: m.user.username,
-            shareAmount: amount / members.length,
-          })),
+          participants: members
+            .filter((m) => m.user && m.userId) // 只包含有效用户
+            .map((m) => ({
+              userId: m.userId!,
+              username: m.user!.username,
+              shareAmount: amount / members.filter(m => m.user && m.userId).length,
+            })),
         }
       }
 
@@ -223,11 +233,13 @@ export class AIService {
 
       return {
         splitMethod: 'equal',
-        participants: members.map((m) => ({
-          userId: m.userId,
-          username: m.user.username,
-          shareAmount: amount / members.length,
-        })),
+        participants: members
+          .filter((m) => m.user && m.userId) // 只包含有效用户
+          .map((m) => ({
+            userId: m.userId!,
+            username: m.user!.username,
+            shareAmount: amount / members.filter(m => m.user && m.userId).length,
+          })),
       }
     }
   }

@@ -32,10 +32,11 @@ export class ExpenseService {
         where: { tripId, isActive: true },
       })
       
-      const shareAmount = data.amount / members.length
+      const validMembers = members.filter(m => m.userId) // 只包含有userId的成员
+      const shareAmount = data.amount / validMembers.length
       participants.push(
-        ...members.map((m) => ({
-          userId: m.userId,
+        ...validMembers.map((m) => ({
+          userId: m.userId!,
           shareAmount,
         }))
       )

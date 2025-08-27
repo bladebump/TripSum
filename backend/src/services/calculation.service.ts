@@ -21,6 +21,8 @@ export class CalculationService {
     const balanceMap = new Map<string, BalanceCalculation>()
 
     for (const member of members) {
+      if (!member.userId || !member.user) continue // 跳过虚拟成员
+      
       balanceMap.set(member.userId, {
         userId: member.userId,
         username: member.user.username,
@@ -39,6 +41,7 @@ export class CalculationService {
       }
 
       for (const participant of expense.participants) {
+        if (!participant.userId) continue // 跳过虚拟成员
         const user = balanceMap.get(participant.userId)
         if (user && participant.shareAmount) {
           user.totalShare += participant.shareAmount.toNumber()

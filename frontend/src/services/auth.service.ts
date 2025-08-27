@@ -3,21 +3,39 @@ import { ApiResponse, AuthResponse, LoginCredentials, RegisterCredentials, User 
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const { data } = await api.post<ApiResponse<AuthResponse>>('/auth/login', credentials)
-    if (data.success && data.data) {
-      this.saveAuthData(data.data)
-      return data.data
+    try {
+      const { data } = await api.post<ApiResponse<AuthResponse>>('/auth/login', credentials)
+      if (data.success && data.data) {
+        this.saveAuthData(data.data)
+        return data.data
+      }
+      throw new Error('登录失败')
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          '登录失败'
+      throw new Error(errorMessage)
     }
-    throw new Error('登录失败')
   }
 
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
-    const { data } = await api.post<ApiResponse<AuthResponse>>('/auth/register', credentials)
-    if (data.success && data.data) {
-      this.saveAuthData(data.data)
-      return data.data
+    try {
+      const { data } = await api.post<ApiResponse<AuthResponse>>('/auth/register', credentials)
+      if (data.success && data.data) {
+        this.saveAuthData(data.data)
+        return data.data
+      }
+      throw new Error('注册失败')
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          '注册失败'
+      throw new Error(errorMessage)
     }
-    throw new Error('注册失败')
   }
 
   async getProfile(): Promise<User> {

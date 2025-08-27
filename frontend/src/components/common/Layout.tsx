@@ -20,14 +20,17 @@ const Layout: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchTrips({ limit: 1 }).then(() => {
-        setHasTrip(trips.length > 0)
+        // trips会在store中更新，不需要在这里设置
       }).catch(() => {
-        setHasTrip(false)
+        console.error('Failed to fetch trips')
       })
-    } else {
-      setHasTrip(false)
     }
-  }, [isAuthenticated, trips.length])
+  }, [isAuthenticated])
+  
+  useEffect(() => {
+    // 单独监听trips变化来更新hasTrip状态
+    setHasTrip(trips.length > 0)
+  }, [trips])
   
   const tabs = [
     {

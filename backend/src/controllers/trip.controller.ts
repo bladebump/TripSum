@@ -75,6 +75,18 @@ export class TripController {
     }
   }
 
+  async addVirtualMember(req: AuthenticatedRequest, res: Response) {
+    try {
+      const addedBy = req.userId!
+      const { id } = req.params
+      const { displayName } = req.body
+      const member = await tripService.addVirtualMember(id, displayName, addedBy)
+      sendSuccess(res, member, 201)
+    } catch (error: any) {
+      sendError(res, '400', error.message, 400)
+    }
+  }
+
   async removeMember(req: AuthenticatedRequest, res: Response) {
     try {
       const removedBy = req.userId!

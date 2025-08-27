@@ -70,6 +70,7 @@ async function main() {
           { name: '娱乐', icon: '🎮', color: '#96CEB4', isDefault: true },
           { name: '购物', icon: '🛒', color: '#FFEAA7', isDefault: true },
           { name: '门票', icon: '🎫', color: '#A29BFE', isDefault: true },
+          { name: '收入', icon: '💰', color: '#00B894', isDefault: true },
           { name: '其他', icon: '📦', color: '#DFE6E9', isDefault: true },
         ],
       },
@@ -80,6 +81,30 @@ async function main() {
   })
 
   console.log(`创建了行程: ${trip.name}`)
+
+  // 添加虚拟成员示例
+  const virtualMembers = await Promise.all([
+    prisma.tripMember.create({
+      data: {
+        tripId: trip.id,
+        displayName: '小李',
+        isVirtual: true,
+        createdBy: users[0].id,
+        role: 'member'
+      }
+    }),
+    prisma.tripMember.create({
+      data: {
+        tripId: trip.id,
+        displayName: '小王',
+        isVirtual: true,
+        createdBy: users[0].id,
+        role: 'member'
+      }
+    })
+  ])
+
+  console.log(`添加了 ${virtualMembers.length} 个虚拟成员`)
 
   // 获取类别ID
   const categories = await prisma.category.findMany({
@@ -170,6 +195,29 @@ async function main() {
         { userId: users[2].id, shareAmount: 900 },
       ],
     },
+    // 添加收入记录示例
+    {
+      amount: -500, // 负数表示收入
+      categoryId: categoryMap['收入'],
+      payerId: users[0].id,
+      description: '退还的门票费用',
+      expenseDate: new Date('2024-03-05'),
+      participants: users.slice(0, 2).map((u) => ({
+        userId: u.id,
+        shareAmount: -250, // 收入也需要是负数
+      })),
+    },
+    {
+      amount: -300,
+      categoryId: categoryMap['收入'],
+      payerId: users[1].id,
+      description: '餐厅多收的钱退回',
+      expenseDate: new Date('2024-03-06'),
+      participants: users.map((u) => ({
+        userId: u.id,
+        shareAmount: -75,
+      })),
+    },
   ]
 
   for (const expenseData of expenses) {
@@ -186,7 +234,7 @@ async function main() {
     })
   }
 
-  console.log(`创建了 ${expenses.length} 条支出记录`)
+  console.log(`创建了 ${expenses.length} 条记录（包括 2 条收入记录）`)
 
   // 创建第二个行程（已完成）
   const completedTrip = await prisma.trip.create({

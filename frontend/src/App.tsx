@@ -7,6 +7,7 @@ import Register from './pages/Register'
 import TripList from './pages/TripList'
 import TripDetail from './pages/TripDetail'
 import ExpenseForm from './pages/ExpenseForm'
+import ChatExpense from './pages/ChatExpense'
 import MemberDashboard from './pages/MemberDashboard'
 import Settlement from './pages/Settlement'
 import Layout from './components/common/Layout'
@@ -42,6 +43,14 @@ function App() {
               />
               <Route
                 path="trips/:id/expense/new"
+                element={
+                  <PrivateRoute>
+                    <ChatExpense />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="trips/:id/expense/form"
                 element={
                   <PrivateRoute>
                     <ExpenseForm />

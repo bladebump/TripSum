@@ -21,6 +21,7 @@ router.put('/:id', validate(updateTripSchema), tripController.updateTrip)
 router.delete('/:id', tripController.deleteTrip)
 
 router.post('/:id/members', validate(addMemberSchema), tripController.addMember)
+router.post('/:id/virtual-members', tripController.addVirtualMember)
 router.get('/:id/members', tripController.getTripMembers)
 router.delete('/:id/members/:userId', tripController.removeMember)
 router.put('/:id/members/:userId', validate(updateMemberRoleSchema), tripController.updateMemberRole)

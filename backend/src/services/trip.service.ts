@@ -238,6 +238,42 @@ export class TripService {
     return member
   }
 
+  async addVirtualMember(tripId: string, displayName: string, addedBy: string) {
+    await this.checkTripPermission(tripId, addedBy, 'admin')
+
+    // 检查是否已存在同名虚拟成员
+    const existingVirtualMember = await prisma.tripMember.findFirst({
+      where: {
+        tripId,
+        isVirtual: true,
+        displayName: displayName.trim(),
+        isActive: true
+      }
+    })
+
+    if (existingVirtualMember) {
+      throw new Error('已存在同名成员')
+    }
+
+    const member = await prisma.tripMember.create({
+      data: {
+        tripId,
+        displayName: displayName.trim(),
+        isVirtual: true,
+        createdBy: addedBy,
+        role: 'member'
+      },
+      include: { 
+        user: true,
+        creator: true
+      }
+    })
+
+    io.to(`trip-${tripId}`).emit('virtual-member-added', member)
+
+    return member
+  }
+
   async removeMember(tripId: string, removeUserId: string, removedBy: string) {
     if (removeUserId === removedBy) {
       const member = await prisma.tripMember.findUnique({
@@ -340,6 +376,16 @@ export class TripService {
 
     const membersWithStats = await Promise.all(
       members.map(async (member) => {
+        // 虚拟成员没有userId，跳过支付统计
+        if (!member.userId) {
+          return {
+            ...member,
+            totalPaid: 0,
+            totalShares: 0,
+            balance: 0,
+          }
+        }
+
         const expenses = await prisma.expense.findMany({
           where: {
             tripId,

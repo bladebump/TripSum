@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios'
 import { Toast } from 'antd-mobile'
 import { ApiResponse } from '@/types'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 class ApiClient {
   private instance: AxiosInstance
@@ -39,6 +39,15 @@ class ApiClient {
       },
       async (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
+          // Don't handle auth errors for login/register endpoints
+          const isAuthEndpoint = error.config?.url?.includes('/auth/login') || 
+                                error.config?.url?.includes('/auth/register')
+          
+          if (isAuthEndpoint) {
+            // Let login/register handle their own 401 errors
+            return Promise.reject(error)
+          }
+          
           const refreshToken = localStorage.getItem('refreshToken')
           if (refreshToken && !error.config?.url?.includes('/auth/refresh')) {
             try {

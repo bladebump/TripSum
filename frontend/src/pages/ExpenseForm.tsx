@@ -73,6 +73,15 @@ const ExpenseForm: React.FC = () => {
         form.setFieldValue('amount', result.amount)
       }
       
+      if (result.category && currentTrip?.categories) {
+        const category = currentTrip.categories.find(c => 
+          c.name.toLowerCase() === result.category?.toLowerCase()
+        )
+        if (category) {
+          form.setFieldValue('categoryId', category.id)
+        }
+      }
+      
       if (result.participants && result.participants.length > 0) {
         const participantIds = result.participants
           .map(p => members.find(m => m.user.username === p.username)?.userId)

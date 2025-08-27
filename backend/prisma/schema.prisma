@@ -18,6 +18,7 @@ model User {
 
   createdTrips       Trip[]            @relation("TripCreator")
   tripMemberships    TripMember[]
+  createdVirtualMembers TripMember[]  @relation("VirtualMemberCreator")
   paidExpenses       Expense[]         @relation("ExpensePayer")
   createdExpenses    Expense[]         @relation("ExpenseCreator")
   expenseShares      ExpenseParticipant[]
@@ -49,15 +50,20 @@ model Trip {
 }
 
 model TripMember {
-  id       String   @id @default(uuid())
-  tripId   String   @map("trip_id")
-  userId   String   @map("user_id")
-  role     String   @default("member") @db.VarChar(20) // admin, member
-  joinDate DateTime @default(now()) @map("join_date")
-  isActive Boolean  @default(true) @map("is_active")
+  id          String   @id @default(uuid())
+  tripId      String   @map("trip_id")
+  userId      String?  @map("user_id")
+  role        String   @default("member") @db.VarChar(20) // admin, member
+  joinDate    DateTime @default(now()) @map("join_date")
+  isActive    Boolean  @default(true) @map("is_active")
+  isVirtual   Boolean  @default(false) @map("is_virtual")
+  displayName String?  @map("display_name") @db.VarChar(50)
+  createdBy   String?  @map("created_by")
 
-  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
+  trip               Trip                  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user               User?                 @relation(fields: [userId], references: [id])
+  creator            User?                 @relation("VirtualMemberCreator", fields: [createdBy], references: [id])
+  expenseParticipant ExpenseParticipant[]
 
   @@unique([tripId, userId])
   @@map("trip_members")
@@ -103,14 +109,17 @@ model Expense {
 model ExpenseParticipant {
   id              String  @id @default(uuid())
   expenseId       String  @map("expense_id")
-  userId          String  @map("user_id")
+  userId          String? @map("user_id")
+  tripMemberId    String? @map("trip_member_id")
   shareAmount     Decimal? @map("share_amount") @db.Decimal(10, 2)
   sharePercentage Decimal? @map("share_percentage") @db.Decimal(5, 2)
 
-  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id])
+  expense    Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id])
+  tripMember TripMember? @relation(fields: [tripMemberId], references: [id])
 
   @@unique([expenseId, userId])
+  @@unique([expenseId, tripMemberId])
   @@map("expense_participants")
 }
 
