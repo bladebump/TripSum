@@ -32,6 +32,7 @@ export interface TripMember {
   isVirtual?: boolean
   displayName?: string
   createdBy?: string
+  contribution: number // 基金缴纳金额
   user?: User
   creator?: User
   totalPaid?: number

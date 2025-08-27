@@ -3,6 +3,7 @@ import authRoutes from './auth.routes'
 import tripRoutes from './trip.routes'
 import expenseRoutes from './expense.routes'
 import aiRoutes from './ai.routes'
+import memberRoutes from './member.routes'
 import { authenticate } from '../middleware/auth.middleware'
 import { expenseController } from '../controllers/expense.controller'
 import { calculationController } from '../controllers/calculation.controller'
@@ -16,6 +17,7 @@ router.use('/auth', authRoutes)
 router.use('/trips', tripRoutes)
 router.use('/expenses', expenseRoutes)
 router.use('/ai', aiRoutes)
+router.use('/', memberRoutes)
 
 // Trip-specific expense routes
 router.post('/trips/:id/expenses', authenticate, upload.single('receipt'), expenseController.createExpense)

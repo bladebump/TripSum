@@ -5,12 +5,15 @@ import { tripService } from '../services/trip.service'
 import { unifiedAIParser } from '../services/ai.unified.parser'
 import { memberParser } from '../services/ai.member.parser'
 import { sendSuccess, sendError } from '../utils/response'
+import logger from '../utils/logger'
 
 export class AIController {
   async parseUserInput(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { tripId, text } = req.body
+      const { tripId, text, members } = req.body
+      
+      logger.info('parseUserInput请求:', { tripId, text, membersCount: members?.length })
       
       if (!tripId || !text) {
         return sendError(res, '400', '缺少必要参数', 400)
@@ -19,10 +22,11 @@ export class AIController {
       // 验证用户是否为旅行成员
       await tripService.getTripDetail(tripId, userId)
       
-      const result = await unifiedAIParser.parseUserInput(tripId, text.trim())
+      const result = await unifiedAIParser.parseUserInput(tripId, text.trim(), members)
       return sendSuccess(res, result)
     } catch (error: any) {
-      return sendError(res, '400', error.message, 400)
+      logger.error('parseUserInput错误:', error)
+      return sendError(res, '500', error.message || '服务器内部错误', 500)
     }
   }
 

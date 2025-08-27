@@ -26,8 +26,9 @@ export class CalculationService {
       balanceMap.set(member.userId, {
         userId: member.userId,
         username: member.user.username,
-        totalPaid: 0,
-        totalShare: 0,
+        contribution: member.contribution.toNumber(), // 基金缴纳
+        totalPaid: 0, // 实际支付（为团队垫付的）
+        totalShare: 0, // 应该分摊
         balance: 0,
         owesTo: [],
         owedBy: [],
@@ -35,22 +36,26 @@ export class CalculationService {
     }
 
     for (const expense of expenses) {
-      const payer = balanceMap.get(expense.payerId)
-      if (payer) {
-        payer.totalPaid += expense.amount.toNumber()
-      }
+      // 只计算支出（正数），不计算收入（负数）
+      if (expense.amount.toNumber() > 0) {
+        const payer = balanceMap.get(expense.payerId)
+        if (payer) {
+          payer.totalPaid += expense.amount.toNumber()
+        }
 
-      for (const participant of expense.participants) {
-        if (!participant.userId) continue // 跳过虚拟成员
-        const user = balanceMap.get(participant.userId)
-        if (user && participant.shareAmount) {
-          user.totalShare += participant.shareAmount.toNumber()
+        for (const participant of expense.participants) {
+          if (!participant.userId) continue // 跳过虚拟成员
+          const user = balanceMap.get(participant.userId)
+          if (user && participant.shareAmount) {
+            user.totalShare += participant.shareAmount.toNumber()
+          }
         }
       }
     }
 
     for (const balance of balanceMap.values()) {
-      balance.balance = balance.totalPaid - balance.totalShare
+      // 余额 = 基金缴纳 + 实际垫付 - 应该分摊
+      balance.balance = balance.contribution + balance.totalPaid - balance.totalShare
     }
 
     const balances = Array.from(balanceMap.values())

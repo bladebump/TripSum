@@ -7,7 +7,7 @@ const participantSchema = Joi.object({
 }).xor('shareAmount', 'sharePercentage')
 
 export const createExpenseSchema = Joi.object({
-  amount: Joi.number().positive().required(),
+  amount: Joi.number().required(), // 允许负数（收入）和正数（支出）
   categoryId: Joi.string().uuid(),
   payerId: Joi.string().uuid().required(),
   description: Joi.string().max(500),

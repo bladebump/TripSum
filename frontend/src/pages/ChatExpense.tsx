@@ -8,7 +8,9 @@ import {
   Dialog,
   Form,
   Selector,
-  DatePicker
+  DatePicker,
+  Checkbox,
+  Space
 } from 'antd-mobile'
 import { SendOutline } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
@@ -16,7 +18,7 @@ import { useExpenseStore } from '@/stores/expense.store'
 import { useAuthStore } from '@/stores/auth.store'
 import aiService from '@/services/ai.service'
 import { formatDate, formatCurrency } from '@/utils/format'
-import { MemberConfirm, MixedIntentConfirm } from '@/components/confirmation'
+import { MemberConfirm, MixedIntentConfirm, IncomeConfirm } from '@/components/confirmation'
 import './ChatExpense.scss'
 
 interface Message {
@@ -29,16 +31,20 @@ interface Message {
 
 interface ParsedExpense {
   amount?: number
+  perPersonAmount?: number
   description?: string
   participants?: Array<{
     userId: string
     username: string
     shareAmount?: number
     sharePercentage?: number
+    individualAmount?: number
   }>
+  excludedMembers?: string[]
   category?: string
   confidence: number
   isIncome?: boolean
+  payerId?: string
 }
 
 interface ParseResult {
@@ -73,6 +79,7 @@ const ChatExpense: React.FC = () => {
   const [showMixedConfirm, setShowMixedConfirm] = useState(false)
   const [currentParseResult, setCurrentParseResult] = useState<ParseResult | null>(null)
   const [datePickerVisible, setDatePickerVisible] = useState(false)
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [form] = Form.useForm()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -158,8 +165,8 @@ const ChatExpense: React.FC = () => {
     setLoading(true)
 
     try {
-      // 使用新的智能解析
-      const result = await aiService.parseUserInput(tripId!, userMessage)
+      // 使用新的智能解析，传递成员信息
+      const result = await aiService.parseUserInput(tripId!, userMessage, members)
       
       if (result.confidence > 0.3) {
         setCurrentParseResult(result)
@@ -209,6 +216,20 @@ const ChatExpense: React.FC = () => {
 
   const handleExpenseIntent = async (data: ParsedExpense) => {
     setParsedData(data)
+    
+    // 设置参与者
+    if (data.participants && data.participants.length > 0) {
+      setSelectedMembers(data.participants.map(p => p.userId).filter(id => id))
+    } else if (data.excludedMembers) {
+      // 如果有排除成员，选择剩余的成员
+      const excludedIds = data.excludedMembers
+      setSelectedMembers(members
+        .filter(m => !excludedIds.includes(m.userId || m.id))
+        .map(m => m.userId || m.id))
+    } else {
+      // 默认选择所有成员
+      setSelectedMembers(members.map(m => m.userId || m.id))
+    }
     
     let responseContent = `✅ 我理解了你的${data.isIncome ? '收入' : '消费'}信息：\n\n`
     
@@ -316,6 +337,38 @@ const ChatExpense: React.FC = () => {
     }
   }
 
+  const handleIncomeSubmit = async (incomeData: any) => {
+    try {
+      // 基金缴纳 - 批量更新成员的contribution
+      const { memberService } = await import('@/services/member.service')
+      
+      const contributions = incomeData.contributors.map((contributor: any) => ({
+        memberId: members.find(m => (m.userId || m.id) === contributor.userId)?.id,
+        contribution: contributor.amount
+      })).filter((c: any) => c.memberId)
+      
+      if (contributions.length > 0) {
+        await memberService.batchUpdateContributions(tripId!, contributions)
+      }
+      
+      Toast.show('基金缴纳记录成功！')
+      setShowConfirmDialog(false)
+      
+      // 添加成功消息
+      addMessage({
+        type: 'system',
+        content: `✅ 基金缴纳记录成功！共收到 ${formatCurrency(incomeData.totalAmount)} 的基金。`
+      })
+      
+      setParsedData(null)
+      
+      // 刷新行程数据
+      fetchTripDetail(tripId!)
+    } catch (error: any) {
+      Toast.show(error.message || '记录失败')
+    }
+  }
+
   const handleSubmitExpense = async () => {
     try {
       await form.validateFields()
@@ -325,18 +378,27 @@ const ChatExpense: React.FC = () => {
       const amount = parseFloat(values.amount)
       const finalAmount = parsedData?.isIncome ? -Math.abs(amount) : Math.abs(amount)
       
+      // 构建参与者数据 - 只包含选中的成员
+      const participantList = selectedMembers.map(memberId => {
+        return {
+          userId: memberId,
+          shareAmount: Math.abs(finalAmount) / selectedMembers.length // 平均分摊
+        }
+      })
+
+      // 确保至少有一个参与者
+      if (participantList.length === 0) {
+        Toast.show('请至少选择一个参与者')
+        return
+      }
+
       const expenseData = {
         amount: finalAmount,
         payerId: values.payerId,
         description: values.description,
         expenseDate: values.expenseDate.toISOString(),
         categoryId: values.categoryId,
-        participants: members
-          .filter(m => m.userId)
-          .map(m => ({
-            userId: m.userId!,
-            shareAmount: finalAmount / members.filter(m => m.userId).length // 暂时平均分摊
-          }))
+        participants: participantList
       }
 
       await createExpense(tripId!, expenseData)
@@ -554,10 +616,20 @@ const ChatExpense: React.FC = () => {
         </div>
       </div>
 
-      {/* 确认记账对话框 */}
-      <Dialog
-        visible={showConfirmDialog}
-        title={parsedData?.isIncome ? "确认收入信息" : "确认记账信息"}
+      {/* 确认对话框 - 根据收入或支出显示不同组件 */}
+      {parsedData?.isIncome ? (
+        <IncomeConfirm
+          visible={showConfirmDialog}
+          data={parsedData}
+          members={members}
+          tripId={tripId!}
+          onConfirm={handleIncomeSubmit}
+          onCancel={() => setShowConfirmDialog(false)}
+        />
+      ) : (
+        <Dialog
+          visible={showConfirmDialog}
+          title="确认支出信息"
         content={
           <Form form={form} layout="horizontal">
             <Form.Item
@@ -617,6 +689,24 @@ const ChatExpense: React.FC = () => {
                 })) || []}
               />
             </Form.Item>
+
+            <Form.Item label="参与者">
+              <Checkbox.Group
+                value={selectedMembers}
+                onChange={(val) => setSelectedMembers(val as string[])}
+              >
+                <Space wrap>
+                  {members.map(member => {
+                    const memberId = member.userId || member.id
+                    return (
+                      <Checkbox key={memberId} value={memberId}>
+                        {member.isVirtual ? member.displayName : member.user?.username}
+                      </Checkbox>
+                    )
+                  })}
+                </Space>
+              </Checkbox.Group>
+            </Form.Item>
           </Form>
         }
         actions={[
@@ -632,6 +722,7 @@ const ChatExpense: React.FC = () => {
           }
         ]}
       />
+      )}
 
       {/* 成员确认对话框 */}
       {currentParseResult?.intent.intent === 'member' && (

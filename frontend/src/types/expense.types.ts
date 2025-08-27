@@ -44,9 +44,10 @@ export interface CreateExpenseData {
 export interface BalanceCalculation {
   userId: string
   username: string
-  totalPaid: number
-  totalShare: number
-  balance: number
+  contribution: number // 基金缴纳
+  totalPaid: number // 实际垫付
+  totalShare: number // 应该分摊
+  balance: number // 最终余额
   owesTo: Array<{
     userId: string
     username: string

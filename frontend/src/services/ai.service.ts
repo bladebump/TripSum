@@ -74,10 +74,15 @@ interface AddMembersResult {
 }
 
 class AIService {
-  async parseUserInput(tripId: string, text: string): Promise<ParseResult> {
+  async parseUserInput(tripId: string, text: string, members?: any[]): Promise<ParseResult> {
     const { data } = await api.post<ApiResponse<ParseResult>>('/ai/parse', {
       tripId,
       text,
+      members: members?.map(m => ({
+        id: m.userId || m.id,
+        name: m.isVirtual ? m.displayName : m.user?.username,
+        isVirtual: m.isVirtual || false
+      }))
     })
     if (data.success && data.data) {
       return data.data

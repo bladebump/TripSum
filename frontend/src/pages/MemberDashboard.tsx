@@ -49,9 +49,10 @@ const MemberDashboard: React.FC = () => {
 
   const barData = balances.map(balance => ({
     name: balance.username,
-    paid: balance.totalPaid,
-    share: balance.totalShare,
-    balance: balance.balance
+    contribution: balance.contribution || 0, // 基金缴纳
+    paid: balance.totalPaid, // 实际垫付
+    share: balance.totalShare, // 应该分摊
+    balance: balance.balance // 最终余额
   }))
 
   return (
@@ -90,8 +91,14 @@ const MemberDashboard: React.FC = () => {
                 description={
                   <div className="balance-detail">
                     <div className="balance-row">
-                      <span>已付: {formatCurrency(balance.totalPaid)}</span>
-                      <span>应付: {formatCurrency(balance.totalShare)}</span>
+                      <span>基金: {formatCurrency(balance.contribution || 0)}</span>
+                      <span>垫付: {formatCurrency(balance.totalPaid)}</span>
+                    </div>
+                    <div className="balance-row">
+                      <span>应分摊: {formatCurrency(balance.totalShare)}</span>
+                      <span className={balance.balance > 0 ? 'positive' : balance.balance < 0 ? 'negative' : ''}>
+                        余额: {balance.balance > 0 ? '+' : ''}{formatCurrency(balance.balance)}
+                      </span>
                     </div>
                     <ProgressBar
                       percent={(balance.totalPaid / (statistics?.totalExpenses || 1)) * 100}
@@ -137,15 +144,16 @@ const MemberDashboard: React.FC = () => {
           </Card>
         )}
 
-        <Card title="支付对比" className="chart-card">
+        <Card title="资金流向" className="chart-card">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Bar dataKey="paid" fill="#0088FE" name="已付" />
-              <Bar dataKey="share" fill="#00C49F" name="应付" />
+              <Bar dataKey="contribution" fill="#82CA9D" name="基金缴纳" />
+              <Bar dataKey="paid" fill="#0088FE" name="实际垫付" />
+              <Bar dataKey="share" fill="#00C49F" name="应该分摊" />
             </BarChart>
           </ResponsiveContainer>
         </Card>

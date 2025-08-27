@@ -7,12 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 TripSum (旅算) is a travel expense-splitting application designed for small groups. It helps friends easily record shared expenses during trips and uses intelligent algorithms to calculate settlement amounts, achieving zero-sum settlement.
 
 ### Key Features Implemented
-- **Smart Expense Recording**: Natural language AI parsing for expense input
+- **Fund Contribution Mode**: Pre-collection fund management with member contributions tracking
+- **Smart Expense Recording**: Natural language AI parsing with calculator tool integration
 - **Virtual Member Support**: Add non-registered users to trip calculations
 - **Modular AI Architecture**: Intent-first parsing system (expense/member/mixed/settlement/unknown)
+- **AI Calculator Tool**: Function Calling integration for precise mathematical calculations
 - **Optimized UI/UX**: Direct action buttons replacing hidden ActionSheet interactions
-- **Real-time Balance Calculation**: Automatic debt optimization and settlement suggestions
+- **Real-time Balance Calculation**: Formula: contribution + paid - share = balance
 - **Admin Controls**: Trip deletion with confirmation dialogs and permission-based UI rendering
+- **Trip Selector**: Multi-trip expense recording with trip selection dropdown
 
 ## Tech Stack
 
@@ -101,9 +104,9 @@ docker-compose down      # Stop all services
 ### Database Schema (Prisma)
 Key models:
 - **User** - User accounts with authentication
-- **Trip** - Travel groups with initial fund and currency
-- **TripMember** - Trip membership with roles (admin/member)
-- **Expense** - Individual expenses with payer and amount
+- **Trip** - Travel groups with initial fund (sum of contributions) and currency
+- **TripMember** - Trip membership with roles and **contribution** field (基金缴纳)
+- **Expense** - Individual expenses with payer and amount (positive only for expenses)
 - **ExpenseParticipant** - Expense sharing details
 - **Settlement** - Calculated settlement transactions
 - **Category** - Expense categories
@@ -142,17 +145,23 @@ Frontend uses Vite environment variables:
 ## Key Development Notes
 
 1. **Database operations** use Prisma ORM - modify schema.prisma and run migrations
-2. **AI features** integrate with OpenAI GPT-4 using modular intent-first architecture
+2. **Fund Management System**:
+   - Members contribute to fund pool via `contribution` field in TripMember
+   - Balance calculation: `contribution + totalPaid - totalShare`
+   - Positive balance = others owe them, Negative = they owe others
+3. **AI features** integrate with OpenAI GPT-4 using modular intent-first architecture
    - Intent classification → Specialized parsing → Unified coordination
    - Supports expense, member, mixed, settlement, and unknown intents
-3. **Authentication** uses JWT with refresh token rotation and secure token handling
-4. **File uploads** stored in MinIO with metadata in PostgreSQL
-5. **Real-time sync** handled via Socket.io websockets for live updates
-6. **Mobile-first UI** using Ant Design Mobile with optimized touch interactions
-7. **Settlement calculation** uses optimized debt reduction algorithm
-8. **Virtual members** supported for non-registered users in trip calculations
-9. **Permission-based UI rendering** - admin vs member role functionality
-10. **Code quality** - all TypeScript warnings resolved, ESLint compliant
+   - **Calculator Tool**: Function Calling for precise calculations (add/subtract/multiply/divide)
+   - AI prompts include member information for context-aware parsing
+4. **Authentication** uses JWT with refresh token rotation and secure token handling
+5. **File uploads** stored in MinIO with metadata in PostgreSQL
+6. **Real-time sync** handled via Socket.io websockets for live updates
+7. **Mobile-first UI** using Ant Design Mobile with optimized touch interactions
+8. **Settlement calculation** uses optimized debt reduction with fund contributions
+9. **Virtual members** supported for non-registered users in trip calculations
+10. **Permission-based UI rendering** - admin vs member role functionality
+11. **Code quality** - all TypeScript warnings resolved, ESLint compliant
 
 ## UI/UX Improvements Implemented
 - **TripDetail Page**: Replaced hidden ActionSheet with visible bottom action button grid
@@ -169,7 +178,27 @@ Frontend uses Vite environment variables:
 - **UI Interactions**: Comprehensive test scenarios for improved UX patterns
 - 如果要测试运行项目端的话让用户运行，而不是自己运行后台进程
 
+## Recent Improvements (v1.3.0)
+
+### Fund Contribution System
+- Added `contribution` field to TripMember model for tracking fund payments
+- Created member service and routes for updating contributions
+- Modified balance calculation to include contributions
+- Updated UI to display fund pool and individual contributions
+- Changed income recording from negative expenses to contribution updates
+
+### AI Calculator Integration
+- Implemented calculator tool in `/backend/src/utils/calculator.ts`
+- Added Function Calling support in AI service
+- AI now uses calculator for all mathematical operations
+- Prevents calculation errors from LLM arithmetic limitations
+
+### UI/UX Enhancements  
+- Trip selector dropdown in expense recording page
+- Separated income confirmation component for fund contributions
+- Enhanced member dashboard showing contribution/paid/share breakdown
+- "应收/应付/已清" labels for clearer balance display
+
 ## Known Issues & Limitations
-- **Multi-trip Expense Recording**: When user has multiple trips, the "Add Expense" button always navigates to the first trip. Requires trip selection mechanism.
 - **ESLint Configuration**: No .eslintrc file found in frontend - linting relies on TypeScript compiler checks
-- **AI Parsing Accuracy**: Dependent on OpenAI API key configuration and model quality
+- **AI Model Configuration**: Uses Kimi API (Moonshot) instead of OpenAI in some deployments

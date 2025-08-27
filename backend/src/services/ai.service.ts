@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { PrismaClient } from '@prisma/client'
 import { ExpenseParseResult } from '../types'
+import { executeCalculation } from '../utils/calculator'
 
 const prisma = new PrismaClient()
 
@@ -10,81 +11,189 @@ const openai = new OpenAI({
 })
 
 export class AIService {
-  async parseExpenseDescription(tripId: string, description: string): Promise<ExpenseParseResult> {
+  async parseExpenseDescription(tripId: string, description: string, memberList?: any[]): Promise<ExpenseParseResult> {
     try {
-      const members = await prisma.tripMember.findMany({
-        where: { tripId, isActive: true },
-        include: { user: true },
-      })
+      let members: any[]
+      let memberNames: string
+      
+      if (memberList && memberList.length > 0) {
+        // 使用前端传递的成员信息
+        members = memberList
+        memberNames = memberList
+          .map(m => `${m.name}${m.isVirtual ? '(虚拟)' : ''}`)
+          .join(', ')
+      } else {
+        // 从数据库查询成员信息
+        const dbMembers = await prisma.tripMember.findMany({
+          where: { tripId, isActive: true },
+          include: { user: true },
+        })
+        
+        members = dbMembers.map(m => ({
+          id: m.userId || m.id,
+          name: m.isVirtual ? m.displayName : m.user?.username,
+          isVirtual: m.isVirtual || false
+        }))
+        
+        memberNames = members
+          .map(m => `${m.name}${m.isVirtual ? '(虚拟)' : ''}`)
+          .join(', ')
+      }
 
-      const memberNames = members
-        .filter((m) => m.user) // 过滤掉虚拟成员
-        .map((m) => m.user!.username)
-        .join(', ')
+      // 定义计算工具
+      const tools = [
+        {
+          type: 'function' as const,
+          function: {
+            name: 'calculate',
+            description: '执行基础数学计算：加减乘除',
+            parameters: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['add', 'subtract', 'multiply', 'divide'],
+                  description: '运算类型'
+                },
+                a: {
+                  type: 'number',
+                  description: '第一个数'
+                },
+                b: {
+                  type: 'number',
+                  description: '第二个数'
+                }
+              },
+              required: ['operation', 'a', 'b']
+            }
+          }
+        }
+      ]
 
       const prompt = `
-        你是一个智能账单解析助手。请分析以下消费描述，识别参与者和金额。
+        你是一个智能账单解析助手。请使用calculate工具进行所有数学计算，不要自己心算。
         
-        团队成员：${memberNames}
+        团队成员：${memberNames}（共${members.length}人）
         消费描述：${description}
+        
+        计算规则：
+        1. 平均分摊：使用calculate('divide', 总金额, 参与人数)计算每人金额
+        2. "每人X元"：使用calculate('multiply', X, 人数)计算总金额
+        3. 收入场景记为负数
+        4. 所有金额计算必须使用calculate工具
         
         请返回JSON格式：
         {
-          "amount": 金额（数字，收入用负数，支出用正数，如果没有明确金额返回null）,
+          "amount": 总金额（数字，收入用负数，支出用正数）,
+          "perPersonAmount": 每人金额（如果描述是"每人X元"的格式）,
           "participants": [
             {
               "username": "参与者名字",
-              "shareAmount": 应分摊金额（如果平均分摊可以省略）
+              "shareAmount": 应分摊金额（必须通过calculate计算得出）
             }
           ],
+          "excludedMembers": ["被排除的成员名"],
           "category": "类别（餐饮/交通/住宿/娱乐/购物/收入/其他）",
           "confidence": 置信度（0-1之间的数字）,
-          "isIncome": 是否为收入（true/false）
+          "isIncome": 是否为收入（true/false）,
+          "payerId": "付款人名字"
         }
         
-        注意：
-        1. 如果描述中没有明确的参与者，返回空数组
-        2. 如果无法确定金额，amount返回null
-        3. 根据描述内容判断最合适的类别
-        4. 识别收入场景如"收到钱"、"退款"、"报销"等，金额用负数表示
-        5. 正常消费支出用正数金额
+        识别规则：
+        1. "ABC三人消费"：只有ABC参与，计算时用3人
+        2. "除了D都参与"：排除D，计算时用总人数-1
+        3. "每人100元"：这是每人金额，需要乘以人数得总额
+        4. 如果没有明确说明谁参与，默认所有人参与
       `
 
-      const completion = await openai.chat.completions.create({
+      const messages: any[] = [
+        {
+          role: 'system',
+          content: '你是一个专业的账单解析助手。使用calculate工具进行所有数学计算。',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ]
+
+      let completion = await openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: '你是一个专业的账单解析助手，擅长从自然语言中提取结构化信息。',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        response_format: { type: 'json_object' },
+        messages: messages,
+        tools: tools,
+        tool_choice: 'auto',
         temperature: 0.3,
       })
 
+      // 处理工具调用
+      while (completion.choices[0].message.tool_calls) {
+        const toolCalls = completion.choices[0].message.tool_calls
+        messages.push(completion.choices[0].message)
+
+        for (const toolCall of toolCalls) {
+          if (toolCall.function.name === 'calculate') {
+            const args = JSON.parse(toolCall.function.arguments)
+            const result = executeCalculation(args.operation, args.a, args.b)
+            
+            messages.push({
+              role: 'tool',
+              content: result.toString(),
+              tool_call_id: toolCall.id,
+            })
+          }
+        }
+
+        // 继续对话获取最终结果
+        completion = await openai.chat.completions.create({
+          model: process.env.OPENAI_MODEL || 'gpt-4',
+          messages: messages,
+          tools: tools,
+          tool_choice: 'auto',
+          response_format: { type: 'json_object' },
+          temperature: 0.3,
+        })
+      }
+
       const result = JSON.parse(completion.choices[0].message.content || '{}')
 
+      // 匹配参与者ID
       if (result.participants && result.participants.length > 0) {
         for (const participant of result.participants) {
           const member = members.find(
-            (m) => m.user && m.user.username.toLowerCase() === participant.username.toLowerCase()
+            (m) => m.name && m.name.toLowerCase() === participant.username.toLowerCase()
           )
           if (member) {
-            participant.userId = member.userId
+            participant.userId = member.id
           }
+        }
+      }
+      
+      // 处理排除的成员
+      if (result.excludedMembers && result.excludedMembers.length > 0) {
+        // 如果有排除成员，从所有成员中移除这些成员作为参与者
+        const excludedNames = result.excludedMembers.map((n: string) => n.toLowerCase())
+        const participantMembers = members.filter(
+          m => !excludedNames.includes(m.name?.toLowerCase())
+        )
+        
+        // 如果没有明确的参与者列表，使用排除后的成员列表
+        if (!result.participants || result.participants.length === 0) {
+          result.participants = participantMembers.map(m => ({
+            userId: m.id,
+            username: m.name
+          }))
         }
       }
 
       return {
         amount: result.amount,
+        perPersonAmount: result.perPersonAmount,
         participants: result.participants,
+        excludedMembers: result.excludedMembers,
         category: result.category,
         confidence: result.confidence || 0.5,
         isIncome: result.isIncome || false,
+        payerId: result.payerId
       } as any // 临时解决类型问题
     } catch (error) {
       console.error('AI解析错误:', error)

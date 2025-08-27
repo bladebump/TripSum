@@ -116,12 +116,12 @@ const TripDetail: React.FC = () => {
           )}
           <div className="summary-stats">
             <div className="stat-item">
-              <div className="stat-value">{formatCurrency(currentTrip.statistics?.totalExpenses || 0)}</div>
-              <div className="stat-label">总支出</div>
+              <div className="stat-value">{formatCurrency(currentTrip.initialFund || 0)}</div>
+              <div className="stat-label">基金池</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{currentTrip.statistics?.expenseCount || 0}</div>
-              <div className="stat-label">笔数</div>
+              <div className="stat-value">{formatCurrency(currentTrip.statistics?.totalExpenses || 0)}</div>
+              <div className="stat-label">总支出</div>
             </div>
             <div className="stat-item">
               <div className="stat-value">{members.length}</div>
@@ -201,13 +201,23 @@ const TripDetail: React.FC = () => {
                         : (member.user?.username?.[0] || 'U').toUpperCase()}
                     </div>
                   }
-                  description={member.isVirtual ? '虚拟成员' : member.user?.email}
+                  description={
+                    <div>
+                      {member.isVirtual ? '虚拟成员' : member.user?.email}
+                      {member.contribution > 0 && (
+                        <div style={{ marginTop: 4 }}>
+                          基金缴纳: {formatCurrency(member.contribution)}
+                        </div>
+                      )}
+                    </div>
+                  }
                   extra={
                     <div>
                       {member.role === 'admin' && <Tag color="primary">管理员</Tag>}
                       {member.balance !== undefined && (
                         <div className={`member-balance ${member.balance > 0 ? 'positive' : member.balance < 0 ? 'negative' : ''}`}>
-                          {formatCurrency(Math.abs(member.balance))}
+                          {member.balance > 0 ? '应收' : member.balance < 0 ? '应付' : '已清'}
+                          {member.balance !== 0 && `: ${formatCurrency(Math.abs(member.balance))}`}
                         </div>
                       )}
                     </div>

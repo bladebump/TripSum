@@ -5,7 +5,7 @@ import { ParseResult, MixedParseResult } from '../types/ai.types'
 import { io } from '../app'
 
 export class UnifiedAIParser {
-  async parseUserInput(tripId: string, text: string): Promise<ParseResult> {
+  async parseUserInput(tripId: string, text: string, members?: any[]): Promise<ParseResult> {
     try {
       // 第一步：识别意图
       const intentResult = await aiIntentService.classifyIntent(text)
@@ -15,7 +15,7 @@ export class UnifiedAIParser {
 
       switch (intentResult.intent) {
         case 'expense':
-          data = await aiService.parseExpenseDescription(tripId, text)
+          data = await aiService.parseExpenseDescription(tripId, text, members)
           break
           
         case 'member':
@@ -23,7 +23,7 @@ export class UnifiedAIParser {
           break
           
         case 'mixed':
-          data = await this.parseMixedIntent(tripId, text)
+          data = await this.parseMixedIntent(tripId, text, members)
           break
           
         case 'settlement':
@@ -53,11 +53,11 @@ export class UnifiedAIParser {
     }
   }
 
-  private async parseMixedIntent(tripId: string, text: string): Promise<MixedParseResult> {
+  private async parseMixedIntent(tripId: string, text: string, members?: any[]): Promise<MixedParseResult> {
     try {
       // 并行解析记账和成员信息
       const [expenseResult, memberResult] = await Promise.all([
-        aiService.parseExpenseDescription(tripId, text),
+        aiService.parseExpenseDescription(tripId, text, members),
         memberParser.parseMembers(tripId, text)
       ])
 

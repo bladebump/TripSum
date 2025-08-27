@@ -50,15 +50,16 @@ model Trip {
 }
 
 model TripMember {
-  id          String   @id @default(uuid())
-  tripId      String   @map("trip_id")
-  userId      String?  @map("user_id")
-  role        String   @default("member") @db.VarChar(20) // admin, member
-  joinDate    DateTime @default(now()) @map("join_date")
-  isActive    Boolean  @default(true) @map("is_active")
-  isVirtual   Boolean  @default(false) @map("is_virtual")
-  displayName String?  @map("display_name") @db.VarChar(50)
-  createdBy   String?  @map("created_by")
+  id           String   @id @default(uuid())
+  tripId       String   @map("trip_id")
+  userId       String?  @map("user_id")
+  role         String   @default("member") @db.VarChar(20) // admin, member
+  joinDate     DateTime @default(now()) @map("join_date")
+  isActive     Boolean  @default(true) @map("is_active")
+  isVirtual    Boolean  @default(false) @map("is_virtual")
+  displayName  String?  @map("display_name") @db.VarChar(50)
+  createdBy    String?  @map("created_by")
+  contribution Decimal  @default(0) @map("contribution") @db.Decimal(10, 2) // 成员缴纳的基金金额
 
   trip               Trip                  @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user               User?                 @relation(fields: [userId], references: [id])
