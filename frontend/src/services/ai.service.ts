@@ -79,7 +79,8 @@ class AIService {
       tripId,
       text,
       members: members?.map(m => ({
-        id: m.userId || m.id,
+        id: m.id,  // TripMember.id
+        userId: m.userId,  // User.id (真实用户)
         name: m.isVirtual ? m.displayName : m.user?.username,
         isVirtual: m.isVirtual || false
       }))

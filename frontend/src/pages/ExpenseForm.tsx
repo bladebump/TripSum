@@ -50,7 +50,7 @@ const ExpenseForm: React.FC = () => {
         fetchMembers(tripId!)
       ])
       // 默认选中所有成员
-      setSelectedMembers(members.map(m => m.userId).filter(id => id !== undefined) as string[])
+      setSelectedMembers(members.map(m => m.id))
     } catch (error) {
       Toast.show('加载失败')
       navigate(-1)
@@ -83,7 +83,14 @@ const ExpenseForm: React.FC = () => {
       
       if (result.participants && result.participants.length > 0) {
         const participantIds = result.participants
-          .map(p => members.find(m => !m.isVirtual && m.user?.username === p.username)?.userId)
+          .map(p => {
+            // 查找成员（包括虚拟成员）
+            const member = members.find(m => 
+              (m.isVirtual && m.displayName === p.username) || 
+              (!m.isVirtual && m.user?.username === p.username)
+            )
+            return member?.id
+          })
           .filter(Boolean) as string[]
         setSelectedMembers(participantIds)
         
@@ -91,9 +98,12 @@ const ExpenseForm: React.FC = () => {
           setSplitMethod('custom')
           const amounts: Record<string, number> = {}
           result.participants.forEach(p => {
-            const member = members.find(m => !m.isVirtual && m.user?.username === p.username)
-            if (member && member.userId && p.shareAmount) {
-              amounts[member.userId] = p.shareAmount
+            const member = members.find(m => 
+              (m.isVirtual && m.displayName === p.username) || 
+              (!m.isVirtual && m.user?.username === p.username)
+            )
+            if (member && p.shareAmount) {
+              amounts[member.id] = p.shareAmount
             }
           })
           setCustomAmounts(amounts)
@@ -123,21 +133,26 @@ const ExpenseForm: React.FC = () => {
       }
 
       // 构建参与者数据
-      const participants = selectedMembers.map(userId => {
+      const participants = selectedMembers.map(memberId => {
+        // 找到对应的成员信息
+        const member = members.find(m => m.id === memberId)
         if (splitMethod === 'equal') {
           return {
-            userId,
+            userId: member?.userId || undefined,
+            memberId: memberId,
             shareAmount: values.amount / selectedMembers.length
           }
         } else if (splitMethod === 'custom') {
           return {
-            userId,
-            shareAmount: customAmounts[userId] || 0
+            userId: member?.userId || undefined,
+            memberId: memberId,
+            shareAmount: customAmounts[memberId] || 0
           }
         } else {
           // percentage
           return {
-            userId,
+            userId: member?.userId || undefined,
+            memberId: memberId,
             sharePercentage: 100 / selectedMembers.length
           }
         }
@@ -196,15 +211,14 @@ const ExpenseForm: React.FC = () => {
             name="payerId"
             label="付款人"
             rules={[{ required: true, message: '请选择付款人' }]}
-            initialValue={user?.id}
+            initialValue={members.find(m => m.userId === user?.id)?.id}
           >
             <Selector
               columns={2}
               options={members
-                .filter(m => m.userId)
                 .map(m => ({
                   label: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || 'Unknown'),
-                  value: m.userId!
+                  value: m.id  // 使用TripMember.id
                 }))}
             />
           </Form.Item>
@@ -270,22 +284,20 @@ const ExpenseForm: React.FC = () => {
             >
               <Space direction="vertical">
                 {members.map(member => (
-                  <Checkbox key={member.userId} value={member.userId}>
+                  <Checkbox key={member.id} value={member.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span>{member.isVirtual ? member.displayName : member.user?.username}</span>
-                      {splitMethod === 'custom' && member.userId && selectedMembers.includes(member.userId) && (
+                      {splitMethod === 'custom' && selectedMembers.includes(member.id) && (
                         <Input
                           type="number"
                           placeholder="金额"
                           style={{ width: 100 }}
-                          value={member.userId ? (customAmounts[member.userId]?.toString() || '0') : '0'}
+                          value={customAmounts[member.id]?.toString() || '0'}
                           onChange={(val) => {
-                            if (member.userId) {
-                              setCustomAmounts({
-                                ...customAmounts,
-                                [member.userId]: parseFloat(val) || 0
-                              })
-                            }
+                            setCustomAmounts({
+                              ...customAmounts,
+                              [member.id]: parseFloat(val) || 0
+                            })
                           }}
                         />
                       )}

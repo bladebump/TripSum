@@ -6,15 +6,23 @@ export interface Expense {
   tripId: string
   amount: number
   categoryId?: string
-  payerId: string
+  payerId?: string  // 旧字段，兼容
+  payerMemberId?: string  // 新字段
   description?: string
   expenseDate: string
   receiptUrl?: string
   aiParsedData?: any
+  isPaidFromFund?: boolean
   createdBy: string
   createdAt: string
   updatedAt: string
-  payer?: User
+  payer?: User  // 旧字段，兼容
+  payerMember?: {
+    id: string
+    isVirtual: boolean
+    displayName?: string
+    user?: User
+  }
   category?: Category
   participants?: ExpenseParticipant[]
 }
@@ -22,7 +30,8 @@ export interface Expense {
 export interface ExpenseParticipant {
   id: string
   expenseId: string
-  userId: string
+  userId?: string  // Optional for virtual members
+  tripMemberId?: string  // TripMember.id for virtual members
   shareAmount?: number
   sharePercentage?: number
   user?: User
@@ -31,11 +40,12 @@ export interface ExpenseParticipant {
 export interface CreateExpenseData {
   amount: number
   categoryId?: string
-  payerId: string
+  payerId: string  // TripMember.id
   description?: string
   expenseDate: string
   participants?: Array<{
-    userId: string
+    userId?: string  // Optional for virtual members
+    memberId: string  // TripMember.id (required)
     shareAmount?: number
     sharePercentage?: number
   }>

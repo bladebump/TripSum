@@ -67,7 +67,7 @@ const ChatExpense: React.FC = () => {
     {
       id: '1',
       type: 'system',
-      content: '👋 你好！我是你的AI记账助手。请告诉我这次消费的情况，比如："昨天晚餐花了200元，我和张三李四一起吃的"',
+      content: `👋 你好，${user?.username || '用户'}！我是你的AI记账助手。\n\n请告诉我这次消费的情况，比如：\n• "昨天晚餐花了200元，我和张三李四一起吃的"\n• "我代付了打车费100元"\n• "添加小明小红两个成员"`,
       timestamp: new Date()
     }
   ])
@@ -219,16 +219,31 @@ const ChatExpense: React.FC = () => {
     
     // 设置参与者
     if (data.participants && data.participants.length > 0) {
-      setSelectedMembers(data.participants.map(p => p.userId).filter(id => id))
+      // 根据用户名找到对应的member.id
+      const memberIds = data.participants.map(p => {
+        const member = members.find(m => 
+          (m.isVirtual && m.displayName === p.username) || 
+          (!m.isVirtual && m.user?.username === p.username)
+        )
+        return member?.id
+      }).filter(Boolean) as string[]
+      setSelectedMembers(memberIds)
     } else if (data.excludedMembers) {
       // 如果有排除成员，选择剩余的成员
-      const excludedIds = data.excludedMembers
+      const excludedNames = data.excludedMembers
+      const excludedIds = excludedNames.map(name => {
+        const member = members.find(m => 
+          (m.isVirtual && m.displayName === name) || 
+          (!m.isVirtual && m.user?.username === name)
+        )
+        return member?.id
+      }).filter(Boolean) as string[]
       setSelectedMembers(members
-        .filter(m => !excludedIds.includes(m.userId || m.id))
-        .map(m => m.userId || m.id))
+        .filter(m => !excludedIds.includes(m.id))
+        .map(m => m.id))
     } else {
       // 默认选择所有成员
-      setSelectedMembers(members.map(m => m.userId || m.id))
+      setSelectedMembers(members.map(m => m.id))
     }
     
     let responseContent = `✅ 我理解了你的${data.isIncome ? '收入' : '消费'}信息：\n\n`
@@ -238,9 +253,13 @@ const ChatExpense: React.FC = () => {
       responseContent += `💰 金额：${formatCurrency(displayAmount)}${data.isIncome ? ' (收入)' : ''}\n`
     }
     
-    if (data.payerName) {
-      const isAdmin = members.find(m => m.role === 'admin' && m.name === data.payerName)
-      responseContent += `💳 付款人：${data.payerName}${isAdmin ? '（基金池）' : '（垫付）'}\n`
+    if (data.payerId) {
+      const payer = members.find(m => (m.userId || m.id) === data.payerId)
+      if (payer) {
+        const payerName = payer.isVirtual ? payer.displayName : payer.user?.username
+        const isAdmin = payer.role === 'admin'
+        responseContent += `💳 付款人：${payerName}${isAdmin ? '（基金池）' : '（垫付）'}\n`
+      }
     }
     
     if (data.category) {
@@ -329,7 +348,7 @@ const ChatExpense: React.FC = () => {
       form.setFieldsValue({
         amount: displayAmount,
         description: parsedData.description || '',
-        payerId: parsedData.payerId || user?.id, // 使用AI识别的付款人
+        payerId: parsedData.payerId || members.find(m => m.userId === user?.id)?.id, // 使用TripMember.id
         expenseDate: new Date(),
         categoryId: currentTrip?.categories?.find(c => c.name === parsedData.category)?.id || ''
       })
@@ -399,8 +418,11 @@ const ChatExpense: React.FC = () => {
       
       // 构建参与者数据 - 只包含选中的成员
       const participantList = selectedMembers.map(memberId => {
+        // 找到对应的成员信息
+        const member = members.find(m => m.id === memberId)
         return {
-          userId: memberId,
+          userId: member?.userId || undefined,
+          memberId: memberId,
           shareAmount: Math.abs(finalAmount) / selectedMembers.length // 平均分摊
         }
       })
@@ -549,6 +571,20 @@ const ChatExpense: React.FC = () => {
     <div className="chat-expense-page">
       <NavBar onBack={() => navigate(-1)}>AI智能记账</NavBar>
 
+      {/* 用户身份标注 */}
+      <div style={{ 
+        padding: '8px 16px', 
+        backgroundColor: '#f0f5ff', 
+        borderBottom: '1px solid #e8e8e8',
+        fontSize: 12,
+        color: '#666'
+      }}>
+        👤 当前用户: <strong>{user?.username}</strong>
+        <span style={{ marginLeft: 12, color: '#999' }}>
+          提示: 当您说"我"时，AI会识别为{user?.username}
+        </span>
+      </div>
+
       {/* 行程选择器 */}
       {trips.length > 1 ? (
         <div className="trip-selector-container">
@@ -575,6 +611,16 @@ const ChatExpense: React.FC = () => {
       <div className="messages-container">
         {messages.map(message => (
           <div key={message.id} className={`message message-${message.type}`}>
+            {message.type === 'user' && (
+              <div style={{ 
+                fontSize: 11, 
+                color: '#999', 
+                marginBottom: 4,
+                fontWeight: 600
+              }}>
+                {user?.username} (我):
+              </div>
+            )}
             <div className="message-content">
               {message.content.split('\n').map((line, index) => (
                 <div key={index}>{line}</div>
@@ -667,10 +713,9 @@ const ChatExpense: React.FC = () => {
               <Selector
                 columns={2}
                 options={members
-                  .filter(m => m.userId)
                   .map(m => ({
                     label: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || 'Unknown'),
-                    value: m.userId!
+                    value: m.id  // 使用TripMember.id
                   }))}
               />
             </Form.Item>
@@ -716,9 +761,8 @@ const ChatExpense: React.FC = () => {
               >
                 <Space wrap>
                   {members.map(member => {
-                    const memberId = member.userId || member.id
                     return (
-                      <Checkbox key={memberId} value={memberId}>
+                      <Checkbox key={member.id} value={member.id}>
                         {member.isVirtual ? member.displayName : member.user?.username}
                       </Checkbox>
                     )

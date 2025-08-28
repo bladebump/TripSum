@@ -24,7 +24,6 @@ const IncomeConfirm: React.FC<IncomeConfirmProps> = ({
   visible,
   data,
   members,
-  tripId,
   onConfirm,
   onCancel
 }) => {

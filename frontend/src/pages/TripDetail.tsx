@@ -171,7 +171,7 @@ const TripDetail: React.FC = () => {
                       }
                       description={
                         <div>
-                          <div>{expense.payer?.username} 付款 · {formatDateTime(expense.expenseDate)}</div>
+                          <div>{expense.payerMember?.isVirtual ? expense.payerMember?.displayName : expense.payerMember?.user?.username} 付款 · {formatDateTime(expense.expenseDate)}</div>
                           {expense.description && <div className="expense-desc">{expense.description}</div>}
                         </div>
                       }
@@ -184,6 +184,60 @@ const TripDetail: React.FC = () => {
                   </SwipeAction>
                 ))}
               </List>
+            )}
+          </div>
+        </Tabs.Tab>
+
+        <Tabs.Tab title="收款记录" key="contributions">
+          <div className="tab-content">
+            {members.filter(m => m.contribution && Number(m.contribution) > 0).length === 0 ? (
+              <Empty 
+                title="还没有收款记录"
+                description="当成员缴纳基金时，会在这里显示"
+              />
+            ) : (
+              <List>
+                {members
+                  .filter(m => m.contribution && Number(m.contribution) > 0)
+                  .map(member => (
+                    <List.Item
+                      key={member.id}
+                      prefix={
+                        <div className="member-avatar">
+                          {member.isVirtual 
+                            ? (member.displayName?.[0] || '虚').toUpperCase()
+                            : (member.user?.username?.[0] || 'U').toUpperCase()}
+                        </div>
+                      }
+                      description={
+                        <div>
+                          <div>{member.isVirtual ? '虚拟成员' : member.user?.email}</div>
+                          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                            缴纳时间: {new Date().toLocaleDateString()}
+                          </div>
+                        </div>
+                      }
+                      extra={
+                        <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>
+                          {formatCurrency(member.contribution)}
+                        </div>
+                      }
+                    >
+                      {member.isVirtual ? member.displayName : member.user?.username}
+                    </List.Item>
+                  ))}
+              </List>
+            )}
+            
+            {members.filter(m => m.contribution && Number(m.contribution) > 0).length > 0 && (
+              <div style={{ padding: 16, backgroundColor: '#f5f5f5', marginTop: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 14, color: '#666' }}>基金池总额</span>
+                  <span style={{ fontSize: 18, fontWeight: 600, color: '#1890ff' }}>
+                    {formatCurrency(currentTrip.initialFund || 0)}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         </Tabs.Tab>
@@ -216,8 +270,12 @@ const TripDetail: React.FC = () => {
                       {member.role === 'admin' && <Tag color="primary">管理员</Tag>}
                       {member.balance !== undefined && (
                         <div className={`member-balance ${member.balance > 0 ? 'positive' : member.balance < 0 ? 'negative' : ''}`}>
-                          {member.balance > 0 ? '应收' : member.balance < 0 ? '应付' : '已清'}
-                          {member.balance !== 0 && `: ${formatCurrency(Math.abs(member.balance))}`}
+                          <div>{member.balance > 0 ? '应收' : member.balance < 0 ? '应付' : '已清'}</div>
+                          {member.balance !== 0 && (
+                            <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+                              {formatCurrency(Math.abs(member.balance))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

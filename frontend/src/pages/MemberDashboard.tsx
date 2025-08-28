@@ -158,23 +158,63 @@ const MemberDashboard: React.FC = () => {
           </ResponsiveContainer>
         </Card>
 
-        <Card title="债务关系" className="debt-card">
-          <List>
-            {balances.map(balance => (
-              balance.owesTo.length > 0 && (
-                <List.Item key={`owes-${balance.userId}`}>
-                  <div className="debt-item">
-                    <strong>{balance.username}</strong> 应付给:
-                    {balance.owesTo.map(debt => (
-                      <div key={debt.userId} className="debt-detail">
-                        {debt.username}: {formatCurrency(debt.amount)}
-                      </div>
-                    ))}
-                  </div>
-                </List.Item>
-              )
-            ))}
-          </List>
+        <Card title="结算建议" className="debt-card">
+          <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f0f5ff', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, color: '#666' }}>
+              💡 以下是建议的结算方案，最小化转账次数
+            </div>
+          </div>
+          {balances.filter(b => b.owesTo.length > 0).length === 0 ? (
+            <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+              <div>当前没有需要结算的债务</div>
+            </div>
+          ) : (
+            <List>
+              {balances.map(balance => (
+                balance.owesTo.length > 0 && (
+                  <List.Item 
+                    key={`owes-${balance.userId}`}
+                    arrow={false}
+                  >
+                    <div className="debt-item" style={{ width: '100%' }}>
+                      {balance.owesTo.map(debt => (
+                        <div 
+                          key={debt.userId} 
+                          className="debt-detail"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            backgroundColor: '#fafafa',
+                            borderRadius: 8,
+                            marginBottom: 8
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontWeight: 600 }}>{balance.username}</span>
+                            <span style={{ color: '#999' }}>→</span>
+                            <span style={{ fontWeight: 600 }}>{debt.username}</span>
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 600, color: '#ff4d4f' }}>
+                            {formatCurrency(debt.amount)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </List.Item>
+                )
+              ))}
+            </List>
+          )}
+          {balances.filter(b => b.owesTo.length > 0).length > 0 && (
+            <div style={{ marginTop: 16, padding: 12, backgroundColor: '#fff7e6', borderRadius: 8 }}>
+              <div style={{ fontSize: 12, color: '#666' }}>
+                ⚠️ 请按照上述建议进行转账，完成后点击"结算"按钮清零债务
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>
