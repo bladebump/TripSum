@@ -23,6 +23,16 @@ export class UnifiedAIParser {
           data = await aiService.parseExpenseDescription(tripId, text, members, currentUserId)
           break
           
+        case 'contribution':
+          // 基金缴纳复用expense解析器，但设置特殊标识
+          data = await aiService.parseExpenseDescription(tripId, text, members, currentUserId)
+          // 基金缴纳特殊处理
+          data.isContribution = true  // 添加基金缴纳标识
+          data.payerId = null         // 基金缴纳无付款人
+          data.payerName = null
+          data.category = '基金'      // 强制设置类别
+          break
+          
         case 'member':
           data = await memberParser.parseMembers(tripId, text)
           break

@@ -101,34 +101,41 @@ const MixedIntentConfirm: React.FC<MixedIntentConfirmProps> = ({
     }
   }
 
-  const renderBothContent = () => (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-          🎯 检测到复合操作
-        </div>
-        <div style={{ fontSize: 14, color: '#666' }}>
-          AI识别到您要同时添加成员和记录支出，请确认以下信息：
-        </div>
-      </div>
+  const renderBothContent = () => {
+    if (!data || !data.expense || !data.members) {
+      return <div>数据加载中...</div>
+    }
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
-          💰 支出信息
-        </div>
-        <div style={{ backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8 }}>
-          {data.expense.amount && (
-            <div>金额: ¥{data.expense.amount.toFixed(2)}</div>
-          )}
-          {data.expense.description && (
-            <div>描述: {data.expense.description}</div>
-          )}
-          {data.expense.category && (
-            <div>类别: {data.expense.category}</div>
-          )}
-          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-            置信度: {Math.round(data.expense.confidence * 100)}%
+    return (
+      <div>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+            🎯 检测到复合操作
           </div>
+          <div style={{ fontSize: 14, color: '#666' }}>
+            AI识别到您要同时添加成员和记录支出，请确认以下信息：
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
+            💰 支出信息
+          </div>
+          <div style={{ backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8 }}>
+            {data.expense.amount && (
+              <div>金额: ¥{data.expense.amount.toFixed(2)}</div>
+            )}
+            {data.expense.description && (
+              <div>描述: {data.expense.description}</div>
+            )}
+            {data.expense.category && (
+              <div>类别: {data.expense.category}</div>
+            )}
+            {data.expense.confidence && (
+              <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                置信度: {Math.round(data.expense.confidence * 100)}%
+              </div>
+            )}
         </div>
       </div>
 
@@ -150,42 +157,55 @@ const MixedIntentConfirm: React.FC<MixedIntentConfirmProps> = ({
       </div>
     </div>
   )
+  }
 
-  const renderExpenseContent = () => (
-    <div>
-      <div style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
-        仅处理支出记录，忽略成员信息：
+  const renderExpenseContent = () => {
+    if (!data || !data.expense) {
+      return <div>数据加载中...</div>
+    }
+    
+    return (
+      <div>
+        <div style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
+          仅处理支出记录，忽略成员信息：
+        </div>
+        <div style={{ backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8 }}>
+          {data.expense.amount && (
+            <div>金额: ¥{data.expense.amount.toFixed(2)}</div>
+          )}
+          {data.expense.description && (
+            <div>描述: {data.expense.description}</div>
+          )}
+          {data.expense.category && (
+            <div>类别: {data.expense.category}</div>
+          )}
+        </div>
       </div>
-      <div style={{ backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8 }}>
-        {data.expense.amount && (
-          <div>金额: ¥{data.expense.amount.toFixed(2)}</div>
-        )}
-        {data.expense.description && (
-          <div>描述: {data.expense.description}</div>
-        )}
-        {data.expense.category && (
-          <div>类别: {data.expense.category}</div>
-        )}
-      </div>
-    </div>
-  )
+    )
+  }
 
-  const renderMembersContent = () => (
-    <div>
-      <div style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
-        仅添加成员，忽略支出信息：
+  const renderMembersContent = () => {
+    if (!data || !data.members || !data.members.members) {
+      return <div>数据加载中...</div>
+    }
+    
+    return (
+      <div>
+        <div style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
+          仅添加成员，忽略支出信息：
+        </div>
+        <MemberConfirm
+          visible={false}
+          title=""
+          members={data.members.members}
+          onClose={() => {}}
+          onConfirm={setTempMembers}
+          loading={false}
+          allowEdit={true}
+        />
       </div>
-      <MemberConfirm
-        visible={false}
-        title=""
-        members={data.members.members}
-        onClose={() => {}}
-        onConfirm={setTempMembers}
-        loading={false}
-        allowEdit={true}
-      />
-    </div>
-  )
+    )
+  }
 
   const renderContent = () => (
     <Tabs activeKey={activeTab} onChange={setActiveTab}>

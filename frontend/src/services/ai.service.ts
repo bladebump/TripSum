@@ -45,7 +45,8 @@ class AIService {
         id: m.id,  // TripMember.id
         userId: m.userId,  // User.id (真实用户)
         name: m.isVirtual ? m.displayName : m.user?.username,
-        isVirtual: m.isVirtual || false
+        isVirtual: m.isVirtual || false,
+        role: m.role  // 添加role字段用于识别管理员
       }))
     })
     if (data.success && data.data) {

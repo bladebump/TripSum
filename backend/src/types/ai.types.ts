@@ -1,5 +1,5 @@
 export interface IntentResult {
-  intent: 'expense' | 'member' | 'settlement' | 'mixed' | 'unknown'
+  intent: 'expense' | 'contribution' | 'member' | 'settlement' | 'mixed' | 'unknown'
   confidence: number
   subIntents?: Array<{
     intent: string
@@ -33,7 +33,9 @@ export interface ExpenseParseResult {
   category?: string
   description?: string
   confidence: number
-  isIncome?: boolean
+  payerId?: string
+  payerName?: string
+  isContribution?: boolean  // 用于标识是否为基金缴纳
 }
 
 export interface MixedParseResult {

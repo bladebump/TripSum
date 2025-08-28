@@ -10,6 +10,7 @@ export const parseUserInputSchema = Joi.object({
       isVirtual: Joi.boolean().optional(),
       userId: Joi.string().allow(null).optional(),
       displayName: Joi.string().optional(),
+      role: Joi.string().valid('admin', 'member').optional(),
       user: Joi.object({
         username: Joi.string()
       }).optional()

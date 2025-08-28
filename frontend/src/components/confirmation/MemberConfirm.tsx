@@ -78,7 +78,7 @@ const MemberConfirm: React.FC<MemberConfirmProps> = ({
           将添加以下成员到旅行中：
         </div>
         
-        {members.length > 0 && (
+        {members && members.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>
               AI识别结果：
