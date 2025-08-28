@@ -13,6 +13,11 @@ export class CalculationService {
       prisma.expense.findMany({
         where: { tripId },
         include: {
+          payerMember: {
+            include: {
+              user: true
+            }
+          },
           participants: true,
         },
       }),
@@ -40,9 +45,12 @@ export class CalculationService {
       if (expense.amount.toNumber() > 0) {
         // 只有非基金池支付的才计入个人垫付
         if (!expense.isPaidFromFund) {
-          const payer = balanceMap.get(expense.payerId)
-          if (payer) {
-            payer.totalPaid += expense.amount.toNumber()
+          // 只计算真实用户的垫付，虚拟成员不参与余额计算
+          if (expense.payerMember?.userId) {
+            const payer = balanceMap.get(expense.payerMember.userId)
+            if (payer) {
+              payer.totalPaid += expense.amount.toNumber()
+            }
           }
         }
 

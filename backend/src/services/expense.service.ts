@@ -6,12 +6,13 @@ const prisma = new PrismaClient()
 interface CreateExpenseData {
   amount: number
   categoryId?: string
-  payerId: string
+  payerId: string  // 现在接收TripMember.id
   description?: string
   expenseDate: Date
   receiptUrl?: string
   participants?: Array<{
-    userId: string
+    userId?: string  // 真实用户ID（可选）
+    memberId?: string  // TripMember.id（可选）
     shareAmount?: number
     sharePercentage?: number
   }>
@@ -21,22 +22,21 @@ export class ExpenseService {
   async createExpense(tripId: string, createdBy: string, data: CreateExpenseData) {
     await this.checkTripMembership(tripId, createdBy)
 
-    if (data.payerId !== createdBy) {
-      await this.checkTripMembership(tripId, data.payerId)
-    }
-
-    // 判断是否为基金池支付
-    const trip = await prisma.trip.findUnique({
-      where: { id: tripId },
-      include: {
-        members: {
-          where: { role: 'admin', isActive: true }
-        }
+    // 验证付款人（payerId现在是TripMember.id）
+    const payerMember = await prisma.tripMember.findFirst({
+      where: {
+        id: data.payerId,
+        tripId,
+        isActive: true
       }
     })
     
-    const adminMember = trip?.members[0]
-    const isPaidFromFund = adminMember?.userId === data.payerId
+    if (!payerMember) {
+      throw new Error('付款人不是该行程的成员')
+    }
+
+    // 判断是否为基金池支付（管理员付款）
+    const isPaidFromFund = payerMember.role === 'admin'
 
     const participants = data.participants || []
     
@@ -45,11 +45,12 @@ export class ExpenseService {
         where: { tripId, isActive: true },
       })
       
-      const validMembers = members.filter(m => m.userId) // 只包含有userId的成员
-      const shareAmount = data.amount / validMembers.length
+      // 包含所有成员（真实用户和虚拟成员）
+      const shareAmount = data.amount / members.length
       participants.push(
-        ...validMembers.map((m) => ({
-          userId: m.userId!,
+        ...members.map((m) => ({
+          userId: m.userId || undefined,  // 真实用户ID
+          memberId: m.id,  // TripMember.id
           shareAmount,
         }))
       )
@@ -80,7 +81,7 @@ export class ExpenseService {
         tripId,
         amount: data.amount,
         categoryId: data.categoryId,
-        payerId: data.payerId,
+        payerMemberId: data.payerId,  // 使用payerMemberId字段
         description: data.description,
         expenseDate: data.expenseDate,
         receiptUrl: data.receiptUrl,
@@ -88,14 +89,19 @@ export class ExpenseService {
         createdBy,
         participants: {
           create: participants.map((p) => ({
-            userId: p.userId,
+            userId: p.userId || null,  // 真实用户ID（可为null）
+            tripMemberId: p.memberId || null,  // 虚拟成员ID（可为null）
             shareAmount: p.shareAmount,
             sharePercentage: p.sharePercentage,
           })),
         },
       },
       include: {
-        payer: true,
+        payerMember: {
+          include: {
+            user: true
+          }
+        },
         category: true,
         participants: {
           include: {
@@ -152,7 +158,11 @@ export class ExpenseService {
       prisma.expense.findMany({
         where,
         include: {
-          payer: true,
+          payerMember: {
+            include: {
+              user: true
+            }
+          },
           category: true,
           participants: {
             include: {
@@ -183,7 +193,11 @@ export class ExpenseService {
       where: { id: expenseId },
       include: {
         trip: true,
-        payer: true,
+        payerMember: {
+          include: {
+            user: true
+          }
+        },
         creator: true,
         category: true,
         participants: {
@@ -301,6 +315,7 @@ export class ExpenseService {
 
     return member
   }
+
 }
 
 export const expenseService = new ExpenseService()

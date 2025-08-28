@@ -64,6 +64,7 @@ model TripMember {
   trip               Trip                  @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user               User?                 @relation(fields: [userId], references: [id])
   creator            User?                 @relation("VirtualMemberCreator", fields: [createdBy], references: [id])
+  paidExpenses       Expense[]
   expenseParticipant ExpenseParticipant[]
 
   @@unique([tripId, userId])
@@ -89,7 +90,8 @@ model Expense {
   tripId         String   @map("trip_id")
   amount         Decimal  @db.Decimal(10, 2)
   categoryId     String?  @map("category_id")
-  payerId        String   @map("payer_id")
+  payerId        String?  @map("payer_id") // 旧字段，待迁移后删除
+  payerMemberId  String?  @map("payer_member_id") // 新字段：付款人（关联到TripMember）
   description    String?  @db.Text
   expenseDate    DateTime @map("expense_date")
   receiptUrl     String?  @map("receipt_url") @db.Text
@@ -101,7 +103,8 @@ model Expense {
 
   trip         Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
   category     Category?            @relation(fields: [categoryId], references: [id])
-  payer        User                 @relation("ExpensePayer", fields: [payerId], references: [id])
+  payer        User?                @relation("ExpensePayer", fields: [payerId], references: [id])
+  payerMember  TripMember?          @relation(fields: [payerMemberId], references: [id])
   creator      User                 @relation("ExpenseCreator", fields: [createdBy], references: [id])
   participants ExpenseParticipant[]
 

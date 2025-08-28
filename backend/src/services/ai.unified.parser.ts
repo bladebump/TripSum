@@ -5,17 +5,22 @@ import { ParseResult, MixedParseResult } from '../types/ai.types'
 import { io } from '../app'
 
 export class UnifiedAIParser {
-  async parseUserInput(tripId: string, text: string, members?: any[]): Promise<ParseResult> {
+  async parseUserInput(tripId: string, text: string, members?: any[], currentUserId?: string): Promise<ParseResult> {
     try {
-      // 第一步：识别意图
-      const intentResult = await aiIntentService.classifyIntent(text)
+      // 提取现有成员名称用于意图识别
+      const existingMemberNames = members?.map(m => 
+        m.isVirtual ? m.displayName : m.user?.username
+      ).filter(Boolean) || []
+      
+      // 第一步：识别意图（传入现有成员信息）
+      const intentResult = await aiIntentService.classifyIntent(text, existingMemberNames)
       
       // 第二步：根据意图类型路由到相应的解析器
       let data: any
 
       switch (intentResult.intent) {
         case 'expense':
-          data = await aiService.parseExpenseDescription(tripId, text, members)
+          data = await aiService.parseExpenseDescription(tripId, text, members, currentUserId)
           break
           
         case 'member':
@@ -23,7 +28,7 @@ export class UnifiedAIParser {
           break
           
         case 'mixed':
-          data = await this.parseMixedIntent(tripId, text, members)
+          data = await this.parseMixedIntent(tripId, text, members, currentUserId)
           break
           
         case 'settlement':
@@ -53,11 +58,11 @@ export class UnifiedAIParser {
     }
   }
 
-  private async parseMixedIntent(tripId: string, text: string, members?: any[]): Promise<MixedParseResult> {
+  private async parseMixedIntent(tripId: string, text: string, members?: any[], currentUserId?: string): Promise<MixedParseResult> {
     try {
       // 并行解析记账和成员信息
       const [expenseResult, memberResult] = await Promise.all([
-        aiService.parseExpenseDescription(tripId, text, members),
+        aiService.parseExpenseDescription(tripId, text, members, currentUserId),
         memberParser.parseMembers(tripId, text)
       ])
 

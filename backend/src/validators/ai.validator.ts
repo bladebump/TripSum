@@ -8,7 +8,7 @@ export const parseUserInputSchema = Joi.object({
       id: Joi.string().required(),
       name: Joi.string().required(),
       isVirtual: Joi.boolean().optional(),
-      userId: Joi.string().optional(),
+      userId: Joi.string().allow(null).optional(),
       displayName: Joi.string().optional(),
       user: Joi.object({
         username: Joi.string()

@@ -11,10 +11,11 @@ const openai = new OpenAI({
 })
 
 export class AIService {
-  async parseExpenseDescription(tripId: string, description: string, memberList?: any[]): Promise<ExpenseParseResult> {
+  async parseExpenseDescription(tripId: string, description: string, memberList?: any[], currentUserId?: string): Promise<ExpenseParseResult> {
     try {
       let members: any[]
       let memberNames: string
+      let currentUserName: string = ''
       
       if (memberList && memberList.length > 0) {
         // 使用前端传递的成员信息
@@ -22,6 +23,10 @@ export class AIService {
         memberNames = memberList
           .map(m => `${m.name}${m.isVirtual ? '(虚拟)' : ''}`)
           .join(', ')
+        
+        // 找出当前用户（currentUserId是真实用户的User.id）
+        const currentMember = memberList.find(m => m.userId === currentUserId)
+        currentUserName = currentMember?.name || ''
       } else {
         // 从数据库查询成员信息
         const dbMembers = await prisma.tripMember.findMany({
@@ -38,6 +43,12 @@ export class AIService {
         memberNames = members
           .map(m => `${m.name}${m.isVirtual ? '(虚拟)' : ''}`)
           .join(', ')
+        
+        // 找出当前用户
+        const currentMember = dbMembers.find(m => m.userId === currentUserId)
+        currentUserName = currentMember?.isVirtual 
+          ? currentMember.displayName || ''
+          : currentMember?.user?.username || ''
       }
 
       // 定义计算工具
@@ -81,6 +92,7 @@ export class AIService {
         
         团队成员：${memberNames}（共${members.length}人）
         管理员：${adminName}
+        当前用户：${currentUserName}（当用户说"我"时，指的是${currentUserName}）
         消费描述：${description}
         
         计算规则：
@@ -92,8 +104,8 @@ export class AIService {
         付款人识别规则：
         1. "张三付了X元" → payerName: "张三"
         2. "李四请客" → payerName: "李四"
-        3. 没有明确付款人时 → payerName: "${adminName}"（管理员默认付款）
-        4. "我付了"需要根据上下文判断是谁
+        3. "我付了" → payerName: "${currentUserName}"
+        4. 没有明确付款人时 → payerName: "${adminName}"（管理员默认付款）
         
         请返回JSON格式：
         {
@@ -116,7 +128,9 @@ export class AIService {
         1. "ABC三人消费"：只有ABC参与，计算时用3人
         2. "除了D都参与"：排除D，计算时用总人数-1
         3. "每人100元"：这是每人金额，需要乘以人数得总额
-        4. 如果没有明确说明谁参与，默认所有人参与
+        4. "我和张三一起" → 包括当前用户(${currentUserName})和张三两人
+        5. "和我一起" → 必须包括当前用户(${currentUserName})
+        6. 如果没有明确说明谁参与，默认所有人参与
       `
 
       const messages: any[] = [

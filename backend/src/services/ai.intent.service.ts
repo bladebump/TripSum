@@ -7,16 +7,21 @@ const openai = new OpenAI({
 })
 
 export class AIIntentService {
-  async classifyIntent(text: string): Promise<IntentResult> {
+  async classifyIntent(text: string, existingMembers?: string[]): Promise<IntentResult> {
     try {
+      const memberContext = existingMembers && existingMembers.length > 0
+        ? `\n当前行程已有成员：${existingMembers.join('、')}`
+        : ''
+      
       const prompt = `
         分析用户输入的意图。请判断用户想要执行的操作类型：
 
         用户输入：${text}
+        ${memberContext}
         
         意图类型：
         1. expense: 记录支出或收入 (如："昨天吃饭100元"、"打车50"、"收到退款200")
-        2. member: 添加或管理成员 (如："添加张三李四"、"加入小明")  
+        2. member: 添加或管理成员 (如："添加张三李四"、"加入小明"、"新增王五")  
         3. settlement: 结算相关 (如："结算一下"、"谁欠谁钱")
         4. mixed: 混合意图 (如："和新来的王五一起吃饭100元" - 同时包含添加成员和记账)
         5. unknown: 无法识别的意图
@@ -34,7 +39,9 @@ export class AIIntentService {
         }
 
         识别规则：
-        - 包含金额和人名 → mixed
+        - 包含"添加"、"加入"、"新增"、"新来的"等词汇，且有人名 → member或mixed
+        - 提到不在现有成员中的新人名 → 可能是member意图
+        - 包含金额和新人名 → mixed
         - 只有金额相关 → expense  
         - 只有人名/添加相关 → member
         - 结算/债务相关 → settlement

@@ -22,7 +22,11 @@ export class AIController {
       // 验证用户是否为旅行成员
       await tripService.getTripDetail(tripId, userId)
       
-      const result = await unifiedAIParser.parseUserInput(tripId, text.trim(), members)
+      // 当前用户的ID就是userId（这是真实用户的ID）
+      // members中传递的是TripMember.id，需要找对应关系
+      const currentMemberId = userId
+      
+      const result = await unifiedAIParser.parseUserInput(tripId, text.trim(), members, currentMemberId)
       return sendSuccess(res, result)
     } catch (error: any) {
       logger.error('parseUserInput错误:', error)
