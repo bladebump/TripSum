@@ -180,16 +180,29 @@ Frontend uses Vite environment variables:
 - **UI Interactions**: Comprehensive test scenarios for improved UX patterns
 - 如果要测试运行项目端的话让用户运行，而不是自己运行后台进程
 
-## Recent Improvements (v1.3.0)
+## Recent Improvements (v1.4.0)
 
 ### Fund Management System (基金池模式)
 - **Contribution Tracking**: Added `contribution` field to TripMember for fund pre-collection
 - **Smart Payment Recognition**: AI identifies who paid (admin = fund pool, others = reimbursement needed)
+- **Cumulative Contributions**: Fund contributions now accumulate instead of overwriting
+- **AI Fund Recognition**: Enhanced AI to recognize fund contribution keywords ("上存", "缴纳", "交钱", etc.)
 - **Dual Payment Modes**:
   - Fund Pool Payment: When admin pays (default)
   - Member Reimbursement: When non-admin pays (tracked as `isPaidFromFund = false`)
 - **Balance Formula**: `Balance = Contribution + Reimbursements - Shares`
 - **Fund Pool Status**: Real-time tracking of pool balance, expenses, and reimbursements
+
+### Virtual Member Unification
+- **Complete Parity**: Virtual members now have identical functionality to real users
+- **Database Refactoring**: Unified using `TripMember.id` consistently throughout
+- **Balance Calculation**: Virtual members participate equally in all calculations
+- **Debt Relationships**: Virtual members included in debt optimization algorithms
+
+### API Optimization
+- **Reduced API Surface**: Consolidated from 28 to 20 endpoints
+- **Removed Redundancy**: Eliminated duplicate member management APIs
+- **Unified Routes**: All member operations now under trip routes
 
 ### AI Calculator Integration
 - Implemented calculator tool in `/backend/src/utils/calculator.ts`
@@ -202,7 +215,26 @@ Frontend uses Vite environment variables:
 - Separated income confirmation component for fund contributions
 - Enhanced member dashboard showing contribution/paid/share breakdown
 - "应收/应付/已清" labels for clearer balance display
+- Fixed fund contribution participant selection in chat interface
 
 ## Known Issues & Limitations
 - **ESLint Configuration**: No .eslintrc file found in frontend - linting relies on TypeScript compiler checks
 - **AI Model Configuration**: Uses Kimi API (Moonshot) instead of OpenAI in some deployments
+
+## Version History
+
+### v1.4.0 (2024-12-28)
+- ✅ Fixed fund contribution parsing (positive amounts)
+- ✅ Unified virtual and real member handling
+- ✅ API consolidation and cleanup
+- ✅ Cumulative fund contribution support
+
+### v1.3.0 (2024-12-27)
+- ✨ Implemented fund pool payment system
+- ✨ Added AI calculator integration
+- ✨ Multi-trip expense recording
+
+### v1.2.0 (2024-12-26)
+- ✨ Virtual member support
+- ✨ AI intent recognition architecture
+- ✨ Enhanced UI/UX with direct action buttons
