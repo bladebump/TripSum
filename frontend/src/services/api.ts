@@ -110,6 +110,10 @@ class ApiClient {
     return this.instance.delete<T>(url, config)
   }
 
+  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig) {
+    return this.instance.patch<T>(url, data, config)
+  }
+
   async uploadFile<T = any>(url: string, file: File, additionalData?: Record<string, any>) {
     const formData = new FormData()
     formData.append('receipt', file)

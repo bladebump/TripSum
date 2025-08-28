@@ -66,7 +66,14 @@ const ExpenseForm: React.FC = () => {
 
     setAiLoading(true)
     try {
-      const result = await aiService.parseExpense(tripId!, description)
+      const parseResult = await aiService.parseUserInput(tripId!, description)
+      
+      if (parseResult.intent.intent !== 'expense') {
+        Toast.show('无法识别为支出信息')
+        return
+      }
+      
+      const result = parseResult.data
       
       if (result.amount) {
         form.setFieldValue('amount', result.amount)
@@ -83,7 +90,7 @@ const ExpenseForm: React.FC = () => {
       
       if (result.participants && result.participants.length > 0) {
         const participantIds = result.participants
-          .map(p => {
+          .map((p: any) => {
             // 查找成员（包括虚拟成员）
             const member = members.find(m => 
               (m.isVirtual && m.displayName === p.username) || 
@@ -94,10 +101,10 @@ const ExpenseForm: React.FC = () => {
           .filter(Boolean) as string[]
         setSelectedMembers(participantIds)
         
-        if (result.participants.some(p => p.shareAmount)) {
+        if (result.participants.some((p: any) => p.shareAmount)) {
           setSplitMethod('custom')
           const amounts: Record<string, number> = {}
-          result.participants.forEach(p => {
+          result.participants.forEach((p: any) => {
             const member = members.find(m => 
               (m.isVirtual && m.displayName === p.username) || 
               (!m.isVirtual && m.user?.username === p.username)
@@ -132,26 +139,21 @@ const ExpenseForm: React.FC = () => {
         return
       }
 
-      // 构建参与者数据
+      // 构建参与者数据 - 统一使用 memberId (tripMemberId)
       const participants = selectedMembers.map(memberId => {
-        // 找到对应的成员信息
-        const member = members.find(m => m.id === memberId)
         if (splitMethod === 'equal') {
           return {
-            userId: member?.userId || undefined,
             memberId: memberId,
             shareAmount: values.amount / selectedMembers.length
           }
         } else if (splitMethod === 'custom') {
           return {
-            userId: member?.userId || undefined,
             memberId: memberId,
             shareAmount: customAmounts[memberId] || 0
           }
         } else {
           // percentage
           return {
-            userId: member?.userId || undefined,
             memberId: memberId,
             sharePercentage: 100 / selectedMembers.length
           }

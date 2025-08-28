@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { tripController } from '../controllers/trip.controller'
-import { memberController } from '../controllers/member.controller'
+// memberController已删除，使用tripController处理所有成员相关操作
 import { authenticate } from '../middleware/auth.middleware'
 import { validate, validateQuery } from '../middleware/validation.middleware'
 import {
@@ -9,8 +9,9 @@ import {
   addMemberSchema,
   updateMemberRoleSchema,
   tripQuerySchema,
+  updateContributionSchema,
+  batchUpdateContributionsSchema,
 } from '../validators/trip.validator'
-import Joi from 'joi'
 
 const router = Router()
 
@@ -26,23 +27,9 @@ router.post('/:id/members', validate(addMemberSchema), tripController.addMember)
 router.post('/:id/virtual-members', tripController.addVirtualMember)
 router.get('/:id/members', tripController.getTripMembers)
 
-// 基金缴纳验证规则
-const batchUpdateContributionsSchema = Joi.object({
-  contributions: Joi.array().items(
-    Joi.object({
-      memberId: Joi.string().uuid().required(),
-      contribution: Joi.number().min(0).required()
-    })
-  ).min(1).required()
-})
-
-const updateContributionSchema = Joi.object({
-  contribution: Joi.number().min(0).required()
-})
-
-// 添加基金缴纳路由 - 必须在 /:userId 路由之前
-router.put('/:id/members/contributions', validate(batchUpdateContributionsSchema), memberController.batchUpdateContributions)
-router.put('/:id/members/:memberId/contribution', validate(updateContributionSchema), memberController.updateContribution)
+// 基金缴纳功能API
+router.put('/:id/members/:memberId/contribution', validate(updateContributionSchema), tripController.updateMemberContribution)
+router.patch('/:id/contributions', validate(batchUpdateContributionsSchema), tripController.batchUpdateContributions)
 
 router.delete('/:id/members/:userId', tripController.removeMember)
 router.put('/:id/members/:userId', validate(updateMemberRoleSchema), tripController.updateMemberRole)

@@ -71,6 +71,7 @@ export interface Settlement {
 
 export interface ExpenseParseResult {
   amount?: number
+  description?: string
   participants?: Array<{
     userId: string
     username: string

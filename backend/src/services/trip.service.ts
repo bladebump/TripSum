@@ -99,9 +99,11 @@ export class TripService {
           0
         )
 
-        const userExpenses = trip.expenses
-          .filter((expense) => expense.payerId === userId)
-          .reduce((sum, expense) => sum + expense.amount.toNumber(), 0)
+        // 找到用户对应的 TripMember
+        const userMember = trip.members.find(m => m.userId === userId)
+        const userExpenses = userMember ? trip.expenses
+          .filter((expense) => expense.payerMemberId === userMember.id)
+          .reduce((sum, expense) => sum + expense.amount.toNumber(), 0) : 0
 
         const avgExpense = trip.members.length > 0 ? totalExpenses / trip.members.length : 0
         const myBalance = userExpenses - avgExpense
@@ -139,7 +141,11 @@ export class TripService {
         categories: true,
         expenses: {
           include: {
-            payer: true,
+            payerMember: {
+              include: {
+                user: true
+              }
+            },
             category: true,
           },
         },
@@ -155,6 +161,22 @@ export class TripService {
       throw new Error('您不是该行程的成员')
     }
 
+    // 计算余额信息
+    const { calculationService } = await import('./calculation.service')
+    const balances = await calculationService.calculateBalances(tripId)
+
+    // 将余额信息合并到成员数据中
+    const membersWithBalance = trip.members.map((member: any) => {
+      // 统一使用 member.id 查找余额信息
+      const balance = balances.find(b => b.userId === member.id)
+      return {
+        ...member,
+        balance: balance?.balance || 0,
+        totalPaid: balance?.totalPaid || 0,
+        totalShares: balance?.totalShare || 0
+      }
+    })
+
     const totalExpenses = trip.expenses.reduce(
       (sum, expense) => sum + expense.amount.toNumber(),
       0
@@ -163,11 +185,11 @@ export class TripService {
     const statistics = {
       totalExpenses,
       expenseCount: trip.expenses.length,
-      averagePerPerson: trip.members.length > 0 ? totalExpenses / trip.members.length : 0,
     }
 
     return {
       ...trip,
+      members: membersWithBalance,
       statistics,
     }
   }
@@ -374,58 +396,103 @@ export class TripService {
       },
     })
 
-    const membersWithStats = await Promise.all(
-      members.map(async (member) => {
-        // 虚拟成员没有userId，跳过支付统计
-        if (!member.userId) {
-          return {
-            ...member,
-            totalPaid: 0,
-            totalShares: 0,
-            balance: 0,
+    // 计算余额信息 - 使用正确的基金池模式计算
+    const { calculationService } = await import('./calculation.service')
+    const balances = await calculationService.calculateBalances(tripId)
+
+    // 将余额信息合并到成员数据中（虚拟成员和真实成员统一处理）
+    const membersWithBalance = members.map(member => {
+      // 统一使用 member.id 查找余额信息
+      const balance = balances.find(b => b.userId === member.id) || {
+        balance: 0,
+        totalPaid: 0,
+        totalShare: 0
+      }
+
+      return {
+        ...member,
+        balance: balance.balance,
+        totalPaid: balance.totalPaid,
+        totalShares: balance.totalShare
+      }
+    })
+
+    return membersWithBalance
+  }
+
+  async updateMemberContribution(tripId: string, memberId: string, contribution: number, updatedBy: string) {
+    // 检查权限：只有管理员可以更新基金缴纳
+    await this.checkTripPermission(tripId, updatedBy, 'admin')
+    
+    // 验证成员是否存在且属于该行程
+    const member = await prisma.tripMember.findFirst({
+      where: {
+        id: memberId,
+        tripId,
+        isActive: true,
+      },
+      include: { user: true },
+    })
+
+    if (!member) {
+      throw new Error('成员不存在或不属于该行程')
+    }
+
+    const updatedMember = await prisma.tripMember.update({
+      where: { id: memberId },
+      data: { 
+        contribution: {
+          increment: contribution  // 使用累加而不是覆盖
+        }
+      },
+      include: { user: true },
+    })
+
+    io.to(`trip-${tripId}`).emit('member-contribution-updated', updatedMember)
+
+    return updatedMember
+  }
+
+  async batchUpdateContributions(tripId: string, contributions: Array<{ memberId: string; contribution: number }>, updatedBy: string) {
+    // 检查权限：只有管理员可以批量更新基金缴纳
+    await this.checkTripPermission(tripId, updatedBy, 'admin')
+    
+    // 验证所有成员都属于该行程
+    const memberIds = contributions.map(c => c.memberId)
+    const members = await prisma.tripMember.findMany({
+      where: {
+        id: { in: memberIds },
+        tripId,
+        isActive: true,
+      },
+    })
+
+    if (members.length !== contributions.length) {
+      throw new Error('部分成员不存在或不属于该行程')
+    }
+
+    // 批量更新 - 使用累加而不是覆盖
+    const updatePromises = contributions.map(({ memberId, contribution }) =>
+      prisma.tripMember.update({
+        where: { id: memberId },
+        data: { 
+          contribution: {
+            increment: contribution  // 使用累加
           }
-        }
-
-        const expenses = await prisma.expense.findMany({
-          where: {
-            tripId,
-            payerId: member.userId,
-          },
-        })
-
-        const totalPaid = expenses.reduce(
-          (sum, expense) => sum + expense.amount.toNumber(),
-          0
-        )
-
-        const participations = await prisma.expenseParticipant.findMany({
-          where: {
-            userId: member.userId,
-            expense: {
-              tripId,
-            },
-          },
-          include: {
-            expense: true,
-          },
-        })
-
-        const totalShare = participations.reduce(
-          (sum, p) => sum + (p.shareAmount?.toNumber() || 0),
-          0
-        )
-
-        const balance = totalPaid - totalShare
-
-        return {
-          ...member,
-          totalPaid,
-          balance,
-        }
+        },
+        include: { user: true },
       })
     )
 
-    return membersWithStats
+    const updatedMembers = await Promise.all(updatePromises)
+
+    io.to(`trip-${tripId}`).emit('batch-contributions-updated', updatedMembers)
+
+    return {
+      success: true,
+      updated: updatedMembers.length,
+      members: updatedMembers,
+    }
   }
 
   private async checkTripPermission(

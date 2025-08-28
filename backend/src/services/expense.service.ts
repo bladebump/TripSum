@@ -45,12 +45,11 @@ export class ExpenseService {
         where: { tripId, isActive: true },
       })
       
-      // 包含所有成员（真实用户和虚拟成员）
+      // 包含所有成员（真实用户和虚拟成员统一处理）
       const shareAmount = data.amount / members.length
       participants.push(
         ...members.map((m) => ({
-          userId: m.userId || undefined,  // 真实用户ID
-          memberId: m.id,  // TripMember.id
+          memberId: m.id,  // 统一使用 TripMember.id
           shareAmount,
         }))
       )
@@ -89,8 +88,9 @@ export class ExpenseService {
         createdBy,
         participants: {
           create: participants.map((p) => ({
-            userId: p.userId || null,  // 真实用户ID（可为null）
-            tripMemberId: p.memberId || null,  // 虚拟成员ID（可为null）
+            tripMember: {
+              connect: { id: p.memberId }  // 连接到现有的 TripMember
+            },
             shareAmount: p.shareAmount,
             sharePercentage: p.sharePercentage,
           })),
@@ -105,7 +105,11 @@ export class ExpenseService {
         category: true,
         participants: {
           include: {
-            user: true,
+            tripMember: {
+              include: {
+                user: true
+              }
+            }
           },
         },
       },
@@ -150,7 +154,8 @@ export class ExpenseService {
         where.categoryId = filters.categoryId
       }
       if (filters.payerId) {
-        where.payerId = filters.payerId
+        // 使用 payerMemberId 代替 payerId
+        where.payerMemberId = filters.payerId
       }
     }
 
@@ -166,7 +171,11 @@ export class ExpenseService {
           category: true,
           participants: {
             include: {
-              user: true,
+              tripMember: {
+                include: {
+                  user: true
+                }
+              }
             },
           },
         },
@@ -202,7 +211,11 @@ export class ExpenseService {
         category: true,
         participants: {
           include: {
-            user: true,
+            tripMember: {
+              include: {
+                user: true
+              }
+            }
           },
         },
       },
@@ -248,7 +261,9 @@ export class ExpenseService {
 
       updateData.participants = {
         create: data.participants.map((p) => ({
-          userId: p.userId,
+          tripMember: {
+            connect: { id: p.memberId }  // 连接到现有的 TripMember
+          },
           shareAmount: p.shareAmount,
           sharePercentage: p.sharePercentage,
         })),
@@ -259,11 +274,19 @@ export class ExpenseService {
       where: { id: expenseId },
       data: updateData,
       include: {
-        payer: true,
+        payerMember: {
+          include: {
+            user: true
+          }
+        },
         category: true,
         participants: {
           include: {
-            user: true,
+            tripMember: {
+              include: {
+                user: true
+              }
+            }
           },
         },
       },

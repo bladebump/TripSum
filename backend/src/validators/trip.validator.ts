@@ -29,3 +29,16 @@ export const tripQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(10),
   status: Joi.string().valid('active', 'completed', 'all').default('all'),
 })
+
+export const updateContributionSchema = Joi.object({
+  contribution: Joi.number().min(0).required(),
+})
+
+export const batchUpdateContributionsSchema = Joi.object({
+  contributions: Joi.array().items(
+    Joi.object({
+      memberId: Joi.string().uuid().required(),
+      contribution: Joi.number().min(0).required(),
+    })
+  ).min(1).required(),
+})

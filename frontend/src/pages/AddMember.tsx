@@ -93,14 +93,14 @@ const AddMember: React.FC = () => {
 
     setParsing(true)
     try {
-      const result = await aiService.parseMembers(tripId!, textInput.trim())
+      const result = await aiService.parseUserInput(tripId!, textInput.trim())
       
-      if (result.confidence < 0.3) {
+      if (result.confidence < 0.3 || result.intent.intent !== 'member') {
         Toast.show('无法识别有效的成员信息，请尝试更明确的描述')
         return
       }
 
-      const membersWithSelection = result.members.map(member => ({
+      const membersWithSelection = result.data.members.map((member: any) => ({
         ...member,
         selected: true
       }))

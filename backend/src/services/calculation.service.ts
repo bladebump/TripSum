@@ -18,21 +18,33 @@ export class CalculationService {
               user: true
             }
           },
-          participants: true,
+          participants: {
+            include: {
+              tripMember: {
+                include: {
+                  user: true
+                }
+              }
+            }
+          },
         },
       }),
     ])
 
     const balanceMap = new Map<string, BalanceCalculation>()
 
+    // 为所有成员创建余额记录（虚拟成员和真实成员完全一样）
     for (const member of members) {
-      if (!member.userId || !member.user) continue // 跳过虚拟成员
+      const memberId = member.id // 统一使用 TripMember.id 作为标识
+      const username = member.isVirtual 
+        ? (member.displayName || '虚拟成员')
+        : (member.user?.username || 'Unknown')
       
-      balanceMap.set(member.userId, {
-        userId: member.userId,
-        username: member.user.username,
+      balanceMap.set(memberId, {
+        userId: memberId, // 实际上是 memberId，但保持接口兼容
+        username: username,
         contribution: member.contribution.toNumber(), // 基金缴纳
-        totalPaid: 0, // 实际支付（为团队垫付的）
+        totalPaid: 0, // 实际垫付
         totalShare: 0, // 应该分摊
         balance: 0,
         owesTo: [],
@@ -40,37 +52,38 @@ export class CalculationService {
       })
     }
 
+    // 处理所有支出（虚拟成员和真实成员完全一样）
     for (const expense of expenses) {
       // 只计算支出（正数），不计算收入（负数）
       if (expense.amount.toNumber() > 0) {
-        // 只有非基金池支付的才计入个人垫付
-        if (!expense.isPaidFromFund) {
-          // 只计算真实用户的垫付，虚拟成员不参与余额计算
-          if (expense.payerMember?.userId) {
-            const payer = balanceMap.get(expense.payerMember.userId)
-            if (payer) {
-              payer.totalPaid += expense.amount.toNumber()
-            }
+        // 非基金池支付计入个人垫付（所有成员包括虚拟成员都可以垫付）
+        if (!expense.isPaidFromFund && expense.payerMember) {
+          const payer = balanceMap.get(expense.payerMember.id)
+          if (payer) {
+            payer.totalPaid += expense.amount.toNumber()
           }
         }
 
-        // 所有参与者都需要分摊
+        // 所有参与者分摊（虚拟成员和真实成员完全一样）
         for (const participant of expense.participants) {
-          if (!participant.userId) continue // 跳过虚拟成员
-          const user = balanceMap.get(participant.userId)
-          if (user && participant.shareAmount) {
-            user.totalShare += participant.shareAmount.toNumber()
+          if (!participant.tripMemberId) continue // 跳过无效记录
+          const member = balanceMap.get(participant.tripMemberId)
+          if (member && participant.shareAmount) {
+            member.totalShare += participant.shareAmount.toNumber()
           }
         }
       }
     }
 
+    // 计算余额（所有成员使用相同公式）
     for (const balance of balanceMap.values()) {
       // 余额 = 基金缴纳 + 实际垫付 - 应该分摊
       balance.balance = balance.contribution + balance.totalPaid - balance.totalShare
     }
 
     const balances = Array.from(balanceMap.values())
+    
+    // 所有成员（包括虚拟成员）都参与债务关系计算
     this.calculateDebts(balances)
 
     return balances

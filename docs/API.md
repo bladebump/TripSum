@@ -249,8 +249,7 @@ Authorization: Bearer <token>
     ],
     "statistics": {
       "totalExpenses": 5000,
-      "expenseCount": 20,
-      "averagePerPerson": 1000
+      "expenseCount": 20
     }
   }
 }
@@ -285,7 +284,7 @@ Authorization: Bearer <token>
 
 ## 成员管理接口
 
-### 添加成员
+### 添加成员（真实用户）
 
 **POST** `/trips/:id/members`
 
@@ -299,6 +298,39 @@ Authorization: Bearer <token>
 {
   "userId": "uuid",
   "role": "member"
+}
+```
+
+### 添加虚拟成员
+
+**POST** `/trips/:id/virtual-members`
+
+Headers:
+```
+Authorization: Bearer <token>
+```
+
+请求体:
+```json
+{
+  "displayName": "张三"
+}
+```
+
+响应:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "tripId": "uuid",
+    "userId": null,
+    "displayName": "张三",
+    "isVirtual": true,
+    "role": "member",
+    "joinDate": "2024-02-26T00:00:00Z",
+    "contribution": 0
+  }
 }
 ```
 
@@ -317,17 +349,125 @@ Authorization: Bearer <token>
   "success": true,
   "data": [
     {
-      "id": "uuid",
+      "id": "tripMemberId",
       "userId": "uuid",
-      "username": "string",
-      "email": "string",
-      "avatarUrl": "string",
+      "tripId": "uuid", 
       "role": "admin",
       "joinDate": "2024-02-26T00:00:00Z",
-      "totalPaid": 2000,
-      "balance": 500
+      "isActive": true,
+      "isVirtual": false,
+      "displayName": null,
+      "contribution": 5000,
+      "user": {
+        "id": "uuid",
+        "username": "string",
+        "email": "string",
+        "avatarUrl": "string"
+      },
+      "balance": 1500,
+      "totalPaid": 500,
+      "totalShares": 4000
+    },
+    {
+      "id": "virtualMemberId",
+      "userId": null,
+      "tripId": "uuid",
+      "role": "member", 
+      "joinDate": "2024-02-26T00:00:00Z",
+      "isActive": true,
+      "isVirtual": true,
+      "displayName": "张三",
+      "contribution": 5000,
+      "user": null,
+      "balance": 0,
+      "totalPaid": 0,
+      "totalShares": 0
     }
   ]
+}
+```
+
+**说明：**
+- 支持虚拟成员（`isVirtual: true`，无`userId`）
+- 包含基金池模式计算的完整余额信息
+- `balance = contribution + totalPaid - totalShares`
+- 虚拟成员不参与余额计算（balance始终为0）
+
+### 更新成员基金缴纳
+
+**PUT** `/trips/:id/members/:memberId/contribution`
+
+Headers:
+```
+Authorization: Bearer <token>
+```
+
+请求体:
+```json
+{
+  "contribution": 1000
+}
+```
+
+响应:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "tripMemberId",
+    "tripId": "uuid",
+    "userId": "uuid",
+    "contribution": 1000,
+    "user": {
+      "username": "用户名",
+      "email": "user@example.com"
+    }
+  }
+}
+```
+
+### 批量更新基金缴纳
+
+**PATCH** `/trips/:id/contributions`
+
+Headers:
+```
+Authorization: Bearer <token>
+```
+
+请求体:
+```json
+{
+  "contributions": [
+    {
+      "memberId": "tripMemberId1",
+      "contribution": 1000
+    },
+    {
+      "memberId": "tripMemberId2", 
+      "contribution": 1500
+    }
+  ]
+}
+```
+
+响应:
+```json
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "updated": 2,
+    "members": [
+      {
+        "id": "tripMemberId1",
+        "contribution": 1000,
+        "user": {
+          "username": "用户1"
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -622,9 +762,9 @@ Authorization: Bearer <token>
 
 ## AI功能接口
 
-### 解析支出描述
+### 统一智能解析入口
 
-**POST** `/ai/parse-expense`
+**POST** `/ai/parse`
 
 Headers:
 ```
@@ -635,7 +775,21 @@ Authorization: Bearer <token>
 ```json
 {
   "tripId": "uuid",
-  "description": "昨天晚上吃饭花了300，张三和李四参加，我付的钱"
+  "text": "昨天晚上吃海鲜花了500，张三和李四参加，我付的钱",
+  "members": [
+    {
+      "id": "tripMemberId", 
+      "userId": "uuid",
+      "name": "当前用户",
+      "isVirtual": false
+    },
+    {
+      "id": "virtualMemberId",
+      "userId": null, 
+      "name": "张三",
+      "isVirtual": true
+    }
+  ]
 }
 ```
 
@@ -644,89 +798,83 @@ Authorization: Bearer <token>
 {
   "success": true,
   "data": {
-    "amount": 300,
-    "participants": [
+    "intent": {
+      "intent": "expense",
+      "confidence": 0.95
+    },
+    "data": {
+      "amount": 500,
+      "description": "晚餐-海鲜",
+      "participants": [
+        {
+          "userId": "uuid",
+          "username": "当前用户",
+          "shareAmount": 166.67
+        },
+        {
+          "userId": "virtualMemberId",
+          "username": "张三", 
+          "shareAmount": 166.67
+        }
+      ],
+      "category": "餐饮",
+      "confidence": 0.95,
+      "payerId": "uuid",
+      "payerName": "当前用户",
+      "isIncome": false
+    }
+  }
+}
+```
+
+**支持的意图类型：**
+- `expense`: 支出记录（包含金额、参与者、类别等）
+- `member`: 成员管理（添加新成员）
+- `settlement`: 结算查询
+- `mixed`: 混合意图（如：和新朋友张三吃饭100元）
+- `unknown`: 无法识别
+
+### 批量添加成员
+
+**POST** `/ai/add-members`
+
+Headers:
+```
+Authorization: Bearer <token>
+```
+
+请求体:
+```json
+{
+  "tripId": "uuid",
+  "memberNames": ["张三", "李四", "王五"]
+}
+```
+
+响应:
+```json
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "added": [
       {
-        "userId": "uuid",
-        "username": "张三",
-        "shareAmount": 100
-      },
-      {
-        "userId": "uuid",
-        "username": "李四",
-        "shareAmount": 100
+        "id": "uuid",
+        "displayName": "张三",
+        "isVirtual": true
       }
     ],
-    "category": "餐饮",
-    "confidence": 0.95
-  }
-}
-```
-
-### 智能分类
-
-**POST** `/ai/categorize`
-
-Headers:
-```
-Authorization: Bearer <token>
-```
-
-请求体:
-```json
-{
-  "description": "打车去机场"
-}
-```
-
-响应:
-```json
-{
-  "success": true,
-  "data": {
-    "category": "交通",
-    "confidence": 0.98
-  }
-}
-```
-
-### 建议分摊方案
-
-**POST** `/ai/suggest-split`
-
-Headers:
-```
-Authorization: Bearer <token>
-```
-
-请求体:
-```json
-{
-  "tripId": "uuid",
-  "amount": 500,
-  "description": "买了5张门票，张三要两张"
-}
-```
-
-响应:
-```json
-{
-  "success": true,
-  "data": {
-    "splitMethod": "custom",
-    "participants": [
+    "failed": [
       {
-        "userId": "uuid",
-        "username": "张三",
-        "shareAmount": 200,
-        "reason": "需要两张票"
-      },
-      {
-        "userId": "uuid",
-        "username": "李四",
-        "shareAmount": 100
+        "name": "李四",
+        "error": "成员已存在"
       }
-    ]
+    ],
+    "validation": {
+      "valid": ["张三", "王五"],
+      "duplicates": ["李四"],
+      "invalid": []
+    }
   }
 }
 ```

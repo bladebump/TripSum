@@ -120,6 +120,30 @@ export class TripController {
       sendError(res, '403', error.message, 403)
     }
   }
+
+  async updateMemberContribution(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!
+      const { id, memberId } = req.params
+      const { contribution } = req.body
+      const member = await tripService.updateMemberContribution(id, memberId, contribution, userId)
+      sendSuccess(res, member)
+    } catch (error: any) {
+      sendError(res, '403', error.message, 403)
+    }
+  }
+
+  async batchUpdateContributions(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!
+      const { id } = req.params
+      const { contributions } = req.body
+      const result = await tripService.batchUpdateContributions(id, contributions, userId)
+      sendSuccess(res, result)
+    } catch (error: any) {
+      sendError(res, '403', error.message, 403)
+    }
+  }
 }
 
 export const tripController = new TripController()

@@ -128,8 +128,8 @@ const TripDetail: React.FC = () => {
               <div className="stat-label">成员</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{formatCurrency(currentTrip.statistics?.averagePerPerson || 0)}</div>
-              <div className="stat-label">人均</div>
+              <div className="stat-value">{currentTrip.statistics?.expenseCount || 0}</div>
+              <div className="stat-label">笔数</div>
             </div>
           </div>
         </Card>
@@ -270,7 +270,9 @@ const TripDetail: React.FC = () => {
                       {member.role === 'admin' && <Tag color="primary">管理员</Tag>}
                       {member.balance !== undefined && (
                         <div className={`member-balance ${member.balance > 0 ? 'positive' : member.balance < 0 ? 'negative' : ''}`}>
-                          <div>{member.balance > 0 ? '应收' : member.balance < 0 ? '应付' : '已清'}</div>
+                          <div>
+                            {member.balance > 0 ? '剩余' : member.balance < 0 ? '欠款' : '已清'}
+                          </div>
                           {member.balance !== 0 && (
                             <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>
                               {formatCurrency(Math.abs(member.balance))}
@@ -281,7 +283,9 @@ const TripDetail: React.FC = () => {
                     </div>
                   }
                 >
-                  {member.isVirtual ? member.displayName : member.user?.username}
+                  {member.isVirtual 
+                    ? `${member.displayName} (虚拟)` 
+                    : member.user?.username}
                 </List.Item>
               ))}
             </List>

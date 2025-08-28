@@ -174,7 +174,12 @@ const ChatExpense: React.FC = () => {
         // 根据意图类型处理
         switch (result.intent.intent) {
           case 'expense':
-            await handleExpenseIntent(result.data)
+            // 检查是否为基金缴纳
+            if ((result.data as any).isFundContribution) {
+              await handleFundContribution(result.data)
+            } else {
+              await handleExpenseIntent(result.data)
+            }
             break
             
           case 'member':
@@ -214,8 +219,57 @@ const ChatExpense: React.FC = () => {
     }
   }
 
+  const handleFundContribution = async (data: any) => {
+    setParsedData(data)
+    
+    // 设置参与者 - 确保所有缴纳成员都被选中
+    if (data.participants && data.participants.length > 0) {
+      const memberIds = data.participants.map((p: any) => {
+        const member = members.find(m => 
+          (m.isVirtual && m.displayName === p.username) || 
+          (!m.isVirtual && m.user?.username === p.username)
+        )
+        return member?.id
+      }).filter(Boolean) as string[]
+      setSelectedMembers(memberIds)
+    } else {
+      // 如果没有明确参与者，默认选择所有成员
+      setSelectedMembers(members.map(m => m.id))
+    }
+    
+    // 生成基金缴纳响应
+    let responseContent = `✅ 我理解了你的基金缴纳信息：\n\n`
+    
+    if (data.amount) {
+      responseContent += `💰 总金额：${formatCurrency(data.amount)}\n`
+    }
+    
+    if (data.participants && data.participants.length > 0) {
+      responseContent += `👥 缴纳详情：\n`
+      data.participants.forEach((p: any) => {
+        responseContent += `   • ${p.username}：${formatCurrency(Math.abs(p.shareAmount || 0))}\n`
+      })
+    }
+    
+    responseContent += `\n🎯 置信度：${(data.confidence * 100).toFixed(0)}%\n\n`
+    responseContent += `点击"确认基金缴纳"按钮来提交。`
+    
+    addMessage({
+      type: 'ai',
+      content: responseContent,
+      data
+    })
+    
+    setTimeout(() => {
+      setShowConfirmDialog(true)
+    }, 500)
+  }
+
   const handleExpenseIntent = async (data: ParsedExpense) => {
     setParsedData(data)
+    
+    // 检查是否为基金缴纳
+    const isFundContribution = (data as any).isFundContribution === true
     
     // 设置参与者
     if (data.participants && data.participants.length > 0) {
@@ -246,14 +300,24 @@ const ChatExpense: React.FC = () => {
       setSelectedMembers(members.map(m => m.id))
     }
     
-    let responseContent = `✅ 我理解了你的${data.isIncome ? '收入' : '消费'}信息：\n\n`
+    let responseContent = ''
+    
+    if (isFundContribution) {
+      responseContent = `✅ 我理解了你的基金缴纳信息：\n\n`
+    } else {
+      responseContent = `✅ 我理解了你的${data.isIncome ? '收入' : '消费'}信息：\n\n`
+    }
     
     if (data.amount) {
       const displayAmount = Math.abs(data.amount)
-      responseContent += `💰 金额：${formatCurrency(displayAmount)}${data.isIncome ? ' (收入)' : ''}\n`
+      if (isFundContribution) {
+        responseContent += `💰 缴纳金额：${formatCurrency(displayAmount)}\n`
+      } else {
+        responseContent += `💰 金额：${formatCurrency(displayAmount)}${data.isIncome ? ' (收入)' : ''}\n`
+      }
     }
     
-    if (data.payerId) {
+    if (!isFundContribution && data.payerId) {
       const payer = members.find(m => (m.userId || m.id) === data.payerId)
       if (payer) {
         const payerName = payer.isVirtual ? payer.displayName : payer.user?.username
@@ -267,10 +331,21 @@ const ChatExpense: React.FC = () => {
     }
     
     if (data.participants && data.participants.length > 0) {
-      responseContent += `👥 参与者：${data.participants.map(p => p.username).join('、')}\n`
+      if (isFundContribution) {
+        responseContent += `👥 缴纳人员：${data.participants.map(p => `${p.username}(${formatCurrency(p.shareAmount || 0)})`).join('、')}\n`
+      } else {
+        responseContent += `👥 参与者：${data.participants.map(p => p.username).join('、')}\n`
+      }
     }
     
-    responseContent += `\n🎯 置信度：${(data.confidence * 100).toFixed(0)}%\n\n点击"${data.isIncome ? '确认收入' : '确认记账'}"按钮来完善详细信息并提交。`
+    let buttonText = '确认记账'
+    if (isFundContribution) {
+      buttonText = '确认基金缴纳'
+    } else if (data.isIncome) {
+      buttonText = '确认收入'
+    }
+    
+    responseContent += `\n🎯 置信度：${(data.confidence * 100).toFixed(0)}%\n\n点击"${buttonText}"按钮来完善详细信息并提交。`
     
     addMessage({
       type: 'ai',
@@ -361,35 +436,43 @@ const ChatExpense: React.FC = () => {
     }
   }
 
-  const handleIncomeSubmit = async (incomeData: any) => {
+  const handleFundContributionSubmit = async (data: any) => {
     try {
-      // 基金缴纳 - 批量更新成员的contribution
-      const { memberService } = await import('@/services/member.service')
-      
-      const contributions = incomeData.contributors.map((contributor: any) => {
+      const contributions = data.participants.map((participant: any) => {
         // 找到对应的成员
         const member = members.find(m => {
-          // 对于真实用户，匹配userId
-          if (!m.isVirtual && m.userId === contributor.userId) return true
-          // 对于虚拟成员，匹配id
-          if (m.isVirtual && m.id === contributor.userId) return true
-          return false
+          return (m.isVirtual && m.displayName === participant.username) || 
+                 (!m.isVirtual && m.user?.username === participant.username)
         })
         
-        if (!member) return null
+        if (!member) {
+          console.warn(`未找到成员: ${participant.username}`)
+          return null
+        }
         
         return {
           memberId: member.id, // 使用TripMember的id
-          contribution: contributor.amount
+          contribution: Math.abs(participant.shareAmount || 0) // 确保是正数
         }
       }).filter((c: any) => c !== null)
       
-      if (contributions.length > 0) {
-        console.log('提交的contributions数据:', contributions)
-        await memberService.batchUpdateContributions(tripId!, contributions)
+      if (contributions.length === 0) {
+        Toast.show('未找到有效的缴纳成员')
+        return
       }
       
-      Toast.show('基金缴纳记录成功！')
+      // 使用恢复的基金缴纳API
+      const { default: contributionService } = await import('@/services/contribution.service')
+      await contributionService.batchUpdateContributions(tripId!, contributions)
+      
+      Toast.show({
+        icon: 'success',
+        content: `✅ 基金缴纳记录成功！共 ${contributions.length} 人缴纳`
+      })
+      
+      // 刷新行程数据
+      await fetchTripDetail(tripId!)
+      await fetchMembers(tripId!)
       setShowConfirmDialog(false)
       
       // 添加成功消息
@@ -681,14 +764,23 @@ const ChatExpense: React.FC = () => {
         </div>
       </div>
 
-      {/* 确认对话框 - 根据收入或支出显示不同组件 */}
-      {parsedData?.isIncome ? (
+      {/* 确认对话框 - 根据类型显示不同组件 */}
+      {(parsedData as any)?.isFundContribution ? (
         <IncomeConfirm
           visible={showConfirmDialog}
           data={parsedData}
           members={members}
           tripId={tripId!}
-          onConfirm={handleIncomeSubmit}
+          onConfirm={handleFundContributionSubmit}
+          onCancel={() => setShowConfirmDialog(false)}
+        />
+      ) : parsedData?.isIncome ? (
+        <IncomeConfirm
+          visible={showConfirmDialog}
+          data={parsedData}
+          members={members}
+          tripId={tripId!}
+          onConfirm={() => {/* 普通收入暂不处理 */}}
           onCancel={() => setShowConfirmDialog(false)}
         />
       ) : (

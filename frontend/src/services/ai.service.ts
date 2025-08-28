@@ -16,44 +16,7 @@ interface ParseResult {
   confidence: number
 }
 
-interface ParseExpenseResult {
-  amount?: number
-  participants?: Array<{
-    userId: string
-    username: string
-    shareAmount?: number
-    sharePercentage?: number
-  }>
-  category?: string
-  confidence: number
-  isIncome?: boolean
-}
-
-interface MemberParseResult {
-  members: Array<{
-    displayName: string
-    confidence: number
-  }>
-  confidence: number
-  totalCount?: number
-}
-
-
-interface CategorizeResult {
-  category: string
-  confidence: number
-}
-
-interface SuggestSplitResult {
-  splitMethod: 'equal' | 'custom' | 'percentage'
-  participants: Array<{
-    userId: string
-    username: string
-    shareAmount?: number
-    sharePercentage?: number
-    reason?: string
-  }>
-}
+// 类型定义已整合到 ParseResult 中
 
 interface AddMembersResult {
   success: boolean
@@ -91,49 +54,7 @@ class AIService {
     throw new Error('AI解析失败')
   }
 
-  async parseExpense(tripId: string, description: string): Promise<ParseExpenseResult> {
-    const { data } = await api.post<ApiResponse<ParseExpenseResult>>('/ai/parse-expense', {
-      tripId,
-      description,
-    })
-    if (data.success && data.data) {
-      return data.data
-    }
-    throw new Error('AI解析失败')
-  }
-
-  async categorize(description: string): Promise<CategorizeResult> {
-    const { data } = await api.post<ApiResponse<CategorizeResult>>('/ai/categorize', {
-      description,
-    })
-    if (data.success && data.data) {
-      return data.data
-    }
-    throw new Error('分类失败')
-  }
-
-  async suggestSplit(tripId: string, amount: number, description: string): Promise<SuggestSplitResult> {
-    const { data } = await api.post<ApiResponse<SuggestSplitResult>>('/ai/suggest-split', {
-      tripId,
-      amount,
-      description,
-    })
-    if (data.success && data.data) {
-      return data.data
-    }
-    throw new Error('分摊建议失败')
-  }
-
-  async parseMembers(tripId: string, text: string): Promise<MemberParseResult> {
-    const { data } = await api.post<ApiResponse<MemberParseResult>>('/ai/parse-members', {
-      tripId,
-      text,
-    })
-    if (data.success && data.data) {
-      return data.data
-    }
-    throw new Error('成员解析失败')
-  }
+  // 所有解析功能已整合到 parseUserInput 统一处理
 
   async addMembers(tripId: string, memberNames: string[]): Promise<AddMembersResult> {
     const { data } = await api.post<ApiResponse<AddMembersResult>>('/ai/add-members', {

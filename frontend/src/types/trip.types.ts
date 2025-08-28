@@ -36,6 +36,7 @@ export interface TripMember {
   user?: User
   creator?: User
   totalPaid?: number
+  totalShares?: number
   balance?: number
 }
 

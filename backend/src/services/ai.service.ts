@@ -95,33 +95,44 @@ export class AIService {
         当前用户：${currentUserName}（当用户说"我"时，指的是${currentUserName}）
         消费描述：${description}
         
+        重要分类：
+        1. 基金缴纳：关键词包括"上存"、"缴纳"、"交钱"、"凑钱"、"充值"、"基金"
+           - 这是成员向基金池缴纳资金，不是收入
+           - 金额应为正数
+           - 设置 isFundContribution = true
+        2. 普通支出：日常消费记录
+        3. 收入：退款、返现等（较少见）
+        
         计算规则：
         1. 平均分摊：使用calculate('divide', 总金额, 参与人数)计算每人金额
         2. "每人X元"：使用calculate('multiply', X, 人数)计算总金额
-        3. 收入场景记为负数
+        3. 基金缴纳场景：金额为正数，每个参与者的shareAmount也是正数
         4. 所有金额计算必须使用calculate工具
         
         付款人识别规则：
         1. "张三付了X元" → payerName: "张三"
         2. "李四请客" → payerName: "李四"
         3. "我付了" → payerName: "${currentUserName}"
-        4. 没有明确付款人时 → payerName: "${adminName}"（管理员默认付款）
+        4. 基金缴纳场景 → payerName: null（无付款人）
+        5. 没有明确付款人时 → payerName: "${adminName}"（管理员默认付款）
         
         请返回JSON格式：
         {
-          "amount": 总金额（数字，收入用负数，支出用正数）,
+          "amount": 总金额（数字，基金缴纳和支出用正数，退款等收入用负数）,
+          "description": "简洁但有意义的描述（如：晚餐-海鲜、基金缴纳、打车-去机场）",
           "perPersonAmount": 每人金额（如果描述是"每人X元"的格式）,
           "participants": [
             {
               "username": "参与者名字",
-              "shareAmount": 应分摊金额（必须通过calculate计算得出）
+              "shareAmount": 应分摊金额（基金缴纳时为正数缴纳金额）
             }
           ],
           "excludedMembers": ["被排除的成员名"],
-          "category": "类别（餐饮/交通/住宿/娱乐/购物/收入/其他）",
+          "category": "类别（餐饮/交通/住宿/娱乐/购物/基金/其他）",
           "confidence": 置信度（0-1之间的数字）,
-          "isIncome": 是否为收入（true/false）,
-          "payerName": "付款人名字（默认为管理员）"
+          "isIncome": 是否为收入（true/false，基金缴纳为false）,
+          "isFundContribution": 是否为基金缴纳（true/false）,
+          "payerName": "付款人名字（基金缴纳时为null）"
         }
         
         参与者识别规则：
@@ -131,6 +142,7 @@ export class AIService {
         4. "我和张三一起" → 包括当前用户(${currentUserName})和张三两人
         5. "和我一起" → 必须包括当前用户(${currentUserName})
         6. 如果没有明确说明谁参与，默认所有人参与
+        7. 基金缴纳场景：通常所有人都参与
       `
 
       const messages: any[] = [
@@ -230,6 +242,7 @@ export class AIService {
 
       return {
         amount: result.amount,
+        description: result.description,
         perPersonAmount: result.perPersonAmount,
         participants: result.participants,
         excludedMembers: result.excludedMembers,

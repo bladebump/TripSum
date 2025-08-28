@@ -1,9 +1,7 @@
 import { Response } from 'express'
 import { AuthenticatedRequest } from '../types'
-import { aiService } from '../services/ai.service'
 import { tripService } from '../services/trip.service'
 import { unifiedAIParser } from '../services/ai.unified.parser'
-import { memberParser } from '../services/ai.member.parser'
 import { sendSuccess, sendError } from '../utils/response'
 import logger from '../utils/logger'
 
@@ -34,43 +32,7 @@ export class AIController {
     }
   }
 
-  async parseExpense(req: AuthenticatedRequest, res: Response) {
-    try {
-      const userId = req.userId!
-      const { tripId, description } = req.body
-      
-      await tripService.getTripDetail(tripId, userId)
-      
-      const result = await aiService.parseExpenseDescription(tripId, description)
-      sendSuccess(res, result)
-    } catch (error: any) {
-      sendError(res, '400', error.message, 400)
-    }
-  }
-
-  async parseMembers(req: AuthenticatedRequest, res: Response) {
-    try {
-      const userId = req.userId!
-      const { tripId, text } = req.body
-      
-      if (!tripId || !text) {
-        return sendError(res, '400', '缺少必要参数', 400)
-      }
-      
-      // 验证用户权限（只有管理员可以添加成员）
-      const trip = await tripService.getTripDetail(tripId, userId)
-      const userMember = trip.members?.find(m => m.userId === userId)
-      
-      if (userMember?.role !== 'admin') {
-        return sendError(res, '403', '只有管理员可以添加成员', 403)
-      }
-      
-      const result = await memberParser.parseMembers(tripId, text.trim())
-      return sendSuccess(res, result)
-    } catch (error: any) {
-      return sendError(res, '400', error.message, 400)
-    }
-  }
+  // parseExpense 和 parseMembers 已整合到 parseUserInput 中
 
   async addMembers(req: AuthenticatedRequest, res: Response) {
     try {
@@ -96,30 +58,7 @@ export class AIController {
     }
   }
 
-  async categorize(req: AuthenticatedRequest, res: Response) {
-    try {
-      const { description } = req.body
-      
-      const result = await aiService.categorizeExpense(description)
-      sendSuccess(res, result)
-    } catch (error: any) {
-      sendError(res, '400', error.message, 400)
-    }
-  }
-
-  async suggestSplit(req: AuthenticatedRequest, res: Response) {
-    try {
-      const userId = req.userId!
-      const { tripId, amount, description } = req.body
-      
-      await tripService.getTripDetail(tripId, userId)
-      
-      const result = await aiService.suggestSplitMethod(tripId, amount, description)
-      sendSuccess(res, result)
-    } catch (error: any) {
-      sendError(res, '400', error.message, 400)
-    }
-  }
+  // categorize 和 suggestSplit 已整合到 parseUserInput 统一处理
 }
 
 export const aiController = new AIController()
