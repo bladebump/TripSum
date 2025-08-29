@@ -162,8 +162,9 @@ Frontend uses Vite environment variables:
 7. **Mobile-first UI** using Ant Design Mobile with optimized touch interactions
 8. **Settlement calculation** uses optimized debt reduction with fund contributions
 9. **Virtual members** supported for non-registered users in trip calculations
-10. **Permission-based UI rendering** - admin vs member role functionality
-11. **Code quality** - all TypeScript warnings resolved, ESLint compliant
+10. **Member identification** - memberId for all business logic, userId only for JWT auth
+11. **Permission-based UI rendering** - admin vs member role functionality
+12. **Code quality** - all TypeScript warnings resolved, ESLint compliant
 
 ## UI/UX Improvements Implemented
 - **TripDetail Page**: Replaced hidden ActionSheet with visible bottom action button grid
@@ -199,6 +200,13 @@ Frontend uses Vite environment variables:
 - **Balance Calculation**: Virtual members participate equally in all calculations
 - **Debt Relationships**: Virtual members included in debt optimization algorithms
 
+### Member Identification Architecture
+- **memberId (TripMember.id)**: Primary identifier for ALL business logic
+- **userId**: Reserved ONLY for JWT authentication and linking to User accounts
+- **Virtual Members**: Have memberId but no userId (userId is null)
+- **API Parameters**: All member operations use memberId, not userId
+- **Database Schema**: ExpenseParticipant requires tripMemberId field
+
 ### API Optimization
 - **Reduced API Surface**: Consolidated from 28 to 20 endpoints
 - **Removed Redundancy**: Eliminated duplicate member management APIs
@@ -222,6 +230,12 @@ Frontend uses Vite environment variables:
 - **AI Model Configuration**: Uses Kimi API (Moonshot) instead of OpenAI in some deployments
 
 ## Version History
+
+### v1.5.0 (2025-08-29)
+- ✅ Fixed critical bug: virtual members losing IDs in AI parsing
+- ✅ Unified memberId architecture for all business logic
+- ✅ Fixed member confirmation dialog not closing
+- ✅ Added member utility functions for consistent operations
 
 ### v1.4.0 (2024-12-28)
 - ✅ Fixed fund contribution parsing (positive amounts)

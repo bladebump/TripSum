@@ -2,7 +2,7 @@
 
 > 让旅行费用分摊变得简单 - 专为小团体旅行设计的智能记账应用
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)
 ![React](https://img.shields.io/badge/React-18-61dafb)
@@ -18,6 +18,7 @@ TripSum（旅算）是一个专为小团体旅行设计的费用分摊应用。�
 - **🤖 智能记账**: AI自然语言解析，精准识别基金缴纳、消费和收入
 - **🧮 智能计算器**: AI集成Function Calling计算工具，确保金额精确
 - **👥 统一成员系统**: 虚拟成员与真实用户完全一致的功能体验
+- **🔑 统一标识架构**: memberId作为核心业务标识，userId仅用于认证
 - **📊 实时余额**: 公式化计算（缴纳+垫付-分摊=余额）
 - **🔧 模块化AI**: 意图优先的解析架构，支持费用/成员/混合/结算等多种意图
 - **📱 优化界面**: 直观的操作按钮网格，替代隐蔽的交互方式

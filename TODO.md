@@ -1,5 +1,17 @@
 # TripSum 待办事项清单
 
+## 📅 2025-08-29 完成的工作
+
+### ✅ userId到memberId架构迁移
+- [x] 修复AI服务虚拟成员解析失败的严重bug
+- [x] 统一使用memberId进行所有业务逻辑
+- [x] 数据库schema更新ExpenseParticipant必需tripMemberId
+- [x] 新增基于memberId的成员管理API
+- [x] 前端API调用全面迁移到memberId
+- [x] 类型定义清理和deprecated标记
+- [x] 修复成员确认对话框不关闭问题
+- [x] 创建member工具函数统一操作
+
 ## 📅 2024-12-29 完成的工作
 
 ### ✅ API架构重构
@@ -135,5 +147,5 @@ npx prisma studio
 - **职责分离**: getTripDetail只返回基础信息，统计由独立API提供
 
 ---
-*最后更新: 2024-12-29*
+*最后更新: 2025-08-29*
 *下次工作重点: 实现 Redis 缓存层以提升性能*
