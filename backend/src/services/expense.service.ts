@@ -1,24 +1,20 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { io } from '../app'
+import { 
+  ParticipantsSummary, 
+  ParticipantDetail,
+  CreateExpenseData
+} from '../types/expense.types'
 
 const prisma = new PrismaClient()
 
-interface CreateExpenseData {
-  amount: number
-  categoryId?: string
-  payerId: string  // TripMember.id
-  description?: string
-  expenseDate: Date
-  receiptUrl?: string
-  participants?: Array<{
-    memberId: string  // TripMember.id（必需）
-    shareAmount?: number
-    sharePercentage?: number
-  }>
+// 扩展CreateExpenseData以匹配服务层需求
+interface ServiceCreateExpenseData extends Omit<CreateExpenseData, 'payerMemberId'> {
+  payerId: string  // TripMember.id（兼容旧代码）
 }
 
 export class ExpenseService {
-  async createExpense(tripId: string, createdBy: string, data: CreateExpenseData) {
+  async createExpense(tripId: string, createdBy: string, data: ServiceCreateExpenseData) {
     await this.checkTripMembership(tripId, createdBy)
 
     // 验证付款人（payerId现在是TripMember.id）
@@ -390,7 +386,7 @@ export class ExpenseService {
     })
 
     // 计算每个参与者的实际分摊金额
-    const participantDetails = expense.participants.map((p: any) => {
+    const participantDetails: ParticipantDetail[] = expense.participants.map((p: any) => {
       const name = p.tripMember?.isVirtual 
         ? (p.tripMember.displayName || '虚拟成员')
         : (p.tripMember?.user?.username || '未知用户')
@@ -417,7 +413,7 @@ export class ExpenseService {
       : 0
 
     // 生成摘要信息
-    const participantsSummary = {
+    const participantsSummary: ParticipantsSummary = {
       count: participantDetails.length,
       names: participantNames.slice(0, 3), // 最多显示3个名字
       hasMore: participantNames.length > 3,

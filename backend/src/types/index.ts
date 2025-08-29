@@ -40,21 +40,19 @@ export interface PaginationResult<T> {
 
 export interface BalanceCalculation {
   memberId: string   // 主要标识符 (TripMember.id)
-  userId?: string    // @deprecated 请使用memberId
   username: string
+  role?: string      // 成员角色 (admin/member)
   contribution: number // 基金缴纳
   totalPaid: number // 实际垫付
   totalShare: number // 应该分摊
   balance: number // 余额（正数表示别人欠他，负数表示他欠别人）
   owesTo: Array<{
     memberId: string   // 使用TripMember.id
-    userId?: string    // @deprecated 请使用memberId
     username: string
     amount: number
   }>
   owedBy: Array<{
     memberId: string   // 使用TripMember.id
-    userId?: string    // @deprecated 请使用memberId
     username: string
     amount: number
   }>
@@ -63,12 +61,10 @@ export interface BalanceCalculation {
 export interface Settlement {
   from: {
     memberId: string   // 使用TripMember.id
-    userId?: string    // @deprecated 请使用memberId
     username: string
   }
   to: {
     memberId: string   // 使用TripMember.id
-    userId?: string    // @deprecated 请使用memberId
     username: string
   }
   amount: number

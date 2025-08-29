@@ -7,32 +7,41 @@ import {
 } from '../member'
 
 describe('Member Utils', () => {
-  const mockMembers = [
+  const mockMembers: any[] = [
     {
       id: 'm1',
+      tripId: 'trip1',
       userId: 'u1',
       role: 'admin',
       isVirtual: false,
       displayName: null,
       contribution: 1000,
+      joinDate: new Date('2024-01-01'),
+      isActive: true,
       user: { username: '张三', email: 'zhang@example.com' }
     },
     {
       id: 'm2',
+      tripId: 'trip1',
       userId: 'u2', 
       role: 'member',
       isVirtual: false,
       displayName: null,
       contribution: 500,
+      joinDate: new Date('2024-01-01'),
+      isActive: true,
       user: { username: '李四', email: 'li@example.com' }
     },
     {
       id: 'm3',
+      tripId: 'trip1',
       userId: null,
       role: 'member',
       isVirtual: true,
       displayName: '虚拟王五',
       contribution: 0,
+      joinDate: new Date('2024-01-01'),
+      isActive: true,
       user: null
     }
   ]

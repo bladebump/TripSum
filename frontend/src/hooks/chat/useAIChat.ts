@@ -12,7 +12,7 @@ export interface Message {
 
 export interface ParseResult {
   intent: {
-    intent: 'expense' | 'contribution' | 'member' | 'settlement' | 'mixed' | 'unknown'
+    intent: 'expense' | 'member' | 'settlement' | 'mixed' | 'unknown' | 'contribution' | 'income'
     confidence: number
   }
   data: any

@@ -28,7 +28,7 @@ interface ParsedMember {
 const AddMember: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { currentTrip, members, fetchTripDetail, fetchMembers } = useTripStore()
+  const { currentTrip, members, fetchTripDetail } = useTripStore()
   const { user } = useAuthStore()
   
   const [activeTab, setActiveTab] = useState('manual')

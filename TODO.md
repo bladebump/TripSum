@@ -117,9 +117,11 @@
   - 需要在真实移动设备上测试
 
 ## 📝 技术债务
-1. **类型定义完善**
-   - 为 `participantsSummary` 创建完整的 TypeScript 接口
-   - 统一前后端的数据结构定义
+1. **类型定义完善** ✅ 2025-08-29
+   - ✅ 为 `participantsSummary` 创建完整的 TypeScript 接口
+   - ✅ 统一前后端的数据结构定义
+   - ✅ 创建独立的 `ParticipantDetail` 和 `ParticipantsSummary` 接口
+   - ✅ 前后端共享相同的类型定义结构
 
 2. **代码重构**
    - 抽取重复的参与者计算逻辑

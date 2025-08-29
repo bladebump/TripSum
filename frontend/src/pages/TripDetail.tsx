@@ -27,7 +27,7 @@ import './TripDetail.scss'
 const TripDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { currentTrip, members, fetchTripDetail, fetchMembers, deleteTrip } = useTripStore()
+  const { currentTrip, members, fetchTripDetail, deleteTrip } = useTripStore()
   const { expenses, fetchExpenses, deleteExpense } = useExpenseStore()
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState('expenses')

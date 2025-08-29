@@ -1,4 +1,4 @@
-import { PrismaClient, Trip } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { io } from '../app'
 
 const prisma = new PrismaClient()
@@ -10,12 +10,6 @@ interface CreateTripData {
   endDate?: Date
   initialFund?: number
   currency?: string
-}
-
-interface TripWithStats extends Trip {
-  memberCount: number
-  totalExpenses: number
-  myBalance?: number
 }
 
 export class TripService {
@@ -82,8 +76,21 @@ export class TripService {
       prisma.trip.findMany({
         where: whereClause,
         include: {
-          members: true,
-          expenses: true,
+          members: {
+            select: {
+              id: true,
+              role: true,
+              contribution: true,
+              userId: true,
+              isVirtual: true
+            }
+          },
+          expenses: {
+            select: {
+              amount: true,
+              isPaidFromFund: true
+            }
+          }
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -92,30 +99,45 @@ export class TripService {
       prisma.trip.count({ where: whereClause }),
     ])
 
-    const tripsWithStats: TripWithStats[] = await Promise.all(
-      trips.map(async (trip) => {
-        const totalExpenses = trip.expenses.reduce(
-          (sum, expense) => sum + expense.amount.toNumber(),
-          0
-        )
+    const tripsWithStats = trips.map((trip) => {
+      // 计算总支出
+      const totalExpenses = trip.expenses.reduce(
+        (sum, expense) => sum + expense.amount.toNumber(),
+        0
+      )
 
-        // 找到用户对应的 TripMember（通过userId找到对应的member，然后使用memberId）
-        const userMember = trip.members.find(m => m.userId === userId)
-        const userExpenses = userMember ? trip.expenses
-          .filter((expense) => expense.payerMemberId === userMember.id)  // 使用memberId比较
-          .reduce((sum, expense) => sum + expense.amount.toNumber(), 0) : 0
+      // 计算总缴纳
+      const totalContributions = trip.members.reduce(
+        (sum, member) => sum + member.contribution.toNumber(),
+        0
+      )
 
-        const avgExpense = trip.members.length > 0 ? totalExpenses / trip.members.length : 0
-        const myBalance = userExpenses - avgExpense
+      // 计算基金池支出（isPaidFromFund=true的支出）
+      const fundExpenses = trip.expenses
+        .filter((expense) => expense.isPaidFromFund)
+        .reduce((sum, expense) => sum + expense.amount.toNumber(), 0)
 
-        return {
-          ...trip,
-          memberCount: trip.members.length,
-          totalExpenses,
-          myBalance,
-        }
-      })
-    )
+      // 基金剩余
+      const fundBalance = totalContributions - fundExpenses
+
+      // 获取用户角色（可选）
+      const userMember = trip.members.find(m => m.userId === userId)
+      const myRole = userMember?.role || null
+
+      return {
+        id: trip.id,
+        name: trip.name,
+        description: trip.description,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        currency: trip.currency,
+        createdAt: trip.createdAt,
+        memberCount: trip.members.length,
+        totalExpenses,
+        fundBalance,
+        myRole,
+      }
+    })
 
     return {
       trips: tripsWithStats,
@@ -463,7 +485,7 @@ export class TripService {
     // 将余额信息合并到成员数据中（虚拟成员和真实成员统一处理）
     const membersWithBalance = members.map(member => {
       // 统一使用 member.id (memberId) 查找余额信息
-      const balance = balances.find(b => (b.memberId || b.userId) === member.id) || {
+      const balance = balances.find(b => b.memberId === member.id) || {
         balance: 0,
         totalPaid: 0,
         totalShare: 0

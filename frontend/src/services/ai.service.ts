@@ -2,7 +2,7 @@ import api from './api'
 import { ApiResponse } from '@/types'
 
 interface IntentResult {
-  intent: 'expense' | 'member' | 'settlement' | 'mixed' | 'unknown'
+  intent: 'expense' | 'member' | 'settlement' | 'mixed' | 'unknown' | 'contribution' | 'income'
   confidence: number
   subIntents?: Array<{
     intent: string

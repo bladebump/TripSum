@@ -180,7 +180,7 @@ const MemberDashboard: React.FC = () => {
                     <div className="debt-item" style={{ width: '100%' }}>
                       {balance.owesTo.map(debt => (
                         <div 
-                          key={debt.memberId || debt.userId}  // 优先使用memberId 
+                          key={debt.memberId} 
                           className="debt-detail"
                           style={{
                             display: 'flex',

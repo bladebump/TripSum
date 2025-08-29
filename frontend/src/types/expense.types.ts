@@ -1,5 +1,24 @@
 import { User } from './user.types'
-import { Category } from './trip.types'
+import { Category, Settlement } from './trip.types'
+
+// 参与者详情接口
+export interface ParticipantDetail {
+  memberId: string          // TripMember.id作为主要标识符
+  name: string             // 参与者显示名称
+  shareAmount: number      // 分摊金额
+  isVirtual: boolean       // 是否为虚拟成员
+}
+
+// 参与者摘要接口
+export interface ParticipantsSummary {
+  count: number            // 参与者总数
+  names: string[]          // 参与者名称列表（用于展示）
+  hasMore: boolean         // 是否有更多参与者（超过显示限制）
+  averageShare: number     // 平均分摊金额
+  totalAmount: number      // 总金额
+  details: ParticipantDetail[]  // 参与者详情列表
+  isEqualShare: boolean    // 是否平均分摊
+}
 
 export interface Expense {
   id: string
@@ -25,20 +44,7 @@ export interface Expense {
   }
   category?: Category
   participants?: ExpenseParticipant[]
-  participantsSummary?: {
-    count: number
-    names: string[]
-    hasMore: boolean
-    averageShare: number
-    totalAmount: number
-    details: Array<{
-      memberId: string
-      name: string
-      shareAmount: number
-      isVirtual: boolean
-    }>
-    isEqualShare: boolean
-  }
+  participantsSummary?: ParticipantsSummary
 }
 
 export interface ExpenseParticipant {
@@ -88,17 +94,7 @@ export interface BalanceCalculation {
   }>
 }
 
-export interface Settlement {
-  from: {
-    memberId: string
-    username: string
-  }
-  to: {
-    memberId: string
-    username: string
-  }
-  amount: number
-}
+// Settlement interface is imported from trip.types.ts
 
 export interface SettlementSummary {
   settlements: Settlement[]

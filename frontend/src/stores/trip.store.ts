@@ -97,7 +97,8 @@ export const useTripStore = create<TripState>((set, get) => ({
         totalShare: member.totalShare,
         isActive: true,
         tripId,
-        user: member.isVirtual ? null : { username: member.username }
+        joinDate: new Date().toISOString(),  // 添加默认的 joinDate
+        user: member.isVirtual ? undefined : { username: member.username } as any
       })) || []
       
       set({ 

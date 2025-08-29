@@ -42,8 +42,8 @@ export class CalculationService {
       
       balanceMap.set(memberId, {
         memberId: memberId, // 统一使用memberId
-        userId: memberId, // 保持接口兼容，逐步废弃
         username: username,
+        role: member.role, // 角色信息
         contribution: member.contribution.toNumber(), // 基金缴纳
         totalPaid: 0, // 实际垫付
         totalShare: 0, // 应该分摊
@@ -91,39 +91,52 @@ export class CalculationService {
   }
 
   private calculateDebts(balances: BalanceCalculation[]) {
-    const creditors = balances
-      .filter((b) => b.balance > 0)
-      .sort((a, b) => b.balance - a.balance)
+    // 查找基金管理员（admin角色）
+    const admin = balances.find(b => b.role === 'admin')
     
-    const debtors = balances
-      .filter((b) => b.balance < 0)
-      .sort((a, b) => a.balance - b.balance)
+    // 创建旅程的人就是管理员，所以admin一定存在
+    if (!admin) {
+      throw new Error('未找到行程管理员，无法进行结算计算')
+    }
 
-    for (const debtor of debtors) {
-      let remainingDebt = Math.abs(debtor.balance)
+    // 基金管理员中心化结算逻辑
+    for (const member of balances) {
+      // 跳过管理员自己
+      if (member.memberId === admin.memberId) continue
+      
+      // 忽略小于0.01的余额（避免浮点数精度问题）
+      if (Math.abs(member.balance) < 0.01) continue
 
-      for (const creditor of creditors) {
-        if (remainingDebt <= 0.01) break
-        if (creditor.balance <= 0.01) continue
-
-        const amount = Math.min(remainingDebt, creditor.balance)
+      if (member.balance > 0) {
+        // 成员有余额，管理员需要退款给成员
+        const amount = Math.round(member.balance * 100) / 100
         
-        debtor.owesTo.push({
-          memberId: creditor.memberId,  // 直接使用memberId
-          userId: creditor.memberId,    // 兼容字段
-          username: creditor.username,
-          amount: Math.round(amount * 100) / 100,
+        admin.owesTo.push({
+          memberId: member.memberId,
+          username: member.username,
+          amount: amount,
         })
 
-        creditor.owedBy.push({
-          memberId: debtor.memberId,   // 直接使用memberId  
-          userId: debtor.memberId,      // 兼容字段
-          username: debtor.username,
-          amount: Math.round(amount * 100) / 100,
+        member.owedBy.push({
+          memberId: admin.memberId,
+          username: admin.username,
+          amount: amount,
+        })
+      } else if (member.balance < 0) {
+        // 成员欠款，需要补缴给管理员
+        const amount = Math.round(Math.abs(member.balance) * 100) / 100
+        
+        member.owesTo.push({
+          memberId: admin.memberId,
+          username: admin.username,
+          amount: amount,
         })
 
-        creditor.balance -= amount
-        remainingDebt -= amount
+        admin.owedBy.push({
+          memberId: member.memberId,
+          username: member.username,
+          amount: amount,
+        })
       }
     }
   }
@@ -137,12 +150,10 @@ export class CalculationService {
         settlements.push({
           from: {
             memberId: balance.memberId,  // 直接使用memberId
-            userId: balance.memberId,     // 兼容字段
             username: balance.username,
           },
           to: {
             memberId: debt.memberId,     // 直接使用memberId
-            userId: debt.memberId,        // 兼容字段
             username: debt.username,
           },
           amount: debt.amount,
@@ -244,10 +255,9 @@ export class CalculationService {
 
     // 构建成员财务状态映射
     const membersFinancialStatus = trip?.members.map(member => {
-      const balance = balances.find(b => (b.memberId || b.userId) === member.id)
+      const balance = balances.find(b => b.memberId === member.id)
       return {
         memberId: member.id,
-        userId: member.userId,
         username: member.isVirtual 
           ? (member.displayName || '虚拟成员')
           : (member.user?.username || 'Unknown'),
