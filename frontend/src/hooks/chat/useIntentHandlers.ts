@@ -79,7 +79,7 @@ export const useIntentHandlers = ({ members, addMessage }: UseIntentHandlersProp
     }
     
     if (data.payerId) {
-      const payer = members.find(m => (m.userId || m.id) === data.payerId)
+      const payer = members.find(m => m.id === data.payerId)
       if (payer) {
         const payerName = payer.isVirtual ? payer.displayName : payer.user?.username
         const isAdmin = payer.role === 'admin'

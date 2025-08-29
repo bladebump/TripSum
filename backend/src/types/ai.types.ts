@@ -25,7 +25,8 @@ export interface MemberParseResult {
 export interface ExpenseParseResult {
   amount?: number
   participants?: Array<{
-    userId?: string
+    memberId?: string     // 使用TripMember.id
+    userId?: string       // @deprecated 请使用memberId
     username: string
     shareAmount?: number
     sharePercentage?: number
@@ -33,7 +34,8 @@ export interface ExpenseParseResult {
   category?: string
   description?: string
   confidence: number
-  payerId?: string
+  payerId?: string        // @deprecated 请使用payerMemberId
+  payerMemberId?: string  // 使用TripMember.id
   payerName?: string
   isContribution?: boolean  // 用于标识是否为基金缴纳
 }

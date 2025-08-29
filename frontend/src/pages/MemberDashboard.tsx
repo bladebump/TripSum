@@ -87,7 +87,7 @@ const MemberDashboard: React.FC = () => {
           <List>
             {balances.map(balance => (
               <List.Item
-                key={balance.userId}
+                key={balance.memberId || balance.userId}  // 优先使用memberId
                 description={
                   <div className="balance-detail">
                     <div className="balance-row">
@@ -174,13 +174,13 @@ const MemberDashboard: React.FC = () => {
               {balances.map(balance => (
                 balance.owesTo.length > 0 && (
                   <List.Item 
-                    key={`owes-${balance.userId}`}
+                    key={`owes-${balance.memberId || balance.userId}`}  // 优先使用memberId
                     arrow={false}
                   >
                     <div className="debt-item" style={{ width: '100%' }}>
                       {balance.owesTo.map(debt => (
                         <div 
-                          key={debt.userId} 
+                          key={debt.memberId || debt.userId}  // 优先使用memberId 
                           className="debt-detail"
                           style={{
                             display: 'flex',

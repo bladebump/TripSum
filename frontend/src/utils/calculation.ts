@@ -10,16 +10,16 @@ export const calculateAveragePerPerson = (totalAmount: number, memberCount: numb
 }
 
 export const calculateUserBalance = (
-  userId: string,
+  memberId: string,  // 改为使用memberId
   expenses: Expense[],
   memberCount: number
 ): number => {
   const totalPaid = expenses
-    .filter(expense => expense.payerId === userId)
+    .filter(expense => expense.payerMemberId === memberId)  // 使用payerMemberId
     .reduce((sum, expense) => sum + expense.amount, 0)
 
   const totalShare = expenses.reduce((sum, expense) => {
-    const participant = expense.participants?.find(p => p.userId === userId)
+    const participant = expense.participants?.find(p => p.tripMemberId === memberId)  // 使用tripMemberId
     if (participant?.shareAmount) {
       return sum + participant.shareAmount
     }
@@ -105,7 +105,7 @@ export const validateParticipants = (
 }
 
 export const calculateOptimalSettlements = (
-  balances: Array<{ userId: string; balance: number }>
+  balances: Array<{ memberId: string; balance: number }>  // 改为使用memberId
 ): Array<{ from: string; to: string; amount: number }> => {
   const settlements: Array<{ from: string; to: string; amount: number }> = []
   
@@ -129,8 +129,8 @@ export const calculateOptimalSettlements = (
       const amount = Math.min(remainingDebt, creditor.balance)
       
       settlements.push({
-        from: debtor.userId,
-        to: creditor.userId,
+        from: debtor.memberId,  // 使用memberId
+        to: creditor.memberId,    // 使用memberId
         amount: Math.round(amount * 100) / 100,
       })
 

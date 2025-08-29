@@ -105,6 +105,11 @@ async function main() {
   ])
 
   console.log(`添加了 ${virtualMembers.length} 个虚拟成员`)
+  
+  // 重新获取所有成员（包括虚拟成员）
+  const allTripMembers = await prisma.tripMember.findMany({
+    where: { tripId: trip.id }
+  })
 
   // 获取类别ID
   const categories = await prisma.category.findMany({
@@ -221,14 +226,27 @@ async function main() {
   ]
 
   for (const expenseData of expenses) {
-    const { participants, ...expense } = expenseData
+    const { participants, payerId, ...expense } = expenseData
+    
+    // 找到支付者对应的 TripMember
+    const payerMember = allTripMembers.find(m => m.userId === payerId)
+    
     await prisma.expense.create({
       data: {
         tripId: trip.id,
         ...expense,
-        createdBy: expense.payerId,
+        payerMemberId: payerMember?.id,
+        payer_id: payerId, // 保留兼容性
+        createdBy: payerId,
         participants: {
-          create: participants,
+          create: participants.map(p => {
+            // 找到参与者对应的 TripMember
+            const participantMember = allTripMembers.find(m => m.userId === p.userId)
+            return {
+              tripMemberId: participantMember?.id,
+              shareAmount: p.shareAmount,
+            }
+          }),
         },
       },
     })

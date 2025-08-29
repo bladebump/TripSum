@@ -39,19 +39,22 @@ export interface PaginationResult<T> {
 }
 
 export interface BalanceCalculation {
-  userId: string
+  memberId: string   // 主要标识符 (TripMember.id)
+  userId?: string    // @deprecated 请使用memberId
   username: string
   contribution: number // 基金缴纳
   totalPaid: number // 实际垫付
   totalShare: number // 应该分摊
   balance: number // 余额（正数表示别人欠他，负数表示他欠别人）
   owesTo: Array<{
-    userId: string
+    memberId: string   // 使用TripMember.id
+    userId?: string    // @deprecated 请使用memberId
     username: string
     amount: number
   }>
   owedBy: Array<{
-    userId: string
+    memberId: string   // 使用TripMember.id
+    userId?: string    // @deprecated 请使用memberId
     username: string
     amount: number
   }>
@@ -59,11 +62,13 @@ export interface BalanceCalculation {
 
 export interface Settlement {
   from: {
-    userId: string
+    memberId: string   // 使用TripMember.id
+    userId?: string    // @deprecated 请使用memberId
     username: string
   }
   to: {
-    userId: string
+    memberId: string   // 使用TripMember.id
+    userId?: string    // @deprecated 请使用memberId
     username: string
   }
   amount: number
@@ -73,7 +78,8 @@ export interface ExpenseParseResult {
   amount?: number
   description?: string
   participants?: Array<{
-    userId: string
+    memberId: string   // 必需，使用TripMember.id
+    userId?: string    // @deprecated 请使用memberId
     username: string
     shareAmount?: number
     sharePercentage?: number

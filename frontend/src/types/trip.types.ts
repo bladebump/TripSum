@@ -55,6 +55,46 @@ export interface TripStatistics {
   averagePerPerson: number
   categoryBreakdown?: CategoryBreakdown[]
   dailyExpenses?: DailyExpense[]
+  fundStatus?: FundStatus
+  membersFinancialStatus?: MemberFinancialStatus[]
+  settlements?: Settlement[]
+  lastUpdated?: string
+}
+
+export interface FundStatus {
+  totalContributions: number
+  fundExpenses: number
+  memberPaidExpenses: number
+  currentBalance: number
+  fundUtilization: number
+}
+
+export interface MemberFinancialStatus {
+  memberId: string
+  userId?: string
+  username: string
+  isVirtual: boolean
+  role: 'admin' | 'member'
+  contribution: number
+  totalPaid: number
+  totalShare: number
+  balance: number
+  expenseCount: number
+  paidCount: number
+}
+
+export interface Settlement {
+  from: {
+    memberId: string  // 使用TripMember.id
+    userId?: string   // @deprecated 请使用memberId
+    username: string
+  }
+  to: {
+    memberId: string  // 使用TripMember.id
+    userId?: string   // @deprecated 请使用memberId
+    username: string
+  }
+  amount: number
 }
 
 export interface CategoryBreakdown {

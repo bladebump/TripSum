@@ -1,6 +1,7 @@
 import { aiIntentService } from './ai.intent.service'
 import { aiService } from './ai.service'
 import { memberParser } from './ai.member.parser'
+import { contributionParser } from './ai.contribution.parser'
 import { ParseResult, MixedParseResult } from '../types/ai.types'
 import { io } from '../app'
 
@@ -24,13 +25,8 @@ export class UnifiedAIParser {
           break
           
         case 'contribution':
-          // 基金缴纳复用expense解析器，但设置特殊标识
-          data = await aiService.parseExpenseDescription(tripId, text, members, currentUserId)
-          // 基金缴纳特殊处理
-          data.isContribution = true  // 添加基金缴纳标识
-          data.payerId = null         // 基金缴纳无付款人
-          data.payerName = null
-          data.category = '基金'      // 强制设置类别
+          // 使用专门的基金缴纳解析器
+          data = await contributionParser.parseContribution(tripId, text, members || [], currentUserId)
           break
           
         case 'member':

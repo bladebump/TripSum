@@ -3,6 +3,7 @@ import { Toast } from 'antd-mobile'
 import { Form } from 'antd-mobile'
 import { useExpenseStore } from '@/stores/expense.store'
 import aiService from '@/services/ai.service'
+import contributionService from '@/services/contribution.service'
 import { formatCurrency } from '@/utils/format'
 import type { ParsedExpense } from './useIntentHandlers'
 import type { Message } from './useAIChat'
@@ -79,9 +80,15 @@ export const useExpenseForm = ({
 
   // 提交基金缴纳
   const handleFundContributionSubmit = useCallback(async (data: any) => {
+    console.log('=== handleFundContributionSubmit开始执行 ===')
+    console.log('接收到的data:', data)
+    
     try {
-      // 处理基金缴纳逻辑
-      const updates = data.participants.map((p: any) => {
+      // 处理基金缴纳逻辑，注意数据结构：IncomeConfirm传递的是contributors，不是participants
+      const contributorsData = data.contributors || data.participants || []
+      console.log('contributorsData:', contributorsData)
+      
+      const updates = contributorsData.map((p: any) => {
         const member = members.find(m => 
           (m.isVirtual && m.displayName === p.username) || 
           (!m.isVirtual && m.user?.username === p.username)
@@ -93,15 +100,13 @@ export const useExpenseForm = ({
         
         return {
           memberId: member.id,
-          contribution: p.shareAmount || 0
+          contribution: p.shareAmount || p.amount || 0  // 兼容两种字段名
         }
       })
       
       // 批量更新成员基金缴纳
-      for (const update of updates) {
-        // TODO: 调用API更新成员contribution
-        console.log('更新成员基金缴纳:', update)
-      }
+      console.log('准备批量更新基金缴纳:', updates)
+      await contributionService.batchUpdateContributions(tripId!, updates)
       
       Toast.show('基金缴纳成功！')
       setShowConfirmDialog(false)
@@ -114,7 +119,7 @@ export const useExpenseForm = ({
       // 添加成功消息
       addMessage({
         type: 'system',
-        content: `✅ 基金缴纳成功！总计缴纳 ${formatCurrency(data.amount)} 元。`
+        content: `✅ 基金缴纳成功！总计缴纳 ${formatCurrency(data.totalAmount)} 元。`
       })
       
       setParsedData(null)

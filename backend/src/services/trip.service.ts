@@ -99,10 +99,10 @@ export class TripService {
           0
         )
 
-        // 找到用户对应的 TripMember
+        // 找到用户对应的 TripMember（通过userId找到对应的member，然后使用memberId）
         const userMember = trip.members.find(m => m.userId === userId)
         const userExpenses = userMember ? trip.expenses
-          .filter((expense) => expense.payerMemberId === userMember.id)
+          .filter((expense) => expense.payerMemberId === userMember.id)  // 使用memberId比较
           .reduce((sum, expense) => sum + expense.amount.toNumber(), 0) : 0
 
         const avgExpense = trip.members.length > 0 ? totalExpenses / trip.members.length : 0
@@ -129,26 +129,26 @@ export class TripService {
   }
 
   async getTripDetail(tripId: string, userId: string) {
+    // 首先验证用户是否为行程成员
+    const memberCheck = await prisma.tripMember.findFirst({
+      where: {
+        tripId,
+        userId,
+        isActive: true
+      }
+    })
+
+    if (!memberCheck) {
+      throw new Error('您不是该行程的成员')
+    }
+
+    // 只返回行程基础信息和分类
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
         creator: true,
-        members: {
-          include: {
-            user: true,
-          },
-        },
         categories: true,
-        expenses: {
-          include: {
-            payerMember: {
-              include: {
-                user: true
-              }
-            },
-            category: true,
-          },
-        },
+        // 不再包含 members 和 expenses
       },
     })
 
@@ -156,42 +156,7 @@ export class TripService {
       throw new Error('行程不存在')
     }
 
-    const isMember = trip.members.some((m) => m.userId === userId && m.isActive)
-    if (!isMember) {
-      throw new Error('您不是该行程的成员')
-    }
-
-    // 计算余额信息
-    const { calculationService } = await import('./calculation.service')
-    const balances = await calculationService.calculateBalances(tripId)
-
-    // 将余额信息合并到成员数据中
-    const membersWithBalance = trip.members.map((member: any) => {
-      // 统一使用 member.id 查找余额信息
-      const balance = balances.find(b => b.userId === member.id)
-      return {
-        ...member,
-        balance: balance?.balance || 0,
-        totalPaid: balance?.totalPaid || 0,
-        totalShares: balance?.totalShare || 0
-      }
-    })
-
-    const totalExpenses = trip.expenses.reduce(
-      (sum, expense) => sum + expense.amount.toNumber(),
-      0
-    )
-
-    const statistics = {
-      totalExpenses,
-      expenseCount: trip.expenses.length,
-    }
-
-    return {
-      ...trip,
-      members: membersWithBalance,
-      statistics,
-    }
+    return trip
   }
 
   async updateTrip(tripId: string, userId: string, data: Partial<CreateTripData>) {
@@ -296,6 +261,61 @@ export class TripService {
     return member
   }
 
+  // 新方法：通过memberId移除成员
+  async removeMemberById(tripId: string, memberId: string, removedBy: string) {
+    // 先获取member信息
+    const targetMember = await prisma.tripMember.findUnique({
+      where: { id: memberId },
+      include: { user: true }
+    })
+
+    if (!targetMember || targetMember.tripId !== tripId) {
+      throw new Error('成员不存在')
+    }
+
+    // 检查权限
+    const removerMember = await prisma.tripMember.findFirst({
+      where: {
+        tripId,
+        userId: removedBy,
+        isActive: true
+      }
+    })
+
+    if (!removerMember) {
+      throw new Error('您不是该行程的成员')
+    }
+
+    // 如果是自己退出或者是管理员操作
+    if (targetMember.userId === removedBy || removerMember.role === 'admin') {
+      // 检查是否是最后一个管理员
+      if (targetMember.role === 'admin') {
+        const adminCount = await prisma.tripMember.count({
+          where: {
+            tripId,
+            role: 'admin',
+            isActive: true,
+          },
+        })
+
+        if (adminCount <= 1) {
+          throw new Error('不能移除最后一个管理员')
+        }
+      }
+
+      const member = await prisma.tripMember.update({
+        where: { id: memberId },
+        data: { isActive: false },
+      })
+
+      io.to(`trip-${tripId}`).emit('member-removed', { memberId })
+      return member
+    } else {
+      throw new Error('权限不足')
+    }
+  }
+
+  // 保留旧方法以兼容
   async removeMember(tripId: string, removeUserId: string, removedBy: string) {
     if (removeUserId === removedBy) {
       const member = await prisma.tripMember.findUnique({
@@ -339,6 +359,46 @@ export class TripService {
     return member
   }
 
+  // 新方法：通过memberId更新角色
+  async updateMemberRoleById(tripId: string, memberId: string, role: string, updatedBy: string) {
+    await this.checkTripPermission(tripId, updatedBy, 'admin')
+
+    // 获取目标成员
+    const targetMember = await prisma.tripMember.findUnique({
+      where: { id: memberId },
+      include: { user: true }
+    })
+
+    if (!targetMember || targetMember.tripId !== tripId) {
+      throw new Error('成员不存在')
+    }
+
+    // 如果要降级管理员，检查是否是最后一个
+    if (role !== 'admin' && targetMember.role === 'admin') {
+      const adminCount = await prisma.tripMember.count({
+        where: {
+          tripId,
+          role: 'admin',
+          isActive: true,
+        },
+      })
+
+      if (adminCount <= 1) {
+        throw new Error('不能移除最后一个管理员')
+      }
+    }
+
+    const member = await prisma.tripMember.update({
+      where: { id: memberId },
+      data: { role },
+      include: { user: true },
+    })
+
+    io.to(`trip-${tripId}`).emit('member-role-updated', member)
+    return member
+  }
+
+  // 保留旧方法以兼容
   async updateMemberRole(tripId: string, targetUserId: string, role: string, updatedBy: string) {
     await this.checkTripPermission(tripId, updatedBy, 'admin')
 
@@ -402,8 +462,8 @@ export class TripService {
 
     // 将余额信息合并到成员数据中（虚拟成员和真实成员统一处理）
     const membersWithBalance = members.map(member => {
-      // 统一使用 member.id 查找余额信息
-      const balance = balances.find(b => b.userId === member.id) || {
+      // 统一使用 member.id (memberId) 查找余额信息
+      const balance = balances.find(b => (b.memberId || b.userId) === member.id) || {
         balance: 0,
         totalPaid: 0,
         totalShare: 0

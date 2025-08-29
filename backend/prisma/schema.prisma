@@ -15,11 +15,8 @@ model User {
   avatarUrl                         String?              @map("avatar_url")
   createdAt                         DateTime             @default(now()) @map("created_at")
   updatedAt                         DateTime             @updatedAt @map("updated_at")
-  expense_participants              ExpenseParticipant[]
   createdExpenses                   Expense[]            @relation("ExpenseCreator")
   expenses_expenses_payer_idTousers Expense[]            @relation("expenses_payer_idTousers")
-  settlementsFrom                   Settlement[]         @relation("SettlementFrom")
-  settlementsTo                     Settlement[]         @relation("SettlementTo")
   createdVirtualMembers             TripMember[]         @relation("VirtualMemberCreator")
   tripMemberships                   TripMember[]
   createdTrips                      Trip[]               @relation("TripCreator")
@@ -60,6 +57,8 @@ model TripMember {
   contribution       Decimal              @default(0) @map("contribution") @db.Decimal(10, 2)
   expenseParticipant ExpenseParticipant[]
   paidExpenses       Expense[]
+  settlementsFrom    Settlement[]         @relation("SettlementFrom")
+  settlementsTo      Settlement[]         @relation("SettlementTo")
   creator            User?                @relation("VirtualMemberCreator", fields: [createdBy], references: [id])
   trip               Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user               User?                @relation(fields: [userId], references: [id])
@@ -109,31 +108,28 @@ model Expense {
 model ExpenseParticipant {
   id              String      @id @default(uuid())
   expenseId       String      @map("expense_id")
-  user_id         String?
   shareAmount     Decimal?    @map("share_amount") @db.Decimal(10, 2)
   sharePercentage Decimal?    @map("share_percentage") @db.Decimal(5, 2)
-  tripMemberId    String?     @map("trip_member_id")
+  tripMemberId    String      @map("trip_member_id")  // 现在是必需的
   expense         Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  tripMember      TripMember? @relation(fields: [tripMemberId], references: [id])
-  users           User?       @relation(fields: [user_id], references: [id])
+  tripMember      TripMember  @relation(fields: [tripMemberId], references: [id], onDelete: Cascade)
 
   @@unique([expenseId, tripMemberId])
-  @@unique([expenseId, user_id])
   @@map("expense_participants")
 }
 
 model Settlement {
-  id         String    @id @default(uuid())
-  tripId     String    @map("trip_id")
-  fromUserId String    @map("from_user_id")
-  toUserId   String    @map("to_user_id")
-  amount     Decimal   @db.Decimal(10, 2)
-  isSettled  Boolean   @default(false) @map("is_settled")
-  settledAt  DateTime? @map("settled_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  fromUser   User      @relation("SettlementFrom", fields: [fromUserId], references: [id])
-  toUser     User      @relation("SettlementTo", fields: [toUserId], references: [id])
-  trip       Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  id             String      @id @default(uuid())
+  tripId         String      @map("trip_id")
+  fromMemberId   String      @map("from_member_id")  // 改为使用memberId
+  toMemberId     String      @map("to_member_id")    // 改为使用memberId
+  amount         Decimal     @db.Decimal(10, 2)
+  isSettled      Boolean     @default(false) @map("is_settled")
+  settledAt      DateTime?   @map("settled_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  fromMember     TripMember  @relation("SettlementFrom", fields: [fromMemberId], references: [id])
+  toMember       TripMember  @relation("SettlementTo", fields: [toMemberId], references: [id])
+  trip           Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@map("settlements")
 }

@@ -1,5 +1,5 @@
 import api from './api'
-import { ApiResponse, Trip, TripMember, CreateTripData } from '@/types'
+import { ApiResponse, Trip, TripMember, CreateTripData, TripStatistics } from '@/types'
 import { transformTripData } from '@/utils/dataTransform'
 
 class TripService {
@@ -62,15 +62,15 @@ class TripService {
     throw new Error('添加成员失败')
   }
 
-  async removeMember(tripId: string, userId: string): Promise<void> {
-    const { data } = await api.delete<ApiResponse>(`/trips/${tripId}/members/${userId}`)
+  async removeMember(tripId: string, memberId: string): Promise<void> {
+    const { data } = await api.delete<ApiResponse>(`/trips/${tripId}/members/${memberId}`)
     if (!data.success) {
       throw new Error('移除成员失败')
     }
   }
 
-  async updateMemberRole(tripId: string, userId: string, role: 'admin' | 'member'): Promise<TripMember> {
-    const { data } = await api.put<ApiResponse<TripMember>>(`/trips/${tripId}/members/${userId}`, {
+  async updateMemberRole(tripId: string, memberId: string, role: 'admin' | 'member'): Promise<TripMember> {
+    const { data } = await api.put<ApiResponse<TripMember>>(`/trips/${tripId}/members/${memberId}`, {
       role,
     })
     if (data.success && data.data) {
@@ -87,8 +87,8 @@ class TripService {
     throw new Error('获取成员列表失败')
   }
 
-  async getTripStatistics(tripId: string): Promise<any> {
-    const { data } = await api.get<ApiResponse>(`/trips/${tripId}/statistics`)
+  async getTripStatistics(tripId: string): Promise<TripStatistics> {
+    const { data } = await api.get<ApiResponse<TripStatistics>>(`/trips/${tripId}/statistics`)
     if (data.success && data.data) {
       return transformTripData(data.data)
     }

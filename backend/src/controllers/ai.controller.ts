@@ -44,8 +44,9 @@ export class AIController {
       }
       
       // 验证用户权限
-      const trip = await tripService.getTripDetail(tripId, userId)
-      const userMember = trip.members?.find(m => m.userId === userId)
+      await tripService.getTripDetail(tripId, userId)  // 验证用户是否是成员
+      const members = await tripService.getTripMembers(tripId, userId)
+      const userMember = members.find((m: any) => m.userId === userId)
       
       if (userMember?.role !== 'admin') {
         return sendError(res, '403', '只有管理员可以添加成员', 403)

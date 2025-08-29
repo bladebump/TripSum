@@ -6,13 +6,12 @@ const prisma = new PrismaClient()
 interface CreateExpenseData {
   amount: number
   categoryId?: string
-  payerId: string  // 现在接收TripMember.id
+  payerId: string  // TripMember.id
   description?: string
   expenseDate: Date
   receiptUrl?: string
   participants?: Array<{
-    userId?: string  // 真实用户ID（可选）
-    memberId?: string  // TripMember.id（可选）
+    memberId: string  // TripMember.id（必需）
     shareAmount?: number
     sharePercentage?: number
   }>
@@ -39,6 +38,36 @@ export class ExpenseService {
     const isPaidFromFund = payerMember.role === 'admin'
 
     const participants = data.participants || []
+    
+    // 验证参与者的memberId是否有效
+    if (participants.length > 0) {
+      const memberIds = participants.map(p => p.memberId)
+      
+      const validMembers = await prisma.tripMember.findMany({
+        where: {
+          id: { in: memberIds },
+          tripId,
+          isActive: true
+        }
+      })
+      
+      if (validMembers.length !== memberIds.length) {
+        const validIds = validMembers.map(m => m.id)
+        const invalidIds = memberIds.filter(id => !validIds.includes(id))
+        throw new Error(`无效的成员ID: ${invalidIds.join(', ')}`)
+      }
+      
+      // 检查参与者数量是否合理（防止4人分摊变成1人）
+      const totalMembers = await prisma.tripMember.count({
+        where: { tripId, isActive: true }
+      })
+      
+      if (participants.length === 1 && totalMembers > 1) {
+        console.warn(`警告：只有1个参与者但行程有${totalMembers}个成员，可能存在解析错误`)
+        // 可以根据业务需求决定是否抛出错误
+        // throw new Error(`参与者数量异常：只有1个参与者但行程有${totalMembers}个成员`)
+      }
+    }
     
     if (participants.length === 0) {
       const members = await prisma.tripMember.findMany({
@@ -115,9 +144,12 @@ export class ExpenseService {
       },
     })
 
-    io.to(`trip-${tripId}`).emit('expense-created', expense)
+    // 添加参与者摘要信息
+    const enhancedExpense = this.addParticipantsSummary(expense)
 
-    return expense
+    io.to(`trip-${tripId}`).emit('expense-created', enhancedExpense)
+
+    return enhancedExpense
   }
 
   async getTripExpenses(
@@ -186,8 +218,11 @@ export class ExpenseService {
       prisma.expense.count({ where }),
     ])
 
+    // 为每个支出添加参与者摘要
+    const enhancedExpenses = expenses.map(expense => this.addParticipantsSummary(expense))
+
     return {
-      expenses,
+      expenses: enhancedExpenses,
       pagination: {
         page,
         limit,
@@ -227,7 +262,7 @@ export class ExpenseService {
 
     await this.checkTripMembership(expense.tripId, userId)
 
-    return expense
+    return this.addParticipantsSummary(expense)
   }
 
   async updateExpense(expenseId: string, userId: string, data: Partial<CreateExpenseData>) {
@@ -292,9 +327,11 @@ export class ExpenseService {
       },
     })
 
-    io.to(`trip-${expense.tripId}`).emit('expense-updated', updatedExpense)
+    const enhancedExpense = this.addParticipantsSummary(updatedExpense)
+    
+    io.to(`trip-${expense.tripId}`).emit('expense-updated', enhancedExpense)
 
-    return updatedExpense
+    return enhancedExpense
   }
 
   async deleteExpense(expenseId: string, userId: string) {
@@ -337,6 +374,66 @@ export class ExpenseService {
     }
 
     return member
+  }
+
+  private addParticipantsSummary(expense: any): any {
+    if (!expense.participants || expense.participants.length === 0) {
+      return expense
+    }
+
+    // 获取参与者名称列表
+    const participantNames = expense.participants.map((p: any) => {
+      if (p.tripMember?.isVirtual) {
+        return p.tripMember.displayName || '虚拟成员'
+      }
+      return p.tripMember?.user?.username || '未知用户'
+    })
+
+    // 计算每个参与者的实际分摊金额
+    const participantDetails = expense.participants.map((p: any) => {
+      const name = p.tripMember?.isVirtual 
+        ? (p.tripMember.displayName || '虚拟成员')
+        : (p.tripMember?.user?.username || '未知用户')
+      
+      let shareAmount = p.shareAmount?.toNumber ? p.shareAmount.toNumber() : p.shareAmount
+      if (!shareAmount && p.sharePercentage) {
+        const percentage = p.sharePercentage?.toNumber ? p.sharePercentage.toNumber() : p.sharePercentage
+        const amount = expense.amount?.toNumber ? expense.amount.toNumber() : expense.amount
+        shareAmount = (amount * percentage) / 100
+      }
+
+      return {
+        memberId: p.tripMemberId || p.tripMember?.id,
+        name,
+        shareAmount: shareAmount || 0,
+        isVirtual: p.tripMember?.isVirtual || false
+      }
+    })
+
+    // 计算平均分摊
+    const totalAmount = expense.amount?.toNumber ? expense.amount.toNumber() : expense.amount
+    const averageShare = participantDetails.length > 0 
+      ? totalAmount / participantDetails.length 
+      : 0
+
+    // 生成摘要信息
+    const participantsSummary = {
+      count: participantDetails.length,
+      names: participantNames.slice(0, 3), // 最多显示3个名字
+      hasMore: participantNames.length > 3,
+      averageShare: Math.round(averageShare * 100) / 100,
+      totalAmount,
+      details: participantDetails,
+      // 判断是否平均分摊
+      isEqualShare: participantDetails.every((p: any) => 
+        Math.abs(p.shareAmount - averageShare) < 0.01
+      )
+    }
+
+    return {
+      ...expense,
+      participantsSummary
+    }
   }
 
 }

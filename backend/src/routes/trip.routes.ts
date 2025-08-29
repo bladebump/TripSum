@@ -31,7 +31,7 @@ router.get('/:id/members', tripController.getTripMembers)
 router.put('/:id/members/:memberId/contribution', validate(updateContributionSchema), tripController.updateMemberContribution)
 router.patch('/:id/contributions', validate(batchUpdateContributionsSchema), tripController.batchUpdateContributions)
 
-router.delete('/:id/members/:userId', tripController.removeMember)
-router.put('/:id/members/:userId', validate(updateMemberRoleSchema), tripController.updateMemberRole)
+router.delete('/:id/members/:memberId', tripController.removeMember)
+router.put('/:id/members/:memberId', validate(updateMemberRoleSchema), tripController.updateMemberRole)
 
 export default router

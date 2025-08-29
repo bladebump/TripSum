@@ -25,16 +25,34 @@ export interface Expense {
   }
   category?: Category
   participants?: ExpenseParticipant[]
+  participantsSummary?: {
+    count: number
+    names: string[]
+    hasMore: boolean
+    averageShare: number
+    totalAmount: number
+    details: Array<{
+      memberId: string
+      name: string
+      shareAmount: number
+      isVirtual: boolean
+    }>
+    isEqualShare: boolean
+  }
 }
 
 export interface ExpenseParticipant {
   id: string
   expenseId: string
-  userId?: string  // Optional for virtual members
-  tripMemberId?: string  // TripMember.id for virtual members
+  tripMemberId: string  // 主要使用TripMember.id
   shareAmount?: number
   sharePercentage?: number
-  user?: User
+  tripMember?: {
+    id: string
+    isVirtual: boolean
+    displayName?: string
+    user?: User
+  }
 }
 
 export interface CreateExpenseData {
@@ -44,27 +62,27 @@ export interface CreateExpenseData {
   description?: string
   expenseDate: string
   participants?: Array<{
-    userId?: string  // Optional for virtual members
-    memberId: string  // TripMember.id (required)
+    memberId: string  // TripMember.id (必需)
     shareAmount?: number
     sharePercentage?: number
   }>
 }
 
 export interface BalanceCalculation {
-  userId: string
+  memberId: string  // 主要使用memberId
+  userId?: string   // 保留以兼容
   username: string
   contribution: number // 基金缴纳
   totalPaid: number // 实际垫付
   totalShare: number // 应该分摊
   balance: number // 最终余额
   owesTo: Array<{
-    userId: string
+    memberId: string
     username: string
     amount: number
   }>
   owedBy: Array<{
-    userId: string
+    memberId: string
     username: string
     amount: number
   }>
@@ -72,11 +90,11 @@ export interface BalanceCalculation {
 
 export interface Settlement {
   from: {
-    userId: string
+    memberId: string
     username: string
   }
   to: {
-    userId: string
+    memberId: string
     username: string
   }
   amount: number

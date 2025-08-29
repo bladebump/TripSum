@@ -90,8 +90,8 @@ export class TripController {
   async removeMember(req: AuthenticatedRequest, res: Response) {
     try {
       const removedBy = req.userId!
-      const { id, userId } = req.params
-      const result = await tripService.removeMember(id, userId, removedBy)
+      const { id, memberId } = req.params
+      const result = await tripService.removeMemberById(id, memberId, removedBy)
       sendSuccess(res, result)
     } catch (error: any) {
       sendError(res, '403', error.message, 403)
@@ -101,9 +101,9 @@ export class TripController {
   async updateMemberRole(req: AuthenticatedRequest, res: Response) {
     try {
       const updatedBy = req.userId!
-      const { id, userId } = req.params
+      const { id, memberId } = req.params
       const { role } = req.body
-      const member = await tripService.updateMemberRole(id, userId, role, updatedBy)
+      const member = await tripService.updateMemberRoleById(id, memberId, role, updatedBy)
       sendSuccess(res, member)
     } catch (error: any) {
       sendError(res, '403', error.message, 403)

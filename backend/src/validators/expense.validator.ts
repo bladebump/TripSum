@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
 const participantSchema = Joi.object({
-  userId: Joi.string().uuid().required(),
+  memberId: Joi.string().uuid().required(),  // 必需，所有成员都用memberId
   shareAmount: Joi.number().positive(),
   sharePercentage: Joi.number().min(0).max(100),
 }).xor('shareAmount', 'sharePercentage')

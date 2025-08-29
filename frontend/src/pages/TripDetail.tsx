@@ -19,6 +19,7 @@ import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatDate, formatCurrency, formatDateTime } from '@/utils/format'
+import { isCurrentUserAdmin } from '@/utils/member'
 import Loading from '@/components/common/Loading'
 import Empty from '@/components/common/Empty'
 import './TripDetail.scss'
@@ -32,6 +33,8 @@ const TripDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('expenses')
   const [loading, setLoading] = useState(true)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null)
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) {
@@ -42,10 +45,10 @@ const TripDetail: React.FC = () => {
   const loadTripData = async () => {
     try {
       setLoading(true)
+      // 只调用必要的API，fetchTripDetail会同时获取统计数据和成员信息
       await Promise.all([
         fetchTripDetail(id!),
-        fetchExpenses(id!),
-        fetchMembers(id!)
+        fetchExpenses(id!)  // 仅在需要详细支出列表时保留
       ])
     } catch (error) {
       Toast.show('加载失败')
@@ -96,7 +99,7 @@ const TripDetail: React.FC = () => {
     return <Loading text="正在删除行程..." />
   }
 
-  const isAdmin = members.find(m => m.userId === user?.id)?.role === 'admin'
+  const isAdmin = isCurrentUserAdmin(members, user?.id)
 
   return (
     <div className="trip-detail-page">
@@ -116,7 +119,9 @@ const TripDetail: React.FC = () => {
           )}
           <div className="summary-stats">
             <div className="stat-item">
-              <div className="stat-value">{formatCurrency(currentTrip.initialFund || 0)}</div>
+              <div className="stat-value">
+                {formatCurrency(currentTrip.statistics?.fundStatus?.totalContributions || 0)}
+              </div>
               <div className="stat-label">基金池</div>
             </div>
             <div className="stat-item">
@@ -173,6 +178,27 @@ const TripDetail: React.FC = () => {
                         <div>
                           <div>{expense.payerMember?.isVirtual ? expense.payerMember?.displayName : expense.payerMember?.user?.username} 付款 · {formatDateTime(expense.expenseDate)}</div>
                           {expense.description && <div className="expense-desc">{expense.description}</div>}
+                          {expense.participantsSummary && (
+                            <div className="expense-participants" style={{ 
+                              marginTop: 4, 
+                              fontSize: 12, 
+                              color: '#666',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}>
+                              <span>👥</span>
+                              {expense.participantsSummary.isEqualShare ? (
+                                <span>{expense.participantsSummary.count}人参与，人均{formatCurrency(expense.participantsSummary.averageShare)}</span>
+                              ) : (
+                                <span>
+                                  {expense.participantsSummary.names.slice(0, 3).join('、')}
+                                  {expense.participantsSummary.hasMore && '等'}
+                                  {expense.participantsSummary.count}人参与
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       }
                       extra={
@@ -180,7 +206,47 @@ const TripDetail: React.FC = () => {
                           {formatCurrency(expense.amount)}
                         </div>
                       }
+                      onClick={() => setExpandedExpenseId(expandedExpenseId === expense.id ? null : expense.id)}
                     />
+                    {expandedExpenseId === expense.id && expense.participantsSummary?.details && (
+                      <div style={{
+                        padding: '12px 16px',
+                        backgroundColor: '#f7f7f7',
+                        borderTop: '1px solid #eee'
+                      }}>
+                        <div style={{ fontSize: 14, color: '#333', marginBottom: 8, fontWeight: 500 }}>
+                          参与者详情：
+                        </div>
+                        {expense.participantsSummary.details.map((participant: any) => (
+                          <div key={participant.memberId} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '4px 0'
+                          }}>
+                            <span style={{ fontSize: 13, color: '#666' }}>
+                              {participant.isVirtual && '👤 '}
+                              {participant.name}
+                            </span>
+                            <span style={{ fontSize: 13, color: '#ff6b6b', fontWeight: 500 }}>
+                              {formatCurrency(participant.shareAmount)}
+                            </span>
+                          </div>
+                        ))}
+                        {expense.isPaidFromFund && (
+                          <div style={{
+                            marginTop: 8,
+                            padding: '4px 8px',
+                            backgroundColor: '#e6f7ff',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            color: '#1890ff'
+                          }}>
+                            💰 此支出从基金池支付
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </SwipeAction>
                 ))}
               </List>
@@ -246,8 +312,8 @@ const TripDetail: React.FC = () => {
           <div className="tab-content">
             <List>
               {members.map(member => (
+                <React.Fragment key={member.id}>
                 <List.Item
-                  key={member.id}
                   prefix={
                     <div className="member-avatar">
                       {member.isVirtual 
@@ -268,25 +334,91 @@ const TripDetail: React.FC = () => {
                   extra={
                     <div>
                       {member.role === 'admin' && <Tag color="primary">管理员</Tag>}
-                      {member.balance !== undefined && (
-                        <div className={`member-balance ${member.balance > 0 ? 'positive' : member.balance < 0 ? 'negative' : ''}`}>
-                          <div>
-                            {member.balance > 0 ? '剩余' : member.balance < 0 ? '欠款' : '已清'}
-                          </div>
-                          {member.balance !== 0 && (
-                            <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>
-                              {formatCurrency(Math.abs(member.balance))}
+                      {(() => {
+                        const memberStatus = currentTrip.statistics?.membersFinancialStatus?.find(
+                          (m: any) => m.memberId === member.id
+                        )
+                        const balance = memberStatus?.balance || 0
+                        return balance !== undefined ? (
+                          <div className={`member-balance ${balance > 0 ? 'positive' : balance < 0 ? 'negative' : ''}`}>
+                            <div>
+                              {balance > 0 ? '应收' : balance < 0 ? '应付' : '已清'}
                             </div>
-                          )}
-                        </div>
-                      )}
+                            {balance !== 0 && (
+                              <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+                                {formatCurrency(Math.abs(balance))}
+                              </div>
+                            )}
+                          </div>
+                        ) : null
+                      })()}
                     </div>
                   }
+                  onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
                 >
                   {member.isVirtual 
                     ? `${member.displayName} (虚拟)` 
                     : member.user?.username}
                 </List.Item>
+                {expandedMemberId === member.id && (() => {
+                  const memberStatus = currentTrip.statistics?.membersFinancialStatus?.find(
+                    (m: any) => m.memberId === member.id
+                  )
+                  return memberStatus ? (
+                    <div style={{
+                      padding: '12px 16px',
+                      backgroundColor: '#f7f7f7',
+                      borderTop: '1px solid #eee',
+                      borderBottom: '1px solid #eee'
+                    }}>
+                      <div style={{ fontSize: 14, color: '#333', marginBottom: 12, fontWeight: 500 }}>
+                        财务明细：
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 13, color: '#666' }}>💰 基金缴纳</span>
+                          <span style={{ fontSize: 13, color: '#52c41a', fontWeight: 500 }}>
+                            +{formatCurrency(memberStatus.contribution)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 13, color: '#666' }}>💳 垫付总额</span>
+                          <span style={{ fontSize: 13, color: '#1890ff', fontWeight: 500 }}>
+                            +{formatCurrency(memberStatus.totalPaid)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 13, color: '#666' }}>📊 应该分摊</span>
+                          <span style={{ fontSize: 13, color: '#ff6b6b', fontWeight: 500 }}>
+                            -{formatCurrency(memberStatus.totalShare)}
+                          </span>
+                        </div>
+                        <div style={{ 
+                          borderTop: '1px solid #e0e0e0', 
+                          paddingTop: 8, 
+                          marginTop: 8,
+                          display: 'flex',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span style={{ fontSize: 14, color: '#333', fontWeight: 500 }}>
+                            余额 (缴纳+垫付-分摊)
+                          </span>
+                          <span style={{ 
+                            fontSize: 16, 
+                            color: memberStatus.balance > 0 ? '#52c41a' : memberStatus.balance < 0 ? '#ff6b6b' : '#999',
+                            fontWeight: 600 
+                          }}>
+                            {memberStatus.balance > 0 ? '+' : ''}{formatCurrency(memberStatus.balance)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                          参与 {memberStatus.expenseCount} 笔支出，垫付 {memberStatus.paidCount} 笔
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                })()}
+              </React.Fragment>
               ))}
             </List>
 

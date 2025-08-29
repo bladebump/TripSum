@@ -19,6 +19,7 @@ import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useAuthStore } from '@/stores/auth.store'
 import aiService from '@/services/ai.service'
+import { getCurrentMemberId } from '@/utils/member'
 import { formatDate } from '@/utils/format'
 import { validateAmount } from '@/utils/validation'
 import './ExpenseForm.scss'
@@ -26,7 +27,7 @@ import './ExpenseForm.scss'
 const ExpenseForm: React.FC = () => {
   const { id: tripId, expenseId } = useParams<{ id: string; expenseId?: string }>()
   const navigate = useNavigate()
-  const { currentTrip, members, fetchTripDetail, fetchMembers } = useTripStore()
+  const { currentTrip, members, fetchTripDetail } = useTripStore()
   const { createExpense, updateExpense } = useExpenseStore()
   const { user } = useAuthStore()
   const [form] = Form.useForm()
@@ -45,10 +46,8 @@ const ExpenseForm: React.FC = () => {
 
   const loadData = async () => {
     try {
-      await Promise.all([
-        fetchTripDetail(tripId!),
-        fetchMembers(tripId!)
-      ])
+      // fetchTripDetail 现在会同时获取成员信息
+      await fetchTripDetail(tripId!)
       // 默认选中所有成员
       setSelectedMembers(members.map(m => m.id))
     } catch (error) {
@@ -213,7 +212,7 @@ const ExpenseForm: React.FC = () => {
             name="payerId"
             label="付款人"
             rules={[{ required: true, message: '请选择付款人' }]}
-            initialValue={members.find(m => m.userId === user?.id)?.id}
+            initialValue={getCurrentMemberId(members, user?.id)}
           >
             <Selector
               columns={2}

@@ -41,7 +41,8 @@ export class CalculationService {
         : (member.user?.username || 'Unknown')
       
       balanceMap.set(memberId, {
-        userId: memberId, // 实际上是 memberId，但保持接口兼容
+        memberId: memberId, // 统一使用memberId
+        userId: memberId, // 保持接口兼容，逐步废弃
         username: username,
         contribution: member.contribution.toNumber(), // 基金缴纳
         totalPaid: 0, // 实际垫付
@@ -108,13 +109,15 @@ export class CalculationService {
         const amount = Math.min(remainingDebt, creditor.balance)
         
         debtor.owesTo.push({
-          userId: creditor.userId,
+          memberId: creditor.memberId,  // 直接使用memberId
+          userId: creditor.memberId,    // 兼容字段
           username: creditor.username,
           amount: Math.round(amount * 100) / 100,
         })
 
         creditor.owedBy.push({
-          userId: debtor.userId,
+          memberId: debtor.memberId,   // 直接使用memberId  
+          userId: debtor.memberId,      // 兼容字段
           username: debtor.username,
           amount: Math.round(amount * 100) / 100,
         })
@@ -133,11 +136,13 @@ export class CalculationService {
       for (const debt of balance.owesTo) {
         settlements.push({
           from: {
-            userId: balance.userId,
+            memberId: balance.memberId,  // 直接使用memberId
+            userId: balance.memberId,     // 兼容字段
             username: balance.username,
           },
           to: {
-            userId: debt.userId,
+            memberId: debt.memberId,     // 直接使用memberId
+            userId: debt.memberId,        // 兼容字段
             username: debt.username,
           },
           amount: debt.amount,
@@ -149,15 +154,15 @@ export class CalculationService {
   }
 
   async createSettlements(tripId: string, settlements: Array<{
-    fromUserId: string
-    toUserId: string
+    fromMemberId: string
+    toMemberId: string
     amount: number
   }>) {
     const createdSettlements = await prisma.settlement.createMany({
       data: settlements.map((s) => ({
         tripId,
-        fromUserId: s.fromUserId,
-        toUserId: s.toUserId,
+        fromMemberId: s.fromMemberId,
+        toMemberId: s.toMemberId,
         amount: s.amount,
       })),
     })
@@ -178,11 +183,25 @@ export class CalculationService {
   }
 
   async getTripStatistics(tripId: string) {
-    const [expenses, categories, trip] = await Promise.all([
+    const [expenses, categories, trip, balances] = await Promise.all([
       prisma.expense.findMany({
         where: { tripId },
         include: {
           category: true,
+          participants: {
+            include: {
+              tripMember: {
+                include: {
+                  user: true
+                }
+              }
+            }
+          },
+          payerMember: {
+            include: {
+              user: true
+            }
+          }
         },
       }),
       prisma.category.findMany({
@@ -192,10 +211,14 @@ export class CalculationService {
         where: { id: tripId },
         include: {
           members: {
-            where: { isActive: true }
+            where: { isActive: true },
+            include: {
+              user: true
+            }
           }
         }
-      })
+      }),
+      this.calculateBalances(tripId) // 获取余额计算结果
     ])
 
     const totalExpenses = expenses.reduce(
@@ -218,6 +241,32 @@ export class CalculationService {
       (sum, exp) => sum + exp.amount.toNumber(),
       0
     )
+
+    // 构建成员财务状态映射
+    const membersFinancialStatus = trip?.members.map(member => {
+      const balance = balances.find(b => (b.memberId || b.userId) === member.id)
+      return {
+        memberId: member.id,
+        userId: member.userId,
+        username: member.isVirtual 
+          ? (member.displayName || '虚拟成员')
+          : (member.user?.username || 'Unknown'),
+        isVirtual: member.isVirtual,
+        role: member.role,
+        contribution: member.contribution.toNumber(),
+        totalPaid: balance?.totalPaid || 0,
+        totalShare: balance?.totalShare || 0,
+        balance: balance?.balance || 0,
+        // 参与的支出数量
+        expenseCount: expenses.filter(e => 
+          e.participants.some(p => p.tripMemberId === member.id)
+        ).length,
+        // 垫付的支出数量
+        paidCount: expenses.filter(e => 
+          e.payerMemberId === member.id && !e.isPaidFromFund
+        ).length
+      }
+    }) || []
 
     const categoryMap = new Map<string, { name: string; amount: number }>()
     
@@ -262,9 +311,7 @@ export class CalculationService {
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    const members = await prisma.tripMember.count({
-      where: { tripId, isActive: true },
-    })
+    const members = trip?.members.length || 0
 
     return {
       totalExpenses,
@@ -276,8 +323,14 @@ export class CalculationService {
         totalContributions,      // 总缴纳
         fundExpenses,           // 基金池支出
         memberPaidExpenses,     // 成员垫付
-        currentBalance: totalContributions - fundExpenses - memberPaidExpenses  // 基金池余额
-      }
+        currentBalance: totalContributions - fundExpenses,  // 基金池余额（只减去基金池支出）
+        fundUtilization: totalContributions > 0 
+          ? (fundExpenses / totalContributions) * 100 
+          : 0  // 基金池使用率
+      },
+      membersFinancialStatus,  // 新增：成员财务状态
+      settlements: await this.calculateSettlement(tripId), // 结算建议
+      lastUpdated: new Date()  // 最后更新时间
     }
   }
 }

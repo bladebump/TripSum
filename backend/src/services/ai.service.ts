@@ -122,6 +122,7 @@ export class AIService {
           "participants": [
             {
               "username": "参与者名字",
+              "memberId": "成员ID",
               "shareAmount": 应分摊金额（正数）
             }
           ],
@@ -206,14 +207,14 @@ export class AIService {
         }
       }
 
-      // 匹配参与者ID
+      // 匹配参与者ID - 统一使用memberId
       if (result.participants && result.participants.length > 0) {
         for (const participant of result.participants) {
           const member = members.find(
             (m) => m.name && m.name.toLowerCase() === participant.username.toLowerCase()
           )
           if (member) {
-            participant.userId = member.id
+            participant.memberId = member.id  // 统一使用memberId
           }
         }
       }
@@ -229,7 +230,7 @@ export class AIService {
         // 如果没有明确的参与者列表，使用排除后的成员列表
         if (!result.participants || result.participants.length === 0) {
           result.participants = participantMembers.map(m => ({
-            userId: m.id,
+            memberId: m.id,  // 统一使用memberId
             username: m.name
           }))
         }
@@ -307,7 +308,7 @@ export class AIService {
   ): Promise<{
     splitMethod: 'equal' | 'custom' | 'percentage'
     participants: Array<{
-      userId: string
+      memberId: string  // 改为使用memberId
       username: string
       shareAmount?: number
       sharePercentage?: number
@@ -321,8 +322,10 @@ export class AIService {
       })
 
       const memberInfo = members
-        .filter((m) => m.user) // 过滤掉虚拟成员
-        .map((m) => `${m.user!.username} (ID: ${m.userId})`)
+        .map((m) => {
+          const name = m.isVirtual ? (m.displayName || '虚拟成员') : m.user?.username
+          return `${name} (ID: ${m.id})`  // 使用TripMember.id
+        })
         .join(', ')
 
       const prompt = `
@@ -337,8 +340,8 @@ export class AIService {
           "splitMethod": "equal/custom/percentage",
           "participants": [
             {
-              "userId": "用户ID",
-              "username": "用户名",
+              "memberId": "成员ID",
+              "username": "成员名称",
               "shareAmount": 分摊金额（custom模式）,
               "sharePercentage": 分摊百分比（percentage模式）,
               "reason": "分摊原因说明"
@@ -373,13 +376,11 @@ export class AIService {
       if (!result.participants || result.participants.length === 0) {
         return {
           splitMethod: 'equal',
-          participants: members
-            .filter((m) => m.user && m.userId) // 只包含有效用户
-            .map((m) => ({
-              userId: m.userId!,
-              username: m.user!.username,
-              shareAmount: amount / members.filter(m => m.user && m.userId).length,
-            })),
+          participants: members.map((m) => ({
+            memberId: m.id,  // 使用TripMember.id
+            username: m.isVirtual ? (m.displayName || '虚拟成员') : m.user?.username || '未知',
+            shareAmount: amount / members.length,  // 所有成员平均分摊
+          })),
         }
       }
 
@@ -393,13 +394,11 @@ export class AIService {
 
       return {
         splitMethod: 'equal',
-        participants: members
-          .filter((m) => m.user && m.userId) // 只包含有效用户
-          .map((m) => ({
-            userId: m.userId!,
-            username: m.user!.username,
-            shareAmount: amount / members.filter(m => m.user && m.userId).length,
-          })),
+        participants: members.map((m) => ({
+          memberId: m.id,  // 使用TripMember.id
+          username: m.isVirtual ? (m.displayName || '虚拟成员') : m.user?.username || '未知',
+          shareAmount: amount / members.length,  // 所有成员平均分摊
+        })),
       }
     }
   }

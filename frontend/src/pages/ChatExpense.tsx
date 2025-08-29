@@ -4,6 +4,7 @@ import {
   NavBar,
   Dialog,
   Form,
+  Input,
   Selector,
   DatePicker,
   Checkbox,
@@ -16,11 +17,12 @@ import { MemberConfirm, MixedIntentConfirm, IncomeConfirm } from '@/components/c
 import { ChatMessages, ChatInput, TripSelector } from '@/components/chat'
 import { useAIChat, useIntentHandlers, useExpenseForm } from '@/hooks/chat'
 import './ChatExpense.scss'
+import '@/components/confirmation/ConfirmDialog.scss'
 
 const ChatExpense: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { trips, members, fetchTrips, fetchTripDetail, fetchMembers } = useTripStore()
+  const { trips, members, fetchTrips, fetchTripDetail } = useTripStore()
   const {} = useAuthStore()
   
   const [inputValue, setInputValue] = useState('')
@@ -84,8 +86,8 @@ const ChatExpense: React.FC = () => {
 
   const loadData = async () => {
     try {
+      // fetchTripDetail 现在会同时获取成员信息
       await fetchTripDetail(tripId!)
-      await fetchMembers(tripId!)
     } catch (error) {
       console.error('加载数据失败:', error)
       Toast.show('加载数据失败')
@@ -156,24 +158,76 @@ const ChatExpense: React.FC = () => {
     return (
       <Dialog
         visible={showConfirmDialog}
-        title="确认消费信息"
+        className="confirm-dialog"
+        title={
+          <div style={{
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%)',
+            padding: '20px',
+            margin: '-16px -16px 0',
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: 600,
+            textAlign: 'center',
+            borderRadius: '12px 12px 0 0'
+          }}>
+            💳 确认消费信息
+          </div>
+        }
         content={
+          <div className="confirm-dialog-content" style={{ padding: '20px 0' }}>
           <Form form={form} layout="vertical">
-            <Form.Item 
-              name="amount" 
-              label="金额" 
-              initialValue={parsedData?.amount?.toString()}
-              rules={[{ required: true, message: '请输入金额' }]}
-            >
-              <input type="number" placeholder="请输入金额" />
-            </Form.Item>
+            <div style={{
+              marginBottom: '20px',
+              padding: '16px',
+              background: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
+                💰 消费金额
+              </div>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute',
+                  left: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '20px',
+                  color: '#ff6b6b',
+                  fontWeight: 600,
+                  zIndex: 1
+                }}>¥</span>
+                <Form.Item 
+                  name="amount" 
+                  initialValue={parsedData?.amount?.toString()}
+                  rules={[{ required: true, message: '请输入金额' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input 
+                    type="number" 
+                    placeholder="0.00"
+                    style={{
+                      paddingLeft: '40px',
+                      fontSize: '24px',
+                      fontWeight: 600,
+                      color: '#ff6b6b',
+                      textAlign: 'center',
+                      height: '56px',
+                      background: '#fff5f5',
+                      border: '2px solid #ffebeb',
+                      borderRadius: '12px'
+                    }}
+                  />
+                </Form.Item>
+              </div>
+            </div>
             
             <Form.Item 
               name="description" 
               label="描述" 
               initialValue={parsedData?.description}
             >
-              <input type="text" placeholder="请输入描述" />
+              <Input placeholder="请输入描述" />
             </Form.Item>
             
             <Form.Item 
@@ -217,6 +271,7 @@ const ChatExpense: React.FC = () => {
               </Checkbox.Group>
             </Form.Item>
           </Form>
+          </div>
         }
         closeOnAction
         actions={[
@@ -251,7 +306,7 @@ const ChatExpense: React.FC = () => {
       />
       
       {/* 消息列表 */}
-      <ChatMessages messages={messages} />
+      <ChatMessages messages={messages} loading={loading} />
       
       {/* 输入框 */}
       <ChatInput
@@ -271,7 +326,10 @@ const ChatExpense: React.FC = () => {
         title="添加新成员"
         members={currentParseResult?.data?.members || []}
         onClose={() => setShowMemberConfirm(false)}
-        onConfirm={handleMemberConfirm}
+        onConfirm={async (memberNames) => {
+          await handleMemberConfirm(memberNames)
+          setShowMemberConfirm(false)  // 添加成功后关闭弹窗
+        }}
       />
       
       {/* 混合意图确认对话框 */}

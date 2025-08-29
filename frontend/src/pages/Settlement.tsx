@@ -42,8 +42,8 @@ const Settlement: React.FC = () => {
         try {
           setSettling(true)
           const settlements = settlementSummary.settlements.map(s => ({
-            fromUserId: s.from.userId,
-            toUserId: s.to.userId,
+            fromMemberId: s.from.memberId,  // 使用memberId
+            toMemberId: s.to.memberId,      // 使用memberId
             amount: s.amount
           }))
           await createSettlements(id!, settlements)

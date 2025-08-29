@@ -25,7 +25,7 @@ interface TripState {
   deleteTrip: (tripId: string) => Promise<void>
   fetchMembers: (tripId: string) => Promise<void>
   addMember: (tripId: string, userId: string, role?: 'admin' | 'member') => Promise<void>
-  removeMember: (tripId: string, userId: string) => Promise<void>
+  removeMember: (tripId: string, memberId: string) => Promise<void>
 }
 
 export const useTripStore = create<TripState>((set, get) => ({
@@ -71,8 +71,40 @@ export const useTripStore = create<TripState>((set, get) => ({
   fetchTripDetail: async (tripId) => {
     set({ loading: true })
     try {
-      const trip = await tripService.getTripDetail(tripId)
-      set({ currentTrip: trip, loading: false })
+      // 并行调用基础信息和统计信息API
+      const [trip, statistics] = await Promise.all([
+        tripService.getTripDetail(tripId),
+        tripService.getTripStatistics(tripId)
+      ])
+      
+      // 合并统计信息到trip对象
+      const tripWithStatistics = {
+        ...trip,
+        statistics
+      }
+      
+      // 从统计数据中提取成员信息并同步到store
+      const membersFromStats = statistics.membersFinancialStatus?.map((member: any) => ({
+        id: member.memberId,
+        userId: member.userId,
+        username: member.username,
+        isVirtual: member.isVirtual,
+        displayName: member.isVirtual ? member.username : undefined,
+        role: member.role,
+        contribution: member.contribution,
+        balance: member.balance,
+        totalPaid: member.totalPaid,
+        totalShare: member.totalShare,
+        isActive: true,
+        tripId,
+        user: member.isVirtual ? null : { username: member.username }
+      })) || []
+      
+      set({ 
+        currentTrip: tripWithStatistics, 
+        members: membersFromStats,
+        loading: false 
+      })
     } catch (error) {
       set({ loading: false })
       throw error
@@ -151,11 +183,11 @@ export const useTripStore = create<TripState>((set, get) => ({
     }
   },
 
-  removeMember: async (tripId, userId) => {
+  removeMember: async (tripId, memberId) => {
     try {
-      await tripService.removeMember(tripId, userId)
+      await tripService.removeMember(tripId, memberId)
       const { members } = get()
-      set({ members: members.filter(m => m.userId !== userId) })
+      set({ members: members.filter(m => m.id !== memberId) })
     } catch (error) {
       throw error
     }

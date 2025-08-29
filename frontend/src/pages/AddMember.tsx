@@ -15,6 +15,7 @@ import { AddOutline, DeleteOutline } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
 import { useAuthStore } from '@/stores/auth.store'
 import aiService from '@/services/ai.service'
+import { isCurrentUserAdmin } from '@/utils/member'
 import Loading from '@/components/common/Loading'
 import './AddMember.scss'
 
@@ -27,7 +28,7 @@ interface ParsedMember {
 const AddMember: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { currentTrip, members, fetchMembers } = useTripStore()
+  const { currentTrip, members, fetchTripDetail, fetchMembers } = useTripStore()
   const { user } = useAuthStore()
   
   const [activeTab, setActiveTab] = useState('manual')
@@ -39,11 +40,12 @@ const AddMember: React.FC = () => {
 
   useEffect(() => {
     if (tripId && !currentTrip) {
-      fetchMembers(tripId)
+      // 使用 fetchTripDetail 替代，它会同时获取成员信息
+      fetchTripDetail(tripId)
     }
-  }, [tripId, currentTrip, fetchMembers])
+  }, [tripId, currentTrip, fetchTripDetail])
 
-  const isAdmin = members.find(m => m.userId === user?.id)?.role === 'admin'
+  const isAdmin = isCurrentUserAdmin(members, user?.id)
 
   if (!isAdmin) {
     return (
@@ -156,8 +158,8 @@ const AddMember: React.FC = () => {
         
         Toast.show(message)
         
-        // 刷新成员列表
-        await fetchMembers(tripId!)
+        // 刷新行程和成员数据
+        await fetchTripDetail(tripId!)
         
         // 清空输入
         setManualMembers([''])
