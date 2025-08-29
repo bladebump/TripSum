@@ -238,7 +238,7 @@ const ChatExpense: React.FC = () => {
             >
               <Selector
                 options={members.map(m => ({
-                  label: m.isVirtual ? m.displayName : m.user?.username,
+                  label: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || '未知用户'),
                   value: m.id
                 }))}
               />
@@ -264,7 +264,7 @@ const ChatExpense: React.FC = () => {
                 <Space wrap>
                   {members.map(member => (
                     <Checkbox key={member.id} value={member.id}>
-                      {member.isVirtual ? member.displayName : member.user?.username}
+                      {member.isVirtual ? (member.displayName || '虚拟成员') : (member.user?.username || '未知用户')}
                     </Checkbox>
                   ))}
                 </Space>

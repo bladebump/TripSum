@@ -197,7 +197,7 @@ const AddMember: React.FC = () => {
         <div className="member-tags">
           {members.map(member => (
             <Tag key={member.id} color="primary">
-              {member.isVirtual ? member.displayName : member.user?.username}
+              {member.isVirtual ? (member.displayName || '虚拟成员') : (member.user?.username || '未知用户')}
               {member.role === 'admin' && ' (管理员)'}
             </Tag>
           ))}

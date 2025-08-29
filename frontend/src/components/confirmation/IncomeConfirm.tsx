@@ -132,7 +132,7 @@ const IncomeConfirm: React.FC<IncomeConfirmProps> = ({
         console.log('找到的成员:', member)
         return {
           userId: memberId,
-          username: member?.isVirtual ? member.displayName : member?.user?.username,
+          username: member?.isVirtual ? (member.displayName || '虚拟成员') : (member?.user?.username || '未知用户'),
           amount: incomeMode === 'uniform' ? uniformAmount : (individualAmounts[memberId] || 0)
         }
       })
@@ -225,7 +225,7 @@ const IncomeConfirm: React.FC<IncomeConfirmProps> = ({
               <Space direction="vertical">
                 {members.map(member => {
                   const memberId = member.id  // 统一使用member.id
-                  const memberName = member.isVirtual ? member.displayName : member.user?.username
+                  const memberName = member.isVirtual ? (member.displayName || '虚拟成员') : (member.user?.username || '未知用户')
                   const amount = individualAmounts[memberId] || 0
                   
                   return (

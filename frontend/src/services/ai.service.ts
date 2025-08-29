@@ -44,7 +44,7 @@ class AIService {
       members: members?.map(m => ({
         id: m.id,  // TripMember.id
         userId: m.userId,  // User.id (真实用户)
-        name: m.isVirtual ? m.displayName : m.user?.username,
+        name: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || '未知用户'),
         isVirtual: m.isVirtual || false,
         role: m.role  // 添加role字段用于识别管理员
       }))

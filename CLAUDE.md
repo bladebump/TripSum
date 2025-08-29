@@ -237,18 +237,19 @@ Frontend uses Vite environment variables:
 - ✅ Fixed member confirmation dialog not closing
 - ✅ Added member utility functions for consistent operations
 
-### v1.4.0 (2024-12-28)
+### v1.4.0 (2025-8-28)
 - ✅ Fixed fund contribution parsing (positive amounts)
 - ✅ Unified virtual and real member handling
 - ✅ API consolidation and cleanup
 - ✅ Cumulative fund contribution support
 
-### v1.3.0 (2024-12-27)
+### v1.3.0 (2025-8-27)
 - ✨ Implemented fund pool payment system
 - ✨ Added AI calculator integration
 - ✨ Multi-trip expense recording
 
-### v1.2.0 (2024-12-26)
+### v1.2.0 (2025-8-26)
 - ✨ Virtual member support
 - ✨ AI intent recognition architecture
 - ✨ Enhanced UI/UX with direct action buttons
+- 测试不要用mock的服务，尽量用真实服务

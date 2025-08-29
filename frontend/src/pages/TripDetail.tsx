@@ -176,7 +176,7 @@ const TripDetail: React.FC = () => {
                       }
                       description={
                         <div>
-                          <div>{expense.payerMember?.isVirtual ? expense.payerMember?.displayName : expense.payerMember?.user?.username} 付款 · {formatDateTime(expense.expenseDate)}</div>
+                          <div>{expense.payerMember?.isVirtual ? (expense.payerMember?.displayName || '虚拟成员') : (expense.payerMember?.user?.username || '未知用户')} 付款 · {formatDateTime(expense.expenseDate)}</div>
                           {expense.description && <div className="expense-desc">{expense.description}</div>}
                           {expense.participantsSummary && (
                             <div className="expense-participants" style={{ 
@@ -289,7 +289,7 @@ const TripDetail: React.FC = () => {
                         </div>
                       }
                     >
-                      {member.isVirtual ? member.displayName : member.user?.username}
+                      {member.isVirtual ? (member.displayName || '虚拟成员') : (member.user?.username || '未知用户')}
                     </List.Item>
                   ))}
               </List>
@@ -357,8 +357,8 @@ const TripDetail: React.FC = () => {
                   onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
                 >
                   {member.isVirtual 
-                    ? `${member.displayName} (虚拟)` 
-                    : member.user?.username}
+                    ? `${member.displayName || '虚拟成员'} (虚拟)` 
+                    : (member.user?.username || '未知用户')}
                 </List.Item>
                 {expandedMemberId === member.id && (() => {
                   const memberStatus = currentTrip.statistics?.membersFinancialStatus?.find(

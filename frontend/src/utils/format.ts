@@ -5,8 +5,11 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.locale('zh-cn')
 dayjs.extend(relativeTime)
 
-export const formatDate = (date: string | Date, format = 'YYYY-MM-DD'): string => {
-  return dayjs(date).format(format)
+export const formatDate = (date: string | Date | null | undefined, format = 'YYYY-MM-DD'): string => {
+  if (!date) return ''
+  const parsed = dayjs(date)
+  if (!parsed.isValid()) return ''
+  return parsed.format(format)
 }
 
 export const formatDateTime = (date: string | Date): string => {
@@ -17,10 +20,22 @@ export const formatRelativeTime = (date: string | Date): string => {
   return dayjs(date).fromNow()
 }
 
-export const formatCurrency = (amount: number | string, currency = '¥'): string => {
+export const formatCurrency = (amount: number | string | null | undefined, currency = 'CNY'): string => {
+  if (amount === null || amount === undefined) return '¥0.00'
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
-  if (isNaN(numAmount)) return `${currency}0.00`
-  return `${currency}${numAmount.toFixed(2)}`
+  if (isNaN(numAmount)) return '¥0.00'
+  
+  // 根据货币类型选择符号
+  const currencySymbol = {
+    'CNY': '¥',
+    'USD': '$',
+    'EUR': '€',
+    '¥': '¥'
+  }[currency] || currency
+  
+  // 添加千分位分隔符
+  const formatted = Math.abs(numAmount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return numAmount < 0 ? `-${currencySymbol}${formatted}` : `${currencySymbol}${formatted}`
 }
 
 export const formatPercentage = (value: number): string => {
@@ -57,7 +72,7 @@ export const isDateInRange = (date: string, startDate: string, endDate?: string)
          (target.isBefore(end) || target.isSame(end))
 }
 
-export const getTripStatus = (startDate: string, endDate?: string): 'upcoming' | 'active' | 'completed' => {
+export const getTripStatus = (startDate: string | Date, endDate?: string | Date | null): 'upcoming' | 'ongoing' | 'completed' => {
   const now = dayjs()
   const start = dayjs(startDate)
   
@@ -66,7 +81,7 @@ export const getTripStatus = (startDate: string, endDate?: string): 'upcoming' |
   }
   
   if (!endDate) {
-    return 'active'
+    return 'ongoing'
   }
   
   const end = dayjs(endDate)
@@ -74,23 +89,27 @@ export const getTripStatus = (startDate: string, endDate?: string): 'upcoming' |
     return 'completed'
   }
   
-  return 'active'
+  return 'ongoing'
 }
 
-export const getTripStatusText = (status: 'upcoming' | 'active' | 'completed'): string => {
-  const statusMap = {
-    upcoming: '即将开始',
-    active: '进行中',
-    completed: '已结束'
+export const getTripStatusText = (status: 'upcoming' | 'ongoing' | 'completed' | string): string => {
+  const statusMap: Record<string, string> = {
+    upcoming: '未开始',
+    ongoing: '进行中',
+    completed: '已结束',
+    // 兼容旧版本
+    active: '进行中'
   }
-  return statusMap[status]
+  return statusMap[status] || '未知'
 }
 
-export const getTripStatusColor = (status: 'upcoming' | 'active' | 'completed'): string => {
-  const colorMap = {
-    upcoming: '#FF976A',
-    active: '#00B578',
-    completed: '#999999'
+export const getTripStatusColor = (status: 'upcoming' | 'ongoing' | 'completed' | string): string => {
+  const colorMap: Record<string, string> = {
+    upcoming: 'default',
+    ongoing: 'success',
+    completed: 'warning',
+    // 兼容旧版本
+    active: 'success'
   }
-  return colorMap[status]
+  return colorMap[status] || 'default'
 }
