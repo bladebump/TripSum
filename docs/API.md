@@ -6,6 +6,8 @@
 - **认证方式**: Bearer Token (JWT)
 - **请求格式**: JSON
 - **响应格式**: JSON
+- **API版本**: v1.5.0 (2025-08-29)
+- **架构特性**: memberId为主、管理员中心化结算
 
 ### 通用响应格式
 
@@ -204,7 +206,7 @@ Authorization: Bearer <token>
         "endDate": "2024-03-05",
         "memberCount": 5,
         "totalExpenses": 5000,
-        "myBalance": 200
+        "fundBalance": 1000
       }
     ],
     "pagination": {
@@ -282,7 +284,7 @@ Headers:
 Authorization: Bearer <token>
 ```
 
-## 成员管理接口
+## 成员管理接口 (v1.5.0 更新)
 
 ### 添加成员（真实用户）
 
@@ -301,9 +303,11 @@ Authorization: Bearer <token>
 }
 ```
 
+**说明**: 虽然请求仍使用userId，但内部处理统一使用memberId标识
+
 ### 添加虚拟成员
 
-**POST** `/trips/:id/virtual-members`
+**POST** `/trips/:id/members/virtual`
 
 Headers:
 ```
