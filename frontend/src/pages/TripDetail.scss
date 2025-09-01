@@ -1,11 +1,37 @@
+// 使用全局CSS变量
 .trip-detail-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 160px; // 为操作按钮和浮动按钮留出空间
-
-  .trip-summary {
+  flex: 1; // 使用flex而不是height，让它自适应父容器
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  min-height: 0; // 允许收缩
+  overflow: hidden; // 防止内容溢出
+  
+  
+  // NavBar固定高度
+  .adm-nav-bar {
+    flex: 0 0 auto;
+  }
+  
+  // 统计卡片区域
+  .trip-info-card {
+    flex: 0 0 auto;  // 明确设置flex-basis为auto
+    max-height: 200px;
+    overflow: auto; // 允许滚动
     padding: 12px;
-
+    background: white;
+    
+    // 移除Card的额外边距
+    .adm-card {
+      margin: 0;
+      border: none;
+      box-shadow: none;
+      
+      .adm-card-body {
+        padding: 12px 0;
+      }
+    }
+    
     .summary-item {
       margin-bottom: 8px;
       font-size: 14px;
@@ -14,6 +40,10 @@
       p {
         margin: 0;
         line-height: 1.5;
+      }
+      
+      &:last-child {
+        margin-bottom: 0;
       }
     }
 
@@ -41,11 +71,34 @@
       }
     }
   }
+  
+  // Tabs占据剩余空间
+  .adm-tabs {
+    flex: 1;  // 简化为flex: 1，占据剩余空间
+    min-height: 0; // 允许收缩
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; // 防止溢出
+    
+    .adm-tabs-header {
+      flex: 0 0 auto;
+      background: white;
+      border-top: 1px solid var(--gray-4);
+    }
+    
+    .adm-tabs-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+    
+    .tab-content {
+      padding: 12px;
+      padding-bottom: 180px; // 为操作按钮留空间
+    }
+  }
 
   .tab-content {
-    padding: 12px;
-    min-height: 400px;
-
     .expense-category {
       width: 40px;
       height: 40px;
@@ -100,101 +153,125 @@
     }
   }
 
-  // 操作按钮网格样式
-  .action-buttons-grid {
+  // 重新设计的操作按钮网格
+  .action-buttons-container {
     position: fixed;
-    bottom: 20px;
-    left: 16px;
-    right: 16px;
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    z-index: 999;
-
-    .action-button {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px 8px;
-      border-radius: 8px;
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      min-height: 80px;
-      justify-content: center;
-
-      &:hover {
-        background: #e9ecef;
-        transform: translateY(-2px);
-      }
-
-      &:active {
-        transform: translateY(0);
-        background: #dee2e6;
-      }
-
-      &.danger {
-        border-color: #ff4d4f;
-        background: #fff2f0;
-        color: #ff4d4f;
-
-        &:hover {
-          background: #ffece8;
-          border-color: #ff7875;
-        }
-
-        &:active {
-          background: #ffa39e;
-        }
-      }
-
-      .action-icon {
-        font-size: 24px;
-        margin-bottom: 6px;
-        line-height: 1;
-      }
-
-      .action-text {
-        font-size: 12px;
-        font-weight: 500;
-        text-align: center;
-        line-height: 1.2;
-        color: inherit;
-      }
-
-      // 管理员按钮特殊处理
-      &:nth-child(4), &:nth-child(5) {
-        grid-column: span 1;
-      }
-    }
-
-    // 当有5个按钮时，调整布局
-    &:has(.action-button:nth-child(5)) {
-      grid-template-columns: repeat(5, 1fr);
-
+    bottom: 60px; // 在TabBar(50px)上方
+    left: 0;
+    right: 0;
+    background: transparent;
+    padding: var(--spacing-sm);
+    padding-bottom: calc(var(--spacing-sm) + var(--safe-area-bottom));
+    z-index: 100; // 降低z-index，避免遮挡其他元素
+    
+    .action-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr); // 改为5列布局
+      gap: 6px; // 减小间距
+      max-width: 450px; // 稍微增加最大宽度以适应5列
+      margin: 0 auto;
+      background: white;
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+      
       .action-button {
-        min-height: 70px;
-        padding: 12px 4px;
-
+        aspect-ratio: 1; // 保持正方形
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--gray-4);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        position: relative;
+        overflow: hidden;
+        
+        // 主要操作按钮
+        &.primary {
+          background: var(--primary-gradient);
+          border: none;
+          color: var(--text-inverse);
+          box-shadow: var(--shadow-primary);
+          
+          &:active {
+            transform: scale(0.95);
+            box-shadow: var(--shadow-sm);
+          }
+        }
+        
+        // 成功操作按钮
+        &.success {
+          background: var(--success-gradient);
+          border: none;
+          color: var(--text-inverse);
+          box-shadow: var(--shadow-success);
+          
+          &:active {
+            transform: scale(0.95);
+          }
+        }
+        
+        // 危险操作按钮
+        &.danger {
+          background: var(--danger-gradient);
+          border: none;
+          color: var(--text-inverse);
+          box-shadow: var(--shadow-danger);
+          
+          &:active {
+            transform: scale(0.95);
+          }
+        }
+        
+        // 默认按钮悬停效果
+        &:not(.primary):not(.success):not(.danger) {
+          &:active {
+            background: var(--bg-hover);
+            transform: scale(0.95);
+          }
+        }
+        
         .action-icon {
           font-size: 20px;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
+          line-height: 1;
         }
-
+        
         .action-text {
-          font-size: 11px;
+          font-size: 10px;
+          font-weight: var(--font-weight-medium);
+          text-align: center;
+          line-height: 1;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
+        
+        // 管理员徽章
+        &.admin-only::after {
+          content: '👑';
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          font-size: 12px;
+        }
+      }
+      
+      // 大按钮模式（用于重要操作）
+      .action-button.large {
+        grid-column: span 2;
+        aspect-ratio: 2/1;
       }
     }
   }
 
   // 调整浮动按钮位置，避免与操作按钮重叠
   .adm-floating-bubble {
-    bottom: 140px !important;
+    bottom: 200px !important;
   }
 }

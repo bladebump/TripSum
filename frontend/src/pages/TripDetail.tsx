@@ -107,7 +107,7 @@ const TripDetail: React.FC = () => {
         {currentTrip.name}
       </NavBar>
 
-      <div className="trip-summary">
+      <div className="trip-info-card">
         <Card>
           <div className="summary-item">
             <span>📅 {formatDate(currentTrip.startDate)} - {currentTrip.endDate ? formatDate(currentTrip.endDate) : '进行中'}</span>
@@ -433,36 +433,62 @@ const TripDetail: React.FC = () => {
         </Tabs.Tab>
       </Tabs>
 
-      {/* 操作按钮网格 */}
-      <div className="action-buttons-grid">
-        <div className="action-button" onClick={() => navigate(`/trips/${id}/expense/new`)}>
-          <div className="action-icon">📝</div>
-          <div className="action-text">添加支出</div>
+      {/* 重新设计的操作按钮网格 */}
+      <div className="action-buttons-container">
+        <div className="action-buttons-grid">
+          <div className="action-button primary" onClick={() => navigate(`/trips/${id}/expense/new`)}>
+            <div className="action-icon">➕</div>
+            <div className="action-text">记账</div>
+          </div>
+          
+          <div className="action-button" onClick={() => navigate(`/trips/${id}/statistics`)}>
+            <div className="action-icon">📊</div>
+            <div className="action-text">统计</div>
+          </div>
+          
+          <div className="action-button" onClick={() => navigate(`/trips/${id}/dashboard`)}>
+            <div className="action-icon">💵</div>
+            <div className="action-text">账单</div>
+          </div>
+          
+          <div className="action-button success" onClick={() => navigate(`/trips/${id}/settlement`)}>
+            <div className="action-icon">💰</div>
+            <div className="action-text">结算</div>
+          </div>
+          
+          {isAdmin && (
+            <>
+              <div className="action-button admin-only" onClick={() => navigate(`/trips/${id}/members/add`)}>
+                <div className="action-icon">👥</div>
+                <div className="action-text">成员</div>
+              </div>
+              
+              <div className="action-button" onClick={() => navigate(`/trips/${id}/summary`)}>
+                <div className="action-icon">🤖</div>
+                <div className="action-text">复盘</div>
+              </div>
+              
+              <div className="action-button" onClick={() => navigate(`/trips/${id}/edit`)}>
+                <div className="action-icon">✏️</div>
+                <div className="action-text">编辑</div>
+              </div>
+              
+              <div className="action-button danger" onClick={handleDeleteTrip}>
+                <div className="action-icon">🗑️</div>
+                <div className="action-text">删除</div>
+              </div>
+            </>
+          )}
+          
+          {!isAdmin && (
+            <>
+              <div className="action-button" onClick={() => navigate(`/trips/${id}/summary`)}>
+                <div className="action-icon">🤖</div>
+                <div className="action-text">复盘</div>
+              </div>
+            </>
+          )}
         </div>
-        
-        <div className="action-button" onClick={() => navigate(`/trips/${id}/dashboard`)}>
-          <div className="action-icon">📊</div>
-          <div className="action-text">查看统计</div>
-        </div>
-        
-        <div className="action-button" onClick={() => navigate(`/trips/${id}/settlement`)}>
-          <div className="action-icon">💰</div>
-          <div className="action-text">结算</div>
-        </div>
-
-        {isAdmin && (
-          <>
-            <div className="action-button" onClick={() => navigate(`/trips/${id}/members/add`)}>
-              <div className="action-icon">👥</div>
-              <div className="action-text">添加成员</div>
-            </div>
-            
-            <div className="action-button danger" onClick={handleDeleteTrip}>
-              <div className="action-icon">🗑️</div>
-              <div className="action-text">删除行程</div>
-            </div>
-          </>
-        )}
       </div>
 
       {/* 简化的浮动按钮，仅用于快速添加支出 */}
