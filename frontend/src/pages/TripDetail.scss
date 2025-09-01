@@ -215,6 +215,18 @@
           }
         }
         
+        // 导出按钮
+        &.export {
+          background: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
+          border: none;
+          color: var(--text-inverse);
+          box-shadow: 0 2px 8px rgba(71, 118, 230, 0.3);
+          
+          &:active {
+            transform: scale(0.95);
+          }
+        }
+        
         // 危险操作按钮
         &.danger {
           background: var(--danger-gradient);

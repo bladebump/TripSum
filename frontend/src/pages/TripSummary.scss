@@ -67,6 +67,21 @@
     overflow: hidden;
   }
 
+  .chart-card {
+    margin: 12px;
+    
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      svg {
+        font-size: 20px;
+        color: #1890ff;
+      }
+    }
+  }
+
   .card-title {
     font-size: 18px;
     font-weight: 600;
@@ -244,6 +259,28 @@
       background-color: #fff1f0;
       color: #f5222d;
       border-color: #ffccc7;
+    }
+  }
+
+  // Tab样式
+  .adm-tabs {
+    .adm-tabs-tab-list {
+      background: white;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .adm-tabs-tab {
+      font-size: 15px;
+      
+      &.adm-tabs-tab-active {
+        color: #1890ff;
+        font-weight: 600;
+      }
+    }
+
+    .adm-tabs-content {
+      padding: 0;
+      background: #f5f5f5;
     }
   }
 }

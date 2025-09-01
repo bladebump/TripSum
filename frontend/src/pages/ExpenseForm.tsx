@@ -116,6 +116,11 @@ const ExpenseForm: React.FC = () => {
         }
       }
       
+      // 如果AI解析出了消费日期，设置到表单中
+      if (result.consumptionDate) {
+        form.setFieldValue('expenseDate', new Date(result.consumptionDate))
+      }
+      
       Toast.show({
         icon: 'success',
         content: `AI解析成功 (置信度: ${(result.confidence * 100).toFixed(0)}%)`

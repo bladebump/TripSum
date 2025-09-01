@@ -351,7 +351,7 @@ const IncomeConfirm: React.FC<IncomeConfirmProps> = ({
 
           <Form.Item name="date" label="日期" rules={[{ required: true, message: '请选择日期' }]}>
             <DatePicker>
-              {value => value ? value.toDateString() : '请选择日期'}
+              {value => value ? value.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }) : '请选择日期'}
             </DatePicker>
           </Form.Item>
 

@@ -82,4 +82,11 @@ export interface ExpenseParseResult {
   }>
   category?: string
   confidence: number
+  consumptionDate?: string  // 实际消费日期（区别于记账时间）
+  payerId?: string          // @deprecated 请使用payerMemberId
+  payerMemberId?: string    // 使用TripMember.id
+  payerName?: string
+  perPersonAmount?: number  // 每人金额（当描述是"每人X元"格式时）
+  excludedMembers?: string[] // 被排除的成员
+  isContribution?: boolean  // 是否为基金缴纳
 }

@@ -91,7 +91,7 @@ export const validateFile = (file: File, options?: {
   message?: string
 } => {
   const maxSize = options?.maxSize || 10 // 默认10MB
-  const allowedTypes = options?.allowedTypes || ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf']
+  const allowedTypes = options?.allowedTypes || ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
   
   if (file.size > maxSize * 1024 * 1024) {
     return { valid: false, message: `文件大小不能超过${maxSize}MB` }

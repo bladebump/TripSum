@@ -111,9 +111,8 @@ class TripService {
     throw new Error('生成行程总结失败')
   }
 
-  async exportTripSummary(tripId: string, format: 'html' | 'pdf' = 'html'): Promise<Blob> {
+  async exportTripSummary(tripId: string): Promise<Blob> {
     const response = await api.get(`/trips/${tripId}/summary/export`, {
-      params: { format },
       responseType: 'blob'
     })
     return response.data

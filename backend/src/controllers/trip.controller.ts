@@ -1,6 +1,7 @@
 import { Response } from 'express'
 import { AuthenticatedRequest } from '../types'
 import { tripService } from '../services/trip.service'
+import exportService from '../services/export.service'
 import { sendSuccess, sendError } from '../utils/response'
 
 export class TripController {
@@ -140,6 +141,30 @@ export class TripController {
       const { contributions } = req.body
       const result = await tripService.batchUpdateContributions(id, contributions, userId)
       sendSuccess(res, result)
+    } catch (error: any) {
+      sendError(res, '403', error.message, 403)
+    }
+  }
+
+  async exportTripToExcel(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!
+      const { id } = req.params
+      
+      // 验证用户是否有权限访问该行程
+      await tripService.getTripDetail(id, userId)
+      
+      // 生成Excel文件
+      const buffer = await exportService.exportTripToExcel(id)
+      
+      // 设置响应头
+      const filename = `trip_${id}_${new Date().getTime()}.xlsx`
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+      res.setHeader('Content-Length', buffer.length.toString())
+      
+      // 发送文件
+      res.send(buffer)
     } catch (error: any) {
       sendError(res, '403', error.message, 403)
     }

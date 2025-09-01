@@ -11,7 +11,6 @@ import ChatExpense from './pages/ChatExpense'
 import MemberDashboard from './pages/MemberDashboard'
 import Settlement from './pages/Settlement'
 import AddMember from './pages/AddMember'
-import TripStatistics from './pages/TripStatistics'
 import TripSummary from './pages/TripSummary'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
@@ -90,14 +89,6 @@ function App() {
                 element={
                   <PrivateRoute>
                     <AddMember />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="trips/:id/statistics"
-                element={
-                  <PrivateRoute>
-                    <TripStatistics />
                   </PrivateRoute>
                 }
               />

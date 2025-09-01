@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   Form,
@@ -35,6 +35,16 @@ const ExpenseConfirmDialog: React.FC<ExpenseConfirmDialogProps> = ({
   onConfirm,
   onCancel
 }) => {
+  // 用于实时更新人均金额
+  const [currentAmount, setCurrentAmount] = useState<number>(parsedData?.amount || 0)
+  
+  // 监听parsedData变化，更新金额
+  useEffect(() => {
+    if (parsedData?.amount) {
+      setCurrentAmount(parsedData.amount)
+      form.setFieldValue('amount', parsedData.amount.toString())
+    }
+  }, [parsedData, form])
   return (
     <Dialog
       visible={visible}
@@ -61,6 +71,10 @@ const ExpenseConfirmDialog: React.FC<ExpenseConfirmDialogProps> = ({
                     type="number" 
                     placeholder="0.00"
                     className="amount-value"
+                    onChange={(val) => {
+                      const amount = parseFloat(val) || 0
+                      setCurrentAmount(amount)
+                    }}
                   />
                 </Form.Item>
               </div>
@@ -100,12 +114,12 @@ const ExpenseConfirmDialog: React.FC<ExpenseConfirmDialogProps> = ({
               <Form.Item 
                 name="expenseDate" 
                 label="日期" 
-                initialValue={new Date()}
+                initialValue={parsedData?.consumptionDate ? new Date(parsedData.consumptionDate) : new Date()}
                 trigger="onConfirm"
                 rules={[{ required: true, message: '请选择日期' }]}
               >
                 <DatePicker>
-                  {value => value ? value.toLocaleDateString() : '请选择日期'}
+                  {value => value ? value.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }) : '请选择日期'}
                 </DatePicker>
               </Form.Item>
             </div>
@@ -165,13 +179,13 @@ const ExpenseConfirmDialog: React.FC<ExpenseConfirmDialogProps> = ({
                       ))}
                     </Space>
                   </Checkbox.Group>
-                  {selectedMembers.length > 0 && (
+                  {selectedMembers.length > 0 && currentAmount > 0 && (
                     <div className="participant-summary">
                       <span className="summary-text">
                         已选择 {selectedMembers.length} 人，人均 
                       </span>
                       <span className="summary-amount">
-                        {formatCurrency((parseFloat(form.getFieldValue('amount') || '0') / selectedMembers.length) || 0)}
+                        {formatCurrency(currentAmount / selectedMembers.length)}
                       </span>
                     </div>
                   )}

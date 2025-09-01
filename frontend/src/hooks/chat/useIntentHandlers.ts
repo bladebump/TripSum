@@ -18,6 +18,7 @@ export interface ParsedExpense {
   confidence: number
   payerId?: string
   payerName?: string
+  consumptionDate?: string  // 实际消费日期
   isContribution?: boolean
 }
 

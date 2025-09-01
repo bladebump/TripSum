@@ -18,6 +18,7 @@ import {
 import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { exportService } from '@/services/export.service'
 import { formatDate, formatCurrency, formatDateTime } from '@/utils/format'
 import { isCurrentUserAdmin } from '@/utils/member'
 import Loading from '@/components/common/Loading'
@@ -88,6 +89,23 @@ const TripDetail: React.FC = () => {
         }
       }
     })
+  }
+
+  const handleExportToExcel = async () => {
+    try {
+      Toast.show({
+        icon: 'loading',
+        content: '正在生成Excel文件...',
+        duration: 0
+      })
+      await exportService.exportTripToExcel(id!)
+      Toast.clear()
+      Toast.show('导出成功')
+    } catch (error) {
+      Toast.clear()
+      console.error('导出失败:', error)
+      Toast.show('导出失败，请重试')
+    }
   }
 
 
@@ -441,11 +459,6 @@ const TripDetail: React.FC = () => {
             <div className="action-text">记账</div>
           </div>
           
-          <div className="action-button" onClick={() => navigate(`/trips/${id}/statistics`)}>
-            <div className="action-icon">📊</div>
-            <div className="action-text">统计</div>
-          </div>
-          
           <div className="action-button" onClick={() => navigate(`/trips/${id}/dashboard`)}>
             <div className="action-icon">💵</div>
             <div className="action-text">账单</div>
@@ -454,6 +467,11 @@ const TripDetail: React.FC = () => {
           <div className="action-button success" onClick={() => navigate(`/trips/${id}/settlement`)}>
             <div className="action-icon">💰</div>
             <div className="action-text">结算</div>
+          </div>
+          
+          <div className="action-button export" onClick={handleExportToExcel}>
+            <div className="action-icon">📊</div>
+            <div className="action-text">导出</div>
           </div>
           
           {isAdmin && (

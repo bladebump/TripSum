@@ -455,7 +455,7 @@ ${data.anomalies.slice(0, 3).map((a: any) => `- ${a.message}`).join('\n')}
     return advice.slice(0, 5) // 最多返回5条建议
   }
 
-  async exportSummaryReport(tripId: string, format: 'pdf' | 'html' = 'html'): Promise<Buffer> {
+  async exportSummaryReport(tripId: string): Promise<Buffer> {
     try {
       const summary = await this.generateTripSummary(tripId)
       const trip = await prisma.trip.findUnique({
@@ -474,13 +474,6 @@ ${data.anomalies.slice(0, 3).map((a: any) => `- ${a.message}`).join('\n')}
 
       // 生成HTML报告
       const htmlContent = this.generateHTMLReport(trip, summary)
-      
-      if (format === 'html') {
-        return Buffer.from(htmlContent, 'utf-8')
-      }
-      
-      // 如果需要PDF，可以使用puppeteer等库转换
-      // 这里暂时返回HTML
       return Buffer.from(htmlContent, 'utf-8')
     } catch (error) {
       console.error('导出报告失败:', error)

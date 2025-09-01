@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { TabBar, Toast } from 'antd-mobile'
 import {
-  AppOutline,
   UserOutline,
   AddCircleOutline,
   UnorderedListOutline,
@@ -35,11 +34,6 @@ const Layout: React.FC = () => {
       icon: <AddCircleOutline />,
     },
     {
-      key: '/dashboard',
-      title: '统计',
-      icon: <AppOutline />,
-    },
-    {
       key: '/profile',
       title: '我的',
       icon: <UserOutline />,
@@ -58,7 +52,7 @@ const Layout: React.FC = () => {
       return
     }
     
-    if ((key === '/add' || key === '/dashboard') && !hasTrip) {
+    if (key === '/add' && !hasTrip) {
       Toast.show('请先创建行程')
       navigate('/trips')
       return
@@ -66,11 +60,6 @@ const Layout: React.FC = () => {
     
     if (key === '/add' && hasTrip && trips.length > 0) {
       navigate(`/trips/${trips[0].id}/expense/new`)
-      return
-    }
-    
-    if (key === '/dashboard' && hasTrip && trips.length > 0) {
-      navigate(`/trips/${trips[0].id}/dashboard`)
       return
     }
     

@@ -1,5 +1,4 @@
 import OpenAI from 'openai'
-import { executeCalculation } from '../utils/calculator'
 
 export interface ContributionParseResult {
   amount: number
@@ -62,68 +61,37 @@ export class ContributionParser {
         }
       }
 
-      // 定义计算工具
-      const tools = [
-        {
-          type: 'function' as const,
-          function: {
-            name: 'calculate',
-            description: '执行基础数学计算：加减乘除',
-            parameters: {
-              type: 'object',
-              properties: {
-                operation: {
-                  type: 'string',
-                  enum: ['add', 'subtract', 'multiply', 'divide'],
-                  description: '运算操作：add(加法)、subtract(减法)、multiply(乘法)、divide(除法)'
-                },
-                a: {
-                  type: 'number',
-                  description: '第一个数字'
-                },
-                b: {
-                  type: 'number',
-                  description: '第二个数字'
-                }
-              },
-              required: ['operation', 'a', 'b']
-            }
-          }
-        }
-      ]
+      // 获取当前日期信息
+      const today = new Date()
+      const currentYear = today.getFullYear()
+      const currentMonth = today.getMonth() + 1
 
       const prompt = `
-        你是一个智能基金缴纳解析助手。请使用calculate工具进行所有数学计算，不要自己心算。
+        你是一个智能基金缴纳解析助手。请准确解析缴纳信息。
         
-        团队成员：${memberNames}（共${members.length}人）
-        当前用户：${currentUserName}（当用户说"我"时，指的是${currentUserName}）
-        缴纳描述：${text}
+        当前信息：
+        - 团队成员：${memberNames}（共${members.length}人）
+        - 当前用户：${currentUserName}（当用户说"我"时，指的是${currentUserName}）
+        - 今天日期：${currentYear}年${currentMonth}月${today.getDate()}日
         
-        这是一条基金缴纳记录，请解析缴纳信息。基金缴纳的特点：
-        1. 每个人向基金池缴纳资金
-        2. 可能是统一金额，也可能是个性化金额
-        3. 没有付款人概念（所有人都是缴纳者）
+        用户输入：${text}
         
-        常见基金缴纳场景：
-        1. "每人预存1000" → 所有人各缴纳1000
-        2. "预存200，我多交5000" → 其他人各200，我缴纳200+5000=5200
+        解析示例：
+        1. "每人预存1000" → perPersonAmount: 1000, participants: 所有人各1000
+        2. "预存200，我多交5000" → participants: 其他人200，${currentUserName} 5200
         3. "我交3000，张三交2000，其他人各1000" → 个性化缴纳
-        
-        计算规则：
-        1. 平均缴纳：使用calculate('multiply', 每人金额, 人数)计算总金额
-        2. 个性化缴纳：使用calculate('add', 各人金额)计算总金额  
-        3. "预存X，我多交Y"：其他人各缴纳X，当前用户缴纳calculate('add', X, Y)
-        4. 所有金额计算必须使用calculate工具
+        4. "先交500做启动资金" → perPersonAmount: 500
+        5. "除了李四，每人上交1000" → excludedMembers: ["李四"], perPersonAmount: 1000
+        6. "为下周的活动预存费用，每人2000" → perPersonAmount: 2000, description: "基金缴纳-下周活动"
         
         请返回JSON格式：
         {
-          "amount": 总缴纳金额（正数）,
-          "description": "简洁描述（如：基金缴纳-每人1000、基金缴纳-个性化）",
           "perPersonAmount": 统一每人金额（如果是统一缴纳）,
+          "description": "简洁描述",
           "participants": [
             {
-              "username": "缴纳者的实际名字（不要用'当前用户'，要用实际姓名如'${currentUserName}'）",
-              "shareAmount": 该人缴纳金额（正数）
+              "username": "缴纳者姓名（'我'要替换为'${currentUserName}'）",
+              "shareAmount": 该人缴纳金额（直接返回数字，不要计算）
             }
           ],
           "excludedMembers": ["不参与缴纳的成员"],
@@ -131,62 +99,29 @@ export class ContributionParser {
           "confidence": 置信度（0-1之间的数字）
         }
         
-        重要：当遇到"我"的时候，请在participants中使用实际姓名"${currentUserName}"，而不是"当前用户"。
-        
-        缴纳者识别规则：
-        1. "每人X元"：所有人都缴纳X元
-        2. "预存X，我多交Y"：其他人各X，当前用户X+Y
-        3. "我交X，张三交Y"：明确指定个人缴纳额
-        4. "除了李四，每人1000"：排除李四，其他人各1000
-        5. 如果没有明确排除，默认所有人都参与缴纳
-        6. 缴纳金额必须为正数
+        重要规则：
+        1. 不要进行任何数学计算，只返回原始数字
+        2. 如果是"每人X元"，返回perPersonAmount=X
+        3. 如果是"预存X，我多交Y"，${currentUserName}的shareAmount=X+Y（你自己加），其他人=X
+        4. 如果没有明确指定谁缴纳，且有perPersonAmount，不需要返回participants
+        5. 当遇到"我"时，必须替换为"${currentUserName}"
       `
 
-      const messages: any[] = [
-        {
-          role: 'system',
-          content: '你是一个专业的基金缴纳解析助手。使用calculate工具进行所有数学计算。',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ]
-
-      let completion = await this.openai.chat.completions.create({
+      const completion = await this.openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || 'gpt-4',
-        messages,
-        tools: tools,
-        tool_choice: 'auto',
+        messages: [
+          {
+            role: 'system',
+            content: '你是一个专业的基金缴纳解析助手。准确提取信息，不进行计算。',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        response_format: { type: 'json_object' },
         temperature: 0.1,
       })
-
-      // 处理工具调用
-      while (completion.choices[0].message.tool_calls) {
-        const toolCalls = completion.choices[0].message.tool_calls
-        messages.push(completion.choices[0].message)
-
-        for (const toolCall of toolCalls) {
-          if (toolCall.function.name === 'calculate') {
-            const args = JSON.parse(toolCall.function.arguments)
-            const result = executeCalculation(args.operation, args.a, args.b)
-            
-            messages.push({
-              tool_call_id: toolCall.id,
-              role: 'tool',
-              content: result.toString()
-            })
-          }
-        }
-
-        completion = await this.openai.chat.completions.create({
-          model: process.env.OPENAI_MODEL || 'gpt-4',
-          messages: messages,
-          tools: tools,
-          tool_choice: 'auto',
-          temperature: 0.1,
-        })
-      }
 
       const content = completion.choices[0]?.message?.content
       if (!content) {
@@ -194,23 +129,49 @@ export class ContributionParser {
       }
 
       // 解析JSON结果
-      let result: any
-      try {
-        // 尝试提取JSON
-        const jsonMatch = content.match(/\{[\s\S]*\}/)
-        const jsonStr = jsonMatch ? jsonMatch[0] : content
-        result = JSON.parse(jsonStr)
-      } catch (parseError) {
-        console.error('JSON解析失败:', parseError, '原始内容:', content)
-        throw new Error('AI返回格式错误，无法解析')
+      const result = JSON.parse(content)
+
+      // 处理参与者和计算总额
+      let finalParticipants = result.participants || []
+      let totalAmount = 0
+      
+      if (result.perPersonAmount && !result.participants) {
+        // 如果是统一缴纳且没有指定参与者，所有人都参与
+        const excludedNames = (result.excludedMembers || []).map((n: string) => n.toLowerCase())
+        const participantMembers = members.filter(
+          m => !excludedNames.includes(m.name?.toLowerCase())
+        )
+        
+        finalParticipants = participantMembers.map(m => ({
+          username: m.name,
+          shareAmount: result.perPersonAmount
+        }))
+        
+        totalAmount = result.perPersonAmount * participantMembers.length
+      } else if (result.participants && result.participants.length > 0) {
+        // 个性化缴纳，计算总额
+        totalAmount = result.participants.reduce((sum: number, p: any) => 
+          sum + (p.shareAmount || 0), 0
+        )
+        finalParticipants = result.participants
+      } else if (result.perPersonAmount) {
+        // 有每人金额但没有参与者列表，默认所有人
+        finalParticipants = members.map(m => ({
+          username: m.name,
+          shareAmount: result.perPersonAmount
+        }))
+        totalAmount = result.perPersonAmount * members.length
       }
 
       // 确保必要字段存在并设置基金缴纳特有属性
       const contributionResult: ContributionParseResult = {
-        amount: Math.abs(result.amount || 0),
+        amount: Math.abs(totalAmount),
         description: result.description || '基金缴纳',
         perPersonAmount: result.perPersonAmount,
-        participants: result.participants || [],
+        participants: finalParticipants.map((p: any) => ({
+          ...p,
+          shareAmount: Math.abs(p.shareAmount || 0)
+        })),
         excludedMembers: result.excludedMembers || [],
         category: '基金',
         confidence: result.confidence || 0.5,
@@ -218,12 +179,6 @@ export class ContributionParser {
         payerName: null,
         isContribution: true
       }
-
-      // 确保所有缴纳金额为正数
-      contributionResult.participants = contributionResult.participants.map(p => ({
-        ...p,
-        shareAmount: Math.abs(p.shareAmount || 0)
-      }))
 
       return contributionResult
 

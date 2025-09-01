@@ -37,6 +37,7 @@ export interface ExpenseParseResult {
   payerId?: string        // @deprecated 请使用payerMemberId
   payerMemberId?: string  // 使用TripMember.id
   payerName?: string
+  consumptionDate?: string  // 实际消费日期（区别于记账时间）
   isContribution?: boolean  // 用于标识是否为基金缴纳
 }
 

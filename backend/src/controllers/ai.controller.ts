@@ -82,19 +82,15 @@ export class AIController {
     try {
       const userId = req.userId!
       const { id: tripId } = req.params
-      const { format = 'html' } = req.query
       
       // 验证用户权限
       await tripService.getTripDetail(tripId, userId)
       
-      const reportBuffer = await aiSummaryService.exportSummaryReport(
-        tripId, 
-        format as 'pdf' | 'html'
-      )
+      const reportBuffer = await aiSummaryService.exportSummaryReport(tripId)
       
       // 设置响应头
-      res.setHeader('Content-Type', format === 'pdf' ? 'application/pdf' : 'text/html')
-      res.setHeader('Content-Disposition', `attachment; filename="trip-summary-${tripId}.${format}"`)
+      res.setHeader('Content-Type', 'text/html')
+      res.setHeader('Content-Disposition', `attachment; filename="trip-summary-${tripId}.html"`)
       
       return res.send(reportBuffer)
     } catch (error: any) {

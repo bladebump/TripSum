@@ -34,4 +34,7 @@ router.patch('/:id/contributions', validate(batchUpdateContributionsSchema), tri
 router.delete('/:id/members/:memberId', tripController.removeMember)
 router.put('/:id/members/:memberId', validate(updateMemberRoleSchema), tripController.updateMemberRole)
 
+// 导出Excel功能
+router.get('/:id/export', tripController.exportTripToExcel)
+
 export default router
