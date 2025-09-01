@@ -2,18 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   NavBar,
-  Dialog,
-  Form,
-  Input,
-  Selector,
-  DatePicker,
-  Checkbox,
-  Space,
   Toast
 } from 'antd-mobile'
 import { useTripStore } from '@/stores/trip.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { MemberConfirm, MixedIntentConfirm, IncomeConfirm } from '@/components/confirmation'
+import { MemberConfirm, MixedIntentConfirm, IncomeConfirm, ExpenseConfirmDialog } from '@/components/confirmation'
 import { ChatMessages, ChatInput, TripSelector } from '@/components/chat'
 import { useAIChat, useIntentHandlers, useExpenseForm } from '@/hooks/chat'
 import './ChatExpense.scss'
@@ -22,7 +15,7 @@ import '@/components/confirmation/ConfirmDialog.scss'
 const ChatExpense: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { trips, members, fetchTrips, fetchTripDetail } = useTripStore()
+  const { trips, members, currentTrip, fetchTrips, fetchTripDetail } = useTripStore()
   const {} = useAuthStore()
   
   const [inputValue, setInputValue] = useState('')
@@ -156,140 +149,19 @@ const ChatExpense: React.FC = () => {
     }
 
     return (
-      <Dialog
+      <ExpenseConfirmDialog
         visible={showConfirmDialog}
-        className="confirm-dialog"
-        title={
-          <div style={{
-            background: 'linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%)',
-            padding: '20px',
-            margin: '-16px -16px 0',
-            color: 'white',
-            fontSize: '18px',
-            fontWeight: 600,
-            textAlign: 'center',
-            borderRadius: '12px 12px 0 0'
-          }}>
-            💳 确认消费信息
-          </div>
-        }
-        content={
-          <div className="confirm-dialog-content" style={{ padding: '20px 0' }}>
-          <Form form={form} layout="vertical">
-            <div style={{
-              marginBottom: '20px',
-              padding: '16px',
-              background: 'white',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-            }}>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
-                💰 消费金额
-              </div>
-              <div style={{ position: 'relative' }}>
-                <span style={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '20px',
-                  color: '#ff6b6b',
-                  fontWeight: 600,
-                  zIndex: 1
-                }}>¥</span>
-                <Form.Item 
-                  name="amount" 
-                  initialValue={parsedData?.amount?.toString()}
-                  rules={[{ required: true, message: '请输入金额' }]}
-                  style={{ marginBottom: 0 }}
-                >
-                  <Input 
-                    type="number" 
-                    placeholder="0.00"
-                    style={{
-                      paddingLeft: '40px',
-                      fontSize: '24px',
-                      fontWeight: 600,
-                      color: '#ff6b6b',
-                      textAlign: 'center',
-                      height: '56px',
-                      background: '#fff5f5',
-                      border: '2px solid #ffebeb',
-                      borderRadius: '12px'
-                    }}
-                  />
-                </Form.Item>
-              </div>
-            </div>
-            
-            <Form.Item 
-              name="description" 
-              label="描述" 
-              initialValue={parsedData?.description}
-            >
-              <Input placeholder="请输入描述" />
-            </Form.Item>
-            
-            <Form.Item 
-              name="payerMemberId" 
-              label="付款人" 
-              initialValue={parsedData?.payerId}
-              rules={[{ required: true, message: '请选择付款人' }]}
-            >
-              <Selector
-                options={members.map(m => ({
-                  label: m.isVirtual ? (m.displayName || '虚拟成员') : (m.user?.username || '未知用户'),
-                  value: m.id
-                }))}
-              />
-            </Form.Item>
-            
-            <Form.Item 
-              name="expenseDate" 
-              label="日期" 
-              initialValue={new Date()}
-              trigger="onConfirm"
-              rules={[{ required: true, message: '请选择日期' }]}
-            >
-              <DatePicker>
-                {value => value ? value.toLocaleDateString() : '请选择日期'}
-              </DatePicker>
-            </Form.Item>
-            
-            <Form.Item label="参与者">
-              <Checkbox.Group
-                value={selectedMembers}
-                onChange={(val) => setSelectedMembers(val as string[])}
-              >
-                <Space wrap>
-                  {members.map(member => (
-                    <Checkbox key={member.id} value={member.id}>
-                      {member.isVirtual ? (member.displayName || '虚拟成员') : (member.user?.username || '未知用户')}
-                    </Checkbox>
-                  ))}
-                </Space>
-              </Checkbox.Group>
-            </Form.Item>
-          </Form>
-          </div>
-        }
-        closeOnAction
-        actions={[
-          {
-            key: 'cancel',
-            text: '取消',
-            onClick: () => {
-              setShowConfirmDialog(false)
-              setParsedData(null)
-            }
-          },
-          {
-            key: 'confirm',
-            text: '确认',
-            bold: true,
-            onClick: handleConfirm
-          }
-        ]}
+        form={form}
+        parsedData={parsedData}
+        members={members}
+        categories={currentTrip?.categories}
+        selectedMembers={selectedMembers}
+        onSelectedMembersChange={setSelectedMembers}
+        onConfirm={handleConfirm}
+        onCancel={() => {
+          setShowConfirmDialog(false)
+          setParsedData(null)
+        }}
       />
     )
   }

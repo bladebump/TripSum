@@ -58,7 +58,69 @@ export interface TripStatistics {
   fundStatus?: FundStatus
   membersFinancialStatus?: MemberFinancialStatus[]
   settlements?: Settlement[]
+  advancedMetrics?: AdvancedMetrics
+  timeDistribution?: TimeDistribution
+  paymentMethodStats?: PaymentMethodStats
+  anomalies?: Anomaly[]
   lastUpdated?: string
+}
+
+export interface AdvancedMetrics {
+  averagePerPerson: number
+  dailyAverage: number
+  averagePerExpense: number
+  maxExpense: number
+  minExpense: number
+  peakDay: {
+    date: string
+    amount: number
+    count: number
+  } | null
+  trend: 'increasing' | 'decreasing' | 'stable'
+  memberAverages: MemberAverage[]
+  tripDuration: number
+  activeConsumers: number
+}
+
+export interface MemberAverage {
+  memberId: string
+  username: string
+  averageExpense: number
+  dailyAverage: number
+}
+
+export interface TimeDistribution {
+  morning: TimeSlot
+  afternoon: TimeSlot
+  evening: TimeSlot
+  night: TimeSlot
+}
+
+export interface TimeSlot {
+  count: number
+  amount: number
+  percentage: number
+}
+
+export interface PaymentMethodStats {
+  fundPool: PaymentMethod
+  memberReimbursement: PaymentMethod
+}
+
+export interface PaymentMethod {
+  count: number
+  amount: number
+  percentage: number
+}
+
+export interface Anomaly {
+  type: 'high_amount' | 'unusual_time'
+  expenseId: string
+  description: string
+  amount: number
+  date: string | Date
+  severity: 'high' | 'medium' | 'low'
+  message: string
 }
 
 export interface FundStatus {

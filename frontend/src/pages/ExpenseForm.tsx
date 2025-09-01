@@ -258,11 +258,12 @@ const ExpenseForm: React.FC = () => {
           <Form.Item
             name="categoryId"
             label="类别"
+            initialValue={currentTrip.categories?.find(c => c.name === '其他')?.id}
           >
             <Selector
               columns={3}
               options={currentTrip.categories?.map(c => ({
-                label: `${c.icon} ${c.name}`,
+                label: `${c.icon || '📦'} ${c.name}`,
                 value: c.id
               })) || []}
             />

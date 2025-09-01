@@ -94,6 +94,30 @@ class TripService {
     }
     throw new Error('获取统计数据失败')
   }
+
+  async getTripSummary(tripId: string): Promise<any> {
+    const { data } = await api.get<ApiResponse<any>>(`/trips/${tripId}/summary`)
+    if (data.success && data.data) {
+      return transformTripData(data.data)
+    }
+    throw new Error('获取行程总结失败')
+  }
+
+  async generateTripSummary(tripId: string): Promise<any> {
+    const { data } = await api.get<ApiResponse<any>>(`/trips/${tripId}/summary`)
+    if (data.success && data.data) {
+      return transformTripData(data.data)
+    }
+    throw new Error('生成行程总结失败')
+  }
+
+  async exportTripSummary(tripId: string, format: 'html' | 'pdf' = 'html'): Promise<Blob> {
+    const response = await api.get(`/trips/${tripId}/summary/export`, {
+      params: { format },
+      responseType: 'blob'
+    })
+    return response.data
+  }
 }
 
 export default new TripService()

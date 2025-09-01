@@ -2,6 +2,7 @@ import { Response } from 'express'
 import { AuthenticatedRequest } from '../types'
 import { tripService } from '../services/trip.service'
 import { unifiedAIParser } from '../services/ai.unified.parser'
+import { aiSummaryService } from '../services/ai.summary.service'
 import { sendSuccess, sendError } from '../utils/response'
 import logger from '../utils/logger'
 
@@ -60,6 +61,47 @@ export class AIController {
   }
 
   // categorize 和 suggestSplit 已整合到 parseUserInput 统一处理
+
+  async generateTripSummary(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!
+      const { id: tripId } = req.params
+      
+      // 验证用户权限
+      await tripService.getTripDetail(tripId, userId)
+      
+      const summary = await aiSummaryService.generateTripSummary(tripId)
+      return sendSuccess(res, summary)
+    } catch (error: any) {
+      logger.error('生成行程总结失败:', error)
+      return sendError(res, '500', error.message || '生成总结失败', 500)
+    }
+  }
+
+  async exportTripSummary(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!
+      const { id: tripId } = req.params
+      const { format = 'html' } = req.query
+      
+      // 验证用户权限
+      await tripService.getTripDetail(tripId, userId)
+      
+      const reportBuffer = await aiSummaryService.exportSummaryReport(
+        tripId, 
+        format as 'pdf' | 'html'
+      )
+      
+      // 设置响应头
+      res.setHeader('Content-Type', format === 'pdf' ? 'application/pdf' : 'text/html')
+      res.setHeader('Content-Disposition', `attachment; filename="trip-summary-${tripId}.${format}"`)
+      
+      return res.send(reportBuffer)
+    } catch (error: any) {
+      logger.error('导出行程总结失败:', error)
+      return sendError(res, '500', error.message || '导出失败', 500)
+    }
+  }
 }
 
 export const aiController = new AIController()

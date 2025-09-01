@@ -6,6 +6,7 @@ import aiRoutes from './ai.routes'
 import { authenticate } from '../middleware/auth.middleware'
 import { expenseController } from '../controllers/expense.controller'
 import { calculationController } from '../controllers/calculation.controller'
+import { aiController } from '../controllers/ai.controller'
 import { validateQuery } from '../middleware/validation.middleware'
 import { expenseQuerySchema } from '../validators/expense.validator'
 import { upload } from '../middleware/upload.middleware'
@@ -26,5 +27,9 @@ router.get('/trips/:id/statistics', authenticate, calculationController.getStati
 router.get('/trips/:id/balances', authenticate, calculationController.getBalances)
 router.post('/trips/:id/calculate', authenticate, calculationController.calculateSettlement)
 router.post('/trips/:id/settle', authenticate, calculationController.createSettlements)
+
+// AI Summary routes
+router.get('/trips/:id/summary', authenticate, aiController.generateTripSummary)
+router.get('/trips/:id/summary/export', authenticate, aiController.exportTripSummary)
 
 export default router

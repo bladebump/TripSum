@@ -280,16 +280,21 @@ export class CalculationService {
 
     const categoryMap = new Map<string, { name: string; amount: number }>()
     
+    // 初始化已有分类
     for (const category of categories) {
       categoryMap.set(category.id, { name: category.name, amount: 0 })
     }
+    
+    // 添加一个"未分类"类别
+    const uncategorizedId = 'uncategorized'
+    categoryMap.set(uncategorizedId, { name: '未分类', amount: 0 })
 
+    // 统计各分类支出
     for (const expense of expenses) {
-      if (expense.categoryId) {
-        const cat = categoryMap.get(expense.categoryId)
-        if (cat) {
-          cat.amount += expense.amount.toNumber()
-        }
+      const catId = expense.categoryId || uncategorizedId
+      const cat = categoryMap.get(catId)
+      if (cat) {
+        cat.amount += expense.amount.toNumber()
       }
     }
 
@@ -322,6 +327,29 @@ export class CalculationService {
       .sort((a, b) => a.date.localeCompare(b.date))
 
     const members = trip?.members.length || 0
+    
+    // 新增：高级统计指标
+    const advancedMetrics = this.calculateAdvancedMetrics(expenses, trip, dailyExpenses, membersFinancialStatus)
+    
+    // 新增：时间维度分析
+    const timeDistribution = this.analyzeTimeDistribution(expenses)
+    
+    // 新增：支付方式统计
+    const paymentMethodStats = {
+      fundPool: {
+        count: expenses.filter(e => e.isPaidFromFund).length,
+        amount: fundExpenses,
+        percentage: totalExpenses > 0 ? (fundExpenses / totalExpenses) * 100 : 0
+      },
+      memberReimbursement: {
+        count: expenses.filter(e => !e.isPaidFromFund).length,
+        amount: memberPaidExpenses,
+        percentage: totalExpenses > 0 ? (memberPaidExpenses / totalExpenses) * 100 : 0
+      }
+    }
+    
+    // 新增：异常消费检测
+    const anomalies = this.detectAnomalies(expenses, advancedMetrics.dailyAverage)
 
     return {
       totalExpenses,
@@ -338,10 +366,182 @@ export class CalculationService {
           ? (fundExpenses / totalContributions) * 100 
           : 0  // 基金池使用率
       },
-      membersFinancialStatus,  // 新增：成员财务状态
+      membersFinancialStatus,  // 成员财务状态
       settlements: await this.calculateSettlement(tripId), // 结算建议
+      advancedMetrics,        // 新增：高级统计指标
+      timeDistribution,       // 新增：时间分布分析
+      paymentMethodStats,     // 新增：支付方式统计
+      anomalies,             // 新增：异常消费提醒
       lastUpdated: new Date()  // 最后更新时间
     }
+  }
+  
+  // 新增：计算高级统计指标
+  private calculateAdvancedMetrics(expenses: any[], trip: any, dailyExpenses: any[], membersFinancialStatus: any[]) {
+    const validExpenses = expenses.filter(e => e.amount.toNumber() > 0)
+    const totalDays = dailyExpenses.length || 1
+    const totalMembers = trip?.members.length || 1
+    const totalAmount = validExpenses.reduce((sum, e) => sum + e.amount.toNumber(), 0)
+    
+    // 计算每个成员的人均消费
+    const memberAverages = membersFinancialStatus.map(m => ({
+      memberId: m.memberId,
+      username: m.username,
+      averageExpense: m.expenseCount > 0 ? m.totalShare / m.expenseCount : 0,
+      dailyAverage: totalDays > 0 ? m.totalShare / totalDays : 0
+    }))
+    
+    // 计算消费峰值
+    const peakDay = dailyExpenses.reduce((peak, day) => 
+      day.amount > (peak?.amount || 0) ? day : peak, 
+      dailyExpenses[0]
+    )
+    
+    // 计算消费趋势（简单线性回归）
+    let trend = 'stable'
+    if (dailyExpenses.length > 1) {
+      const firstHalf = dailyExpenses.slice(0, Math.floor(dailyExpenses.length / 2))
+      const secondHalf = dailyExpenses.slice(Math.floor(dailyExpenses.length / 2))
+      const firstAvg = firstHalf.reduce((sum, d) => sum + d.amount, 0) / firstHalf.length
+      const secondAvg = secondHalf.reduce((sum, d) => sum + d.amount, 0) / secondHalf.length
+      
+      if (secondAvg > firstAvg * 1.2) trend = 'increasing'
+      else if (secondAvg < firstAvg * 0.8) trend = 'decreasing'
+    }
+    
+    return {
+      // 人均消费
+      averagePerPerson: totalAmount / totalMembers,
+      // 日均消费
+      dailyAverage: totalAmount / totalDays,
+      // 单笔平均
+      averagePerExpense: totalAmount / (validExpenses.length || 1),
+      // 最高单笔
+      maxExpense: Math.max(...validExpenses.map(e => e.amount.toNumber()), 0),
+      // 最低单笔
+      minExpense: Math.min(...validExpenses.map(e => e.amount.toNumber()).filter(a => a > 0), 0),
+      // 消费峰值日
+      peakDay: peakDay ? {
+        date: peakDay.date,
+        amount: peakDay.amount,
+        count: peakDay.count
+      } : null,
+      // 消费趋势
+      trend,
+      // 成员人均统计
+      memberAverages,
+      // 行程天数
+      tripDuration: totalDays,
+      // 活跃消费者数量
+      activeConsumers: membersFinancialStatus.filter(m => m.expenseCount > 0).length
+    }
+  }
+  
+  // 新增：分析时间维度分布
+  private analyzeTimeDistribution(expenses: any[]) {
+    const timeSlots = {
+      morning: { start: 6, end: 12, count: 0, amount: 0 },    // 早上 6-12
+      afternoon: { start: 12, end: 18, count: 0, amount: 0 }, // 下午 12-18
+      evening: { start: 18, end: 24, count: 0, amount: 0 },   // 晚上 18-24
+      night: { start: 0, end: 6, count: 0, amount: 0 }        // 深夜 0-6
+    }
+    
+    for (const expense of expenses) {
+      const hour = expense.expenseDate.getHours()
+      const amount = expense.amount.toNumber()
+      
+      if (hour >= 6 && hour < 12) {
+        timeSlots.morning.count++
+        timeSlots.morning.amount += amount
+      } else if (hour >= 12 && hour < 18) {
+        timeSlots.afternoon.count++
+        timeSlots.afternoon.amount += amount
+      } else if (hour >= 18 && hour < 24) {
+        timeSlots.evening.count++
+        timeSlots.evening.amount += amount
+      } else {
+        timeSlots.night.count++
+        timeSlots.night.amount += amount
+      }
+    }
+    
+    const total = expenses.reduce((sum, e) => sum + e.amount.toNumber(), 0)
+    
+    return {
+      morning: {
+        count: timeSlots.morning.count,
+        amount: timeSlots.morning.amount,
+        percentage: total > 0 ? (timeSlots.morning.amount / total) * 100 : 0
+      },
+      afternoon: {
+        count: timeSlots.afternoon.count,
+        amount: timeSlots.afternoon.amount,
+        percentage: total > 0 ? (timeSlots.afternoon.amount / total) * 100 : 0
+      },
+      evening: {
+        count: timeSlots.evening.count,
+        amount: timeSlots.evening.amount,
+        percentage: total > 0 ? (timeSlots.evening.amount / total) * 100 : 0
+      },
+      night: {
+        count: timeSlots.night.count,
+        amount: timeSlots.night.amount,
+        percentage: total > 0 ? (timeSlots.night.amount / total) * 100 : 0
+      }
+    }
+  }
+  
+  // 新增：异常消费检测
+  private detectAnomalies(expenses: any[], dailyAverage: number) {
+    const anomalies = []
+    const amounts = expenses.map(e => e.amount.toNumber()).filter(a => a > 0)
+    
+    if (amounts.length === 0) return []
+    
+    // 计算标准差
+    const mean = amounts.reduce((sum, a) => sum + a, 0) / amounts.length
+    const variance = amounts.reduce((sum, a) => sum + Math.pow(a - mean, 2), 0) / amounts.length
+    const stdDev = Math.sqrt(variance)
+    
+    // 检测异常高额消费（超过均值+2倍标准差）
+    const threshold = mean + (2 * stdDev)
+    
+    for (const expense of expenses) {
+      const amount = expense.amount.toNumber()
+      
+      // 异常高额消费
+      if (amount > threshold && amount > dailyAverage * 2) {
+        anomalies.push({
+          type: 'high_amount',
+          expenseId: expense.id,
+          description: expense.description,
+          amount: amount,
+          date: expense.expenseDate,
+          severity: amount > threshold * 2 ? 'high' : 'medium',
+          message: `异常高额支出：${amount}元，超过平均值的${Math.round(amount / mean)}倍`
+        })
+      }
+      
+      // 检测深夜消费（凌晨0-5点）
+      const hour = expense.expenseDate.getHours()
+      if (hour >= 0 && hour < 5 && amount > mean) {
+        anomalies.push({
+          type: 'unusual_time',
+          expenseId: expense.id,
+          description: expense.description,
+          amount: amount,
+          date: expense.expenseDate,
+          severity: 'low',
+          message: `深夜消费提醒：凌晨${hour}点的支出`
+        })
+      }
+    }
+    
+    // 按严重程度排序
+    const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 }
+    anomalies.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+    
+    return anomalies
   }
 }
 
