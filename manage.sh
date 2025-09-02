@@ -157,7 +157,7 @@ quick_deploy() {
 check_health() {
     print_info "检查服务状态..."
     
-    services=("tripsum-postgres" "tripsum-redis" "tripsum-backend" "tripsum-frontend" "tripsum-nginx")
+    services=("tripsum-postgres" "tripsum-redis" "tripsum-backend" "tripsum-nginx")
     
     for service in "${services[@]}"; do
         if docker ps --format "table {{.Names}}" | grep -q "$service"; then
