@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { io } from '../app'
 
 const prisma = new PrismaClient()
@@ -520,12 +520,14 @@ export class TripService {
       throw new Error('成员不存在或不属于该行程')
     }
 
+    // 计算新的贡献总额
+    const currentContribution = member.contribution || new Prisma.Decimal(0)
+    const newContribution = new Prisma.Decimal(currentContribution.toString()).add(contribution)
+    
     const updatedMember = await prisma.tripMember.update({
       where: { id: memberId },
       data: { 
-        contribution: {
-          increment: contribution  // 使用累加而不是覆盖
-        }
+        contribution: newContribution  // 使用计算后的值而不是 increment
       },
       include: { user: true },
     })
@@ -553,18 +555,25 @@ export class TripService {
       throw new Error('部分成员不存在或不属于该行程')
     }
 
-    // 批量更新 - 使用累加而不是覆盖
-    const updatePromises = contributions.map(({ memberId, contribution }) =>
-      prisma.tripMember.update({
+    // 批量更新 - 计算每个成员的新贡献总额
+    const updatePromises = contributions.map(async ({ memberId, contribution }) => {
+      const member = members.find(m => m.id === memberId)
+      if (!member) {
+        throw new Error(`成员 ${memberId} 不存在`)
+      }
+      
+      // 计算新的贡献总额
+      const currentContribution = member.contribution || new Prisma.Decimal(0)
+      const newContribution = new Prisma.Decimal(currentContribution.toString()).add(contribution)
+      
+      return prisma.tripMember.update({
         where: { id: memberId },
         data: { 
-          contribution: {
-            increment: contribution  // 使用累加
-          }
+          contribution: newContribution  // 使用计算后的值而不是 increment
         },
         include: { user: true },
       })
-    )
+    })
 
     const updatedMembers = await Promise.all(updatePromises)
 
