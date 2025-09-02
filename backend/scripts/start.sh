@@ -9,13 +9,35 @@ echo "========================================="
 echo "TripSum Backend Starting..."
 echo "========================================="
 
+# 从 DATABASE_URL 提取连接信息
+export PGHOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
+export PGPORT=$(echo $DATABASE_URL | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+export PGUSER=$(echo $DATABASE_URL | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
+export PGPASSWORD=$(echo $DATABASE_URL | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
+export PGDATABASE=$(echo $DATABASE_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
+
 # 等待数据库就绪
 echo "等待数据库就绪..."
-until npx prisma db pull --print 2>/dev/null | grep -q "postgres"; do
-  echo "数据库尚未就绪，等待中..."
-  sleep 2
+echo "连接到: $PGHOST:$PGPORT/$PGDATABASE"
+
+MAX_RETRIES=30
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+  if pg_isready -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDATABASE > /dev/null 2>&1; then
+    echo "✓ 数据库已就绪"
+    break
+  else
+    echo "数据库尚未就绪，等待中... ($((RETRY_COUNT + 1))/$MAX_RETRIES)"
+    sleep 2
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+  fi
 done
-echo "✓ 数据库已就绪"
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+  echo "❌ 数据库连接超时"
+  exit 1
+fi
 
 # 检查是否存在 _prisma_migrations 表
 echo "检查数据库状态..."

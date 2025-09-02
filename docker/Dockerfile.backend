@@ -30,10 +30,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# 安装必要的系统包
+# 安装必要的系统包（包括 postgresql-client 用于数据库连接测试）
 RUN apk add --no-cache \
     curl \
     openssl \
+    postgresql-client \
     && rm -rf /var/cache/apk/*
 
 # 创建非root用户
@@ -46,9 +47,12 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 
-# 创建必要的目录
-RUN mkdir -p uploads/receipts logs && \
-    chown -R nodejs:nodejs uploads logs
+# 安装 Prisma CLI（确保在运行时可用）
+RUN npm install -g prisma
+
+# 创建必要的目录和脚本目录
+RUN mkdir -p uploads/receipts logs scripts && \
+    chown -R nodejs:nodejs uploads logs scripts
 
 # 切换到非root用户
 USER nodejs
