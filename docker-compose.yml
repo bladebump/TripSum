@@ -79,8 +79,8 @@ services:
   # 前端服务
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
+      context: .
+      dockerfile: ./docker/Dockerfile.frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
     container_name: tripsum-frontend
