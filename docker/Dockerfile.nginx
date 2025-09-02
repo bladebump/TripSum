@@ -32,16 +32,13 @@ COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # 创建运行时配置脚本（用于动态替换 API URL）
-RUN cat > /docker-entrypoint.sh << 'EOF'
-#!/bin/sh
-if [ -n "$VITE_API_URL" ]; then
-  find /usr/share/nginx/html -type f \( -name "*.js" -o -name "*.mjs" \) -exec \
-    sed -i "s|VITE_API_URL_PLACEHOLDER|${VITE_API_URL}|g" {} \;
-fi
-nginx -g "daemon off;"
-EOF
-
-RUN chmod +x /docker-entrypoint.sh
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'if [ -n "$VITE_API_URL" ]; then' >> /docker-entrypoint.sh && \
+    echo '  find /usr/share/nginx/html -type f \( -name "*.js" -o -name "*.mjs" \) -exec \' >> /docker-entrypoint.sh && \
+    echo '    sed -i "s|VITE_API_URL_PLACEHOLDER|${VITE_API_URL}|g" {} \;' >> /docker-entrypoint.sh && \
+    echo 'fi' >> /docker-entrypoint.sh && \
+    echo 'nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
 # 暴露端口
 EXPOSE 80
