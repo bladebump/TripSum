@@ -137,17 +137,17 @@ class ExportService {
     ]
 
     // 计算统计数据
-    const totalExpenses = trip.expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0)
-    const fundExpenses = trip.expenses.filter((exp: any) => exp.isPaidFromFund).reduce((sum: number, exp: any) => sum + exp.amount, 0)
+    const totalExpenses = trip.expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0)
+    const fundExpenses = trip.expenses.filter((exp: any) => exp.isPaidFromFund).reduce((sum: number, exp: any) => sum + Number(exp.amount), 0)
     const memberExpenses = totalExpenses - fundExpenses
-    const totalContributions = trip.members.reduce((sum: number, member: any) => sum + (member.contribution || 0), 0)
+    const totalContributions = trip.members.reduce((sum: number, member: any) => sum + (Number(member.contribution) || 0), 0)
     const fundBalance = totalContributions - fundExpenses
 
     // 添加数据
     const data = [
       { item: '行程名称', value: trip.name, description: '' },
       { item: '创建时间', value: dayjs(trip.createdAt).format('YYYY-MM-DD HH:mm'), description: '' },
-      { item: '参与人数', value: `${trip.members.length} 人`, description: trip.members.map((m: any) => m.nickname || m.user?.username || '虚拟成员').join('、') },
+      { item: '参与人数', value: `${trip.members.length} 人`, description: trip.members.map((m: any) => m.displayName || m.user?.username || '虚拟成员').join('、') },
       { item: '货币单位', value: trip.currency || 'CNY', description: '' },
       { item: '', value: '', description: '' },
       { item: '基金池总额', value: `¥${totalContributions.toFixed(2)}`, description: '所有成员缴纳的基金总和' },
@@ -189,18 +189,18 @@ class ExportService {
 
     const data = trip.expenses.map((expense: any) => {
       const participantNames = expense.participants.map((p: any) => 
-        p.tripMember.nickname || p.tripMember.user?.username || '虚拟成员'
+        p.tripMember.displayName || p.tripMember.user?.username || '虚拟成员'
       ).join('、')
       
       return {
         date: dayjs(expense.expenseDate || expense.createdAt).format('YYYY-MM-DD'),
         description: expense.description,
         category: expense.category?.name || '其他',
-        amount: `¥${expense.amount.toFixed(2)}`,
-        payer: expense.payerMember?.nickname || expense.payerMember?.user?.username || '虚拟成员',
+        amount: `¥${Number(expense.amount).toFixed(2)}`,
+        payer: expense.payerMember?.displayName || expense.payerMember?.user?.username || '虚拟成员',
         paymentType: expense.isPaidFromFund ? '基金支付' : '个人垫付',
         participants: participantNames,
-        perPerson: `¥${(expense.amount / expense.participants.length).toFixed(2)}`,
+        perPerson: `¥${(Number(expense.amount) / expense.participants.length).toFixed(2)}`,
         note: expense.description || ''
       }
     })
@@ -232,17 +232,17 @@ class ExportService {
     ]
 
     const totalContributions = trip.members.reduce((sum: number, member: any) => 
-      sum + (member.contribution || 0), 0
+      sum + (Number(member.contribution) || 0), 0
     )
 
     const data = trip.members.map((member: any) => {
-      const contribution = member.contribution || 0
+      const contribution = Number(member.contribution) || 0
       const percentage = totalContributions > 0 
         ? ((contribution / totalContributions) * 100).toFixed(1) 
         : '0.0'
       
       return {
-        member: member.nickname || member.user?.username || '虚拟成员',
+        member: member.displayName || member.user?.username || '虚拟成员',
         contribution: `¥${contribution.toFixed(2)}`,
         percentage: `${percentage}%`,
         role: member.role === 'ADMIN' ? '管理员' : '成员',
@@ -307,8 +307,8 @@ class ExportService {
       }
       
       return {
-        member: member?.nickname || member?.user?.username || '虚拟成员',
-        contribution: `¥${calc.contribution.toFixed(2)}`,
+        member: member?.displayName || member?.user?.username || '虚拟成员',
+        contribution: `¥${Number(calc.contribution).toFixed(2)}`,
         paid: `¥${calc.totalPaid.toFixed(2)}`,
         share: `¥${calc.totalShare.toFixed(2)}`,
         balance: `¥${Math.abs(calc.balance).toFixed(2)}`,
@@ -351,11 +351,11 @@ class ExportService {
     ]
 
     const data = settlements.map((settlement: any) => ({
-      from: settlement.fromMember.nickname || settlement.fromMember.user?.username || '虚拟成员',
-      to: settlement.toMember.nickname || settlement.toMember.user?.username || '虚拟成员',
-      amount: `¥${settlement.amount.toFixed(2)}`,
-      status: settlement.isSettled ? '已结算' : '待结算',
-      note: `${settlement.fromMember.nickname || settlement.fromMember.user?.username} 需支付给 ${settlement.toMember.nickname || settlement.toMember.user?.username}`
+      from: settlement.from?.username || '未知成员',
+      to: settlement.to?.username || '未知成员', 
+      amount: `¥${Number(settlement.amount).toFixed(2)}`,
+      status: '待结算',
+      note: `${settlement.from?.username || '未知成员'} 需支付给 ${settlement.to?.username || '未知成员'}`
     }))
 
     if (data.length === 0) {

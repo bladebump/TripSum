@@ -8,8 +8,7 @@ import {
   Grid,
   ProgressBar,
   Tag,
-  Toast,
-  NoticeBar
+  Toast
 } from 'antd-mobile'
 import { 
   PieChart, Pie, Cell, 
@@ -58,7 +57,6 @@ const TripStatistics: React.FC = () => {
     advancedMetrics, 
     timeDistribution, 
     paymentMethodStats, 
-    anomalies,
     categoryBreakdown,
     dailyExpenses,
     membersFinancialStatus
@@ -96,15 +94,6 @@ const TripStatistics: React.FC = () => {
       <NavBar onBack={() => navigate(`/trips/${id}`)}>
         统计分析
       </NavBar>
-
-      {/* 异常提醒 */}
-      {anomalies && anomalies.length > 0 && (
-        <NoticeBar
-          content={anomalies[0].message}
-          color={anomalies[0].severity === 'high' ? 'error' : 'alert'}
-          closeable
-        />
-      )}
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
         <Tabs.Tab title="总览" key="overview">
@@ -402,43 +391,6 @@ const TripStatistics: React.FC = () => {
           </div>
         </Tabs.Tab>
 
-        {anomalies && anomalies.length > 0 && (
-          <Tabs.Tab title="异常检测" key="anomalies">
-            <div className="tab-content">
-              <Card title="异常消费提醒">
-                <List>
-                  {anomalies.map((anomaly, index) => (
-                    <List.Item
-                      key={index}
-                      prefix={
-                        <Tag color={
-                          anomaly.severity === 'high' ? 'danger' :
-                          anomaly.severity === 'medium' ? 'warning' :
-                          'default'
-                        }>
-                          {anomaly.severity === 'high' ? '高' :
-                           anomaly.severity === 'medium' ? '中' :
-                           '低'}
-                        </Tag>
-                      }
-                      description={
-                        <div>
-                          <div>{anomaly.description}</div>
-                          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-                            {new Date(anomaly.date).toLocaleString()}
-                          </div>
-                        </div>
-                      }
-                      extra={formatCurrency(anomaly.amount)}
-                    >
-                      {anomaly.message}
-                    </List.Item>
-                  ))}
-                </List>
-              </Card>
-            </div>
-          </Tabs.Tab>
-        )}
       </Tabs>
     </div>
   )
