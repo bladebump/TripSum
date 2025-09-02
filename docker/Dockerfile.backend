@@ -11,8 +11,8 @@ RUN apk add --no-cache python3 make g++ && \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# 安装依赖
-RUN npm ci --only=production && \
+# 安装所有依赖（包括开发依赖，用于编译）
+RUN npm ci && \
     npm install -g prisma && \
     npx prisma generate
 
@@ -21,6 +21,9 @@ COPY . .
 
 # 编译TypeScript
 RUN npm run build
+
+# 清理开发依赖，只保留生产依赖
+RUN npm prune --production
 
 # 运行阶段
 FROM node:20-alpine
