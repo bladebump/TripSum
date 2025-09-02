@@ -124,6 +124,7 @@ deploy() {
     $DOCKER_COMPOSE_CMD down 2>/dev/null || true
     
     print_info "构建并启动服务..."
+    print_info "注意：启动脚本会自动处理数据库迁移"
     $DOCKER_COMPOSE_CMD up -d --build
     
     print_info "等待服务启动..."
@@ -132,6 +133,7 @@ deploy() {
     check_health
     
     print_success "部署完成！"
+    print_info "提示：如果有新的数据库迁移，已自动应用"
     show_info
 }
 
@@ -281,6 +283,12 @@ init() {
     print_header
     print_warning "首次部署将清理所有现有数据！"
     echo ""
+    echo "将执行以下操作："
+    echo "  1. 停止所有服务"
+    echo "  2. 清理所有数据卷"
+    echo "  3. 清理本地数据"
+    echo "  4. 重新构建并部署"
+    echo ""
     read -p "确认要执行首次部署吗？(yes/no): " confirm
     if [ "$confirm" != "yes" ]; then
         print_info "操作已取消"
@@ -307,6 +315,11 @@ init() {
     sync_code
     
     print_info "构建并启动服务..."
+    print_info "注意：启动脚本会自动："
+    print_info "  - 等待数据库就绪"
+    print_info "  - 执行 Prisma 迁移"
+    print_info "  - 创建索引和触发器"
+    print_info "  - 初始化默认数据"
     $DOCKER_COMPOSE_CMD up -d --build
     
     print_info "等待服务启动..."

@@ -69,6 +69,7 @@ services:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
       - ./backend/scripts/start.sh:/app/scripts/start.sh:ro
+      - ./backend/prisma/post-deploy.sql:/app/prisma/post-deploy.sql:ro
     networks:
       - tripsum-network
     command: sh /app/scripts/start.sh
