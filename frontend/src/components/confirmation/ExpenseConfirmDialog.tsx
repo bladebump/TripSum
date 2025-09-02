@@ -38,13 +38,46 @@ const ExpenseConfirmDialog: React.FC<ExpenseConfirmDialogProps> = ({
   // 用于实时更新人均金额
   const [currentAmount, setCurrentAmount] = useState<number>(parsedData?.amount || 0)
   
-  // 监听parsedData变化，更新金额
+  // 监听parsedData变化，更新所有表单字段
   useEffect(() => {
-    if (parsedData?.amount) {
-      setCurrentAmount(parsedData.amount)
-      form.setFieldValue('amount', parsedData.amount.toString())
+    if (parsedData) {
+      // 更新金额
+      if (parsedData.amount) {
+        setCurrentAmount(parsedData.amount)
+        form.setFieldValue('amount', parsedData.amount.toString())
+      }
+      
+      // 更新描述
+      if (parsedData.description) {
+        form.setFieldValue('description', parsedData.description)
+      }
+      
+      // 更新日期
+      if (parsedData.consumptionDate) {
+        form.setFieldValue('expenseDate', new Date(parsedData.consumptionDate))
+      } else {
+        form.setFieldValue('expenseDate', new Date())
+      }
+      
+      // 更新付款人
+      if (parsedData.payerId) {
+        form.setFieldValue('payerMemberId', parsedData.payerId)
+      }
+      
+      // 更新分类
+      if (parsedData.category && categories.length > 0) {
+        const category = categories.find(c => c.name === parsedData.category)
+        if (category) {
+          form.setFieldValue('categoryId', category.id)
+        } else {
+          const defaultCategory = categories.find(c => c.name === '其他')
+          if (defaultCategory) {
+            form.setFieldValue('categoryId', defaultCategory.id)
+          }
+        }
+      }
     }
-  }, [parsedData, form])
+  }, [parsedData, form, categories])
   return (
     <Dialog
       visible={visible}
