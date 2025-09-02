@@ -464,6 +464,11 @@ const TripDetail: React.FC = () => {
             <div className="action-text">账单</div>
           </div>
           
+          <div className="action-button" onClick={() => navigate(`/trips/${id}/statistics`)}>
+            <div className="action-icon">📈</div>
+            <div className="action-text">统计</div>
+          </div>
+          
           <div className="action-button success" onClick={() => navigate(`/trips/${id}/settlement`)}>
             <div className="action-icon">💰</div>
             <div className="action-text">结算</div>

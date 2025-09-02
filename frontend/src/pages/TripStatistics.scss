@@ -1,0 +1,96 @@
+.trip-statistics {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+
+  .tab-content {
+    padding: 12px;
+  }
+
+  .metric-card {
+    text-align: center;
+    padding: 16px;
+
+    .metric-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .balance {
+    font-size: 16px;
+    font-weight: 600;
+    
+    &.positive {
+      color: #52c41a;
+    }
+    
+    &.negative {
+      color: #f5222d;
+    }
+  }
+
+  .adm-card {
+    margin-bottom: 12px;
+    border-radius: 8px;
+  }
+
+  .adm-list-item-content-main {
+    flex: 1;
+  }
+
+  .adm-progress-bar {
+    margin-top: 8px;
+  }
+
+  // 图表响应式
+  .recharts-wrapper {
+    margin: 0 auto;
+  }
+
+  .recharts-pie-label-text {
+    font-size: 12px;
+  }
+
+  // 标签样式
+  .adm-tag {
+    &.adm-tag-danger {
+      background-color: #fff1f0;
+      color: #f5222d;
+      border-color: #ffccc7;
+    }
+
+    &.adm-tag-warning {
+      background-color: #fffbe6;
+      color: #faad14;
+      border-color: #ffe58f;
+    }
+
+    &.adm-tag-success {
+      background-color: #f6ffed;
+      color: #52c41a;
+      border-color: #d9f7be;
+    }
+  }
+
+  // 通知栏样式
+  .adm-notice-bar {
+    margin-bottom: 12px;
+
+    &.adm-notice-bar-error {
+      background-color: #fff1f0;
+      color: #f5222d;
+    }
+
+    &.adm-notice-bar-alert {
+      background-color: #fffbe6;
+      color: #faad14;
+    }
+  }
+}

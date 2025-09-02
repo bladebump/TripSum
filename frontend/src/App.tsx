@@ -12,6 +12,7 @@ import MemberDashboard from './pages/MemberDashboard'
 import Settlement from './pages/Settlement'
 import AddMember from './pages/AddMember'
 import TripSummary from './pages/TripSummary'
+import TripStatistics from './pages/TripStatistics'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
@@ -97,6 +98,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <TripSummary />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="trips/:id/statistics"
+                element={
+                  <PrivateRoute>
+                    <TripStatistics />
                   </PrivateRoute>
                 }
               />
