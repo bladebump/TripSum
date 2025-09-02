@@ -68,13 +68,10 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
+      - ./backend/scripts/start.sh:/app/scripts/start.sh:ro
     networks:
       - tripsum-network
-    command: |
-      sh -c "
-        npx prisma migrate deploy &&
-        npm start
-      "
+    command: sh /app/scripts/start.sh
 
   # 前端服务
   frontend:

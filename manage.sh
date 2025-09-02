@@ -38,6 +38,9 @@ print_info() {
     echo -e "${BLUE}ℹ${NC} $1"
 }
 
+# 全局变量，存储 Docker Compose 命令
+DOCKER_COMPOSE_CMD=""
+
 # 检查依赖
 check_dependencies() {
     if ! command -v docker &> /dev/null; then
@@ -135,6 +138,7 @@ deploy() {
 # 快速部署
 quick_deploy() {
     print_header
+    check_dependencies
     check_env
     sync_code
     
@@ -228,6 +232,7 @@ backup() {
 
 # 查看日志
 logs() {
+    check_dependencies
     if [ -n "$1" ]; then
         $DOCKER_COMPOSE_CMD logs -f "$1"
     else
@@ -237,6 +242,7 @@ logs() {
 
 # 重启服务
 restart() {
+    check_dependencies
     if [ -n "$1" ]; then
         print_info "重启服务: $1"
         $DOCKER_COMPOSE_CMD restart "$1"
@@ -249,6 +255,7 @@ restart() {
 
 # 查看状态
 status() {
+    check_dependencies
     print_info "服务状态："
     $DOCKER_COMPOSE_CMD ps
     echo ""
@@ -263,9 +270,90 @@ status() {
 
 # 停止服务
 stop() {
+    check_dependencies
     print_info "停止所有服务..."
     $DOCKER_COMPOSE_CMD down
     print_success "服务已停止"
+}
+
+# 首次部署（清理并重新部署）
+init() {
+    print_header
+    print_warning "首次部署将清理所有现有数据！"
+    echo ""
+    read -p "确认要执行首次部署吗？(yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        print_info "操作已取消"
+        exit 0
+    fi
+    
+    check_dependencies
+    check_env
+    
+    print_info "停止现有服务..."
+    $DOCKER_COMPOSE_CMD down 2>/dev/null || true
+    
+    print_info "清理数据卷..."
+    docker volume rm tripsum_postgres_data 2>/dev/null || true
+    docker volume rm tripsum_redis_data 2>/dev/null || true
+    docker volume rm tripsum_nginx_logs 2>/dev/null || true
+    print_success "数据卷已清理"
+    
+    print_info "清理本地数据目录..."
+    rm -rf backend/uploads/* 2>/dev/null || true
+    rm -rf backend/logs/* 2>/dev/null || true
+    print_success "本地数据已清理"
+    
+    sync_code
+    
+    print_info "构建并启动服务..."
+    $DOCKER_COMPOSE_CMD up -d --build
+    
+    print_info "等待服务启动..."
+    sleep 30
+    
+    check_health
+    
+    print_success "首次部署完成！"
+    show_info
+}
+
+# 清理数据卷
+clean() {
+    print_header
+    print_warning "清理操作将删除所有数据！"
+    echo ""
+    echo "将清理以下内容："
+    echo "  - PostgreSQL 数据"
+    echo "  - Redis 缓存"
+    echo "  - Nginx 日志"
+    echo "  - 上传的文件"
+    echo "  - 应用日志"
+    echo ""
+    read -p "确认要清理所有数据吗？(yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        print_info "操作已取消"
+        exit 0
+    fi
+    
+    check_dependencies
+    
+    print_info "停止所有服务..."
+    $DOCKER_COMPOSE_CMD down 2>/dev/null || true
+    
+    print_info "清理 Docker 卷..."
+    docker volume rm tripsum_postgres_data 2>/dev/null || true
+    docker volume rm tripsum_redis_data 2>/dev/null || true
+    docker volume rm tripsum_nginx_logs 2>/dev/null || true
+    
+    print_info "清理本地数据..."
+    rm -rf backend/uploads/* 2>/dev/null || true
+    rm -rf backend/logs/* 2>/dev/null || true
+    rm -rf backups/* 2>/dev/null || true
+    
+    print_success "数据清理完成"
+    echo ""
+    echo "提示：执行 '$0 init' 进行首次部署"
 }
 
 # 显示帮助
@@ -275,24 +363,31 @@ help() {
     echo "用法: $0 <命令>"
     echo ""
     echo "命令："
+    echo "  init         首次部署（清理并初始化）"
     echo "  deploy       完整部署（包含git pull）"
     echo "  quick        快速部署"
     echo "  status       查看服务状态"
     echo "  logs [服务]  查看日志"
     echo "  restart [服务] 重启服务"
     echo "  backup       备份数据"
+    echo "  clean        清理所有数据"
     echo "  stop         停止服务"
     echo "  help         显示帮助"
     echo ""
     echo "示例："
+    echo "  $0 init             # 首次部署"
     echo "  $0 deploy           # 完整部署"
     echo "  $0 logs backend     # 查看后端日志"
     echo "  $0 restart nginx    # 重启nginx"
+    echo "  $0 clean            # 清理所有数据"
 }
 
 # 主函数
 main() {
     case "${1:-help}" in
+        "init")
+            init
+            ;;
         "deploy")
             deploy
             ;;
@@ -310,6 +405,9 @@ main() {
             ;;
         "backup")
             backup
+            ;;
+        "clean")
+            clean
             ;;
         "stop")
             stop
