@@ -37,19 +37,6 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
   exit 1
 fi
 
-# 清理可能存在的错误表名（临时措施，后续可删除）
-echo "清理旧表（如果存在）..."
-PGPASSWORD=$PGPASSWORD psql -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDATABASE <<EOF 2>/dev/null || true
--- 这些是旧版本可能创建的错误表名，新版本不会有这个问题
-DROP TABLE IF EXISTS "User" CASCADE;
-DROP TABLE IF EXISTS "Trip" CASCADE;
-DROP TABLE IF EXISTS "TripMember" CASCADE;
-DROP TABLE IF EXISTS "Expense" CASCADE;
-DROP TABLE IF EXISTS "ExpenseParticipant" CASCADE;
-DROP TABLE IF EXISTS "Category" CASCADE;
-DROP TABLE IF EXISTS "Settlement" CASCADE;
-EOF
-
 echo ""
 echo "========================================="
 echo "执行数据库迁移..."
