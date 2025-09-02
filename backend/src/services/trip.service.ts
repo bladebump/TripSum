@@ -503,85 +503,39 @@ export class TripService {
   }
 
   async updateMemberContribution(tripId: string, memberId: string, contribution: number, updatedBy: string) {
-    console.log('=== updateMemberContribution 开始 ===')
-    console.log('tripId:', tripId)
-    console.log('memberId:', memberId)
-    console.log('contribution:', contribution, 'type:', typeof contribution)
-    console.log('updatedBy:', updatedBy)
+    // 检查权限：只有管理员可以更新基金缴纳
+    await this.checkTripPermission(tripId, updatedBy, 'admin')
     
-    try {
-      // 检查权限：只有管理员可以更新基金缴纳
-      await this.checkTripPermission(tripId, updatedBy, 'admin')
-      
-      // 验证成员是否存在且属于该行程
-      const member = await prisma.tripMember.findFirst({
-        where: {
-          id: memberId,
-          tripId,
-          isActive: true,
-        },
-        include: { user: true },
-      })
+    // 验证成员是否存在且属于该行程
+    const member = await prisma.tripMember.findFirst({
+      where: {
+        id: memberId,
+        tripId,
+        isActive: true,
+      },
+      include: { user: true },
+    })
 
-      console.log('查询到的成员:', member ? {
-        id: member.id,
-        displayName: member.displayName,
-        isVirtual: member.isVirtual,
-        userId: member.userId,
-        contribution: member.contribution?.toString(),
-        contributionType: typeof member.contribution,
-        contributionConstructor: member.contribution?.constructor?.name
-      } : 'null')
-
-      if (!member) {
-        throw new Error('成员不存在或不属于该行程')
-      }
-
-      // 计算新的贡献总额 - 使用普通数值计算避免 Prisma.Decimal 序列化问题
-      const currentContribution = Number(member.contribution || 0)
-      const newContribution = currentContribution + contribution
-      
-      console.log('计算:')
-      console.log('- currentContribution:', currentContribution, 'type:', typeof currentContribution)
-      console.log('- newContribution:', newContribution, 'type:', typeof newContribution)
-      
-      const updateData = { contribution: newContribution }
-      console.log('Prisma update 参数:', {
-        where: { id: memberId },
-        data: updateData,
-        dataStringified: JSON.stringify(updateData)
-      })
-      
-      const updatedMember = await prisma.tripMember.update({
-        where: { id: memberId },
-        data: updateData,
-        include: { user: true },
-      })
-
-      console.log('更新成功')
-      io.to(`trip-${tripId}`).emit('member-contribution-updated', updatedMember)
-
-      return updatedMember
-      
-    } catch (error: any) {
-      console.error('\n=== updateMemberContribution 错误 ===')
-      console.error('错误消息:', error.message)
-      console.error('错误代码:', error.code)
-      console.error('错误堆栈:', error.stack)
-      if (error.meta) {
-        console.error('错误元数据:', JSON.stringify(error.meta, null, 2))
-      }
-      console.error('完整错误对象:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
-      throw error
+    if (!member) {
+      throw new Error('成员不存在或不属于该行程')
     }
+
+    // 计算新的贡献总额 - 使用普通数值计算
+    const currentContribution = Number(member.contribution || 0)
+    const newContribution = currentContribution + contribution
+    
+    const updatedMember = await prisma.tripMember.update({
+      where: { id: memberId },
+      data: { contribution: newContribution },
+      include: { user: true },
+    })
+
+    io.to(`trip-${tripId}`).emit('member-contribution-updated', updatedMember)
+
+    return updatedMember
   }
 
   async batchUpdateContributions(tripId: string, contributions: Array<{ memberId: string; contribution: number }>, updatedBy: string) {
-    console.log('=== batchUpdateContributions 开始 ===')
-    console.log('tripId:', tripId)
-    console.log('contributions:', JSON.stringify(contributions, null, 2))
-    console.log('updatedBy:', updatedBy)
-    
     // 检查权限：只有管理员可以批量更新基金缴纳
     await this.checkTripPermission(tripId, updatedBy, 'admin')
     
@@ -595,86 +549,36 @@ export class TripService {
       },
     })
 
-    console.log('查询到的成员数:', members.length)
-    members.forEach(m => {
-      console.log(`成员 ${m.id}:`, {
-        displayName: m.displayName,
-        isVirtual: m.isVirtual,
-        userId: m.userId,
-        contribution: m.contribution?.toString(),
-        contributionType: typeof m.contribution,
-        contributionConstructor: m.contribution?.constructor?.name
-      })
-    })
-
     if (members.length !== contributions.length) {
       throw new Error('部分成员不存在或不属于该行程')
     }
 
     // 批量更新 - 计算每个成员的新贡献总额
     const updatePromises = contributions.map(async ({ memberId, contribution }) => {
-      try {
-        const member = members.find(m => m.id === memberId)
-        if (!member) {
-          throw new Error(`成员 ${memberId} 不存在`)
-        }
-        
-        console.log(`\n处理成员 ${memberId}:`)
-        console.log('- 输入的 contribution:', contribution, 'type:', typeof contribution)
-        console.log('- 当前 member.contribution:', member.contribution?.toString(), 'type:', typeof member.contribution)
-        console.log('- contribution constructor:', member.contribution?.constructor?.name)
-        
-        // 计算新的贡献总额 - 使用普通数值计算避免 Prisma.Decimal 序列化问题
-        const currentContribution = Number(member.contribution || 0)
-        const newContribution = currentContribution + contribution
-        
-        console.log('- 计算后 currentContribution:', currentContribution, 'type:', typeof currentContribution)
-        console.log('- 计算后 newContribution:', newContribution, 'type:', typeof newContribution)
-        
-        const updateData = { contribution: newContribution }
-        console.log('Prisma update 参数:', {
-          where: { id: memberId },
-          data: updateData,
-          dataStringified: JSON.stringify(updateData)
-        })
-        
-        const result = await prisma.tripMember.update({
-          where: { id: memberId },
-          data: updateData,
-          include: { user: true },
-        })
-        
-        console.log(`成员 ${memberId} 更新成功`)
-        return result
-        
-      } catch (error: any) {
-        console.error(`\n=== 更新成员 ${memberId} 时出错 ===`)
-        console.error('错误消息:', error.message)
-        console.error('错误代码:', error.code)
-        console.error('错误堆栈:', error.stack)
-        if (error.meta) {
-          console.error('错误元数据:', JSON.stringify(error.meta, null, 2))
-        }
-        console.error('完整错误对象:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
-        throw error
+      const member = members.find(m => m.id === memberId)
+      if (!member) {
+        throw new Error(`成员 ${memberId} 不存在`)
       }
+      
+      // 计算新的贡献总额 - 使用普通数值计算
+      const currentContribution = Number(member.contribution || 0)
+      const newContribution = currentContribution + contribution
+      
+      return prisma.tripMember.update({
+        where: { id: memberId },
+        data: { contribution: newContribution },
+        include: { user: true },
+      })
     })
 
-    try {
-      const updatedMembers = await Promise.all(updatePromises)
-      console.log('=== 所有成员更新成功 ===')
-      
-      io.to(`trip-${tripId}`).emit('batch-contributions-updated', updatedMembers)
-      
-      return {
-        success: true,
-        updated: updatedMembers.length,
-        members: updatedMembers,
-      }
-    } catch (error: any) {
-      console.error('=== Promise.all 失败 ===')
-      console.error('错误:', error)
-      throw error
+    const updatedMembers = await Promise.all(updatePromises)
+    
+    io.to(`trip-${tripId}`).emit('batch-contributions-updated', updatedMembers)
+    
+    return {
+      success: true,
+      updated: updatedMembers.length,
+      members: updatedMembers,
     }
   }
 

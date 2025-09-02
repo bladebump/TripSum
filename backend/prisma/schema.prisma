@@ -55,6 +55,8 @@ model TripMember {
   displayName        String?              @map("display_name") @db.VarChar(50)
   createdBy          String?              @map("created_by")
   contribution       Decimal              @default(0) @map("contribution") @db.Decimal(10, 2)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
   expenseParticipant ExpenseParticipant[]
   paidExpenses       Expense[]
   settlementsFrom    Settlement[]         @relation("SettlementFrom")
