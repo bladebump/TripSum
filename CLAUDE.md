@@ -32,7 +32,6 @@ TripSum (旅算) is a travel expense-splitting application designed for small gr
 - Redis 7 for caching and sessions
 - Socket.io for real-time communication
 - JWT for authentication
-- MinIO for file storage
 - OpenAI GPT-4 / Claude API for AI features
 
 ## Essential Commands
@@ -72,11 +71,34 @@ npx prisma generate  # Generate Prisma client
 npx prisma migrate dev  # Run migrations
 ```
 
-### Docker Operations
+### Development Environment
 ```bash
-docker-compose up -d     # Start all services
-docker-compose logs -f   # View logs
-docker-compose down      # Stop all services
+# 本地开发环境
+cd backend && npm run dev    # 启动后端开发服务器
+cd frontend && npm run dev   # 启动前端开发服务器
+
+# 数据库操作
+npx prisma migrate dev       # 运行数据库迁移
+npx prisma db seed          # 填充种子数据
+npx prisma generate         # 生成Prisma客户端
+```
+
+### Production Deployment
+```bash
+# 生产环境部署（推荐）
+./manage.sh deploy          # 完整部署（含git pull）
+./manage.sh quick           # 快速部署
+./manage.sh status          # 查看服务状态
+./manage.sh logs            # 查看日志
+./manage.sh restart         # 重启服务
+./manage.sh backup          # 数据备份
+./manage.sh stop            # 停止服务
+./manage.sh help            # 帮助信息
+
+# 直接使用Docker Compose
+docker-compose up -d --build    # 构建并启动生产环境
+docker-compose logs -f          # 查看日志
+docker-compose ps               # 查看服务状态
 ```
 
 ## Code Architecture
@@ -116,7 +138,7 @@ Key models:
 - JWT-based authentication with access/refresh tokens
 - Request validation using Joi
 - Standardized error responses
-- File uploads via Multer to MinIO
+- File uploads via Multer to local storage
 
 ### State Management
 Frontend uses Zustand stores:
@@ -137,7 +159,7 @@ Backend requires `.env` file with:
 - REDIS_URL - Redis connection
 - JWT secrets and expiry settings
 - OpenAI API key for AI features
-- MinIO configuration for file storage
+- File upload configuration for local storage
 
 Frontend uses Vite environment variables:
 - VITE_API_URL - Backend API endpoint
@@ -157,7 +179,7 @@ Frontend uses Vite environment variables:
    - **Calculator Tool**: Function Calling for precise calculations (add/subtract/multiply/divide)
    - AI prompts include member information for context-aware parsing
 4. **Authentication** uses JWT with refresh token rotation and secure token handling
-5. **File uploads** stored in MinIO with metadata in PostgreSQL
+5. **File uploads** stored locally with metadata in PostgreSQL
 6. **Real-time sync** handled via Socket.io websockets for live updates
 7. **Mobile-first UI** using Ant Design Mobile with optimized touch interactions
 8. **Settlement calculation** uses optimized debt reduction with fund contributions

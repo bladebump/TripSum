@@ -199,14 +199,153 @@ cd backend
 npm run build
 ```
 
-## Docker部署
+## 开发环境
+
+### 快速启动
 
 ```bash
-# 使用Docker Compose启动所有服务
-docker-compose up -d
+# 1. 克隆项目
+git clone <your-repo-url>
+cd TripSum
+
+# 2. 安装依赖
+cd backend && npm install
+cd ../frontend && npm install
+
+# 3. 配置环境变量
+cp .env.example backend/.env
+# 编辑 backend/.env 设置数据库连接等
+
+# 4. 准备数据库（选择一种方式）
+# 方式1: 本地安装PostgreSQL和Redis
+# 方式2: 使用云数据库服务
+# 方式3: Docker本地数据库服务（可选）
+
+# 5. 运行迁移和种子数据
+cd backend
+npx prisma migrate dev
+npx prisma db seed
+
+# 6. 启动开发服务器
+# 后端（终端1）
+cd backend && npm run dev
+
+# 前端（终端2）
+cd frontend && npm run dev
+```
+
+### 数据库配置选项
+
+**方式1: 本地安装**
+```bash
+# Ubuntu/Debian
+sudo apt install postgresql redis-server
+
+# macOS
+brew install postgresql redis
+
+# 配置数据库
+sudo -u postgres createdb tripsum
+sudo -u postgres createuser tripsum_user
+```
+
+**方式2: 使用云服务**
+- PostgreSQL: AWS RDS, Google Cloud SQL, 阿里云RDS等
+- Redis: AWS ElastiCache, 阿里云Redis等
+
+**方式3: Docker本地服务（可选）**
+```bash
+# 仅启动数据库服务用于开发
+docker run -d --name tripsum-postgres -p 5432:5432 -e POSTGRES_DB=tripsum -e POSTGRES_USER=tripsum_user -e POSTGRES_PASSWORD=tripsum_password postgres:15-alpine
+docker run -d --name tripsum-redis -p 6379:6379 redis:7-alpine
+```
+
+## 生产环境部署
+
+### 一键部署（推荐）
+
+```bash
+# 1. 克隆项目
+git clone <your-repo-url>
+cd TripSum
+
+# 2. 配置生产环境
+cp .env.example .env
+nano .env  # 编辑配置
+
+# 必须修改的配置项：
+# NODE_ENV=production
+# JWT_SECRET=your-super-secure-jwt-secret
+# POSTGRES_PASSWORD=your-strong-password  
+# CLIENT_URL=http://your-server-ip
+# VITE_API_URL=http://your-server-ip/api
+# OPENAI_API_KEY=your-openai-api-key
+
+# 3. 一键部署
+./manage.sh deploy
+```
+
+### 管理命令
+
+```bash
+# 查看服务状态
+./manage.sh status
 
 # 查看日志
-docker-compose logs -f
+./manage.sh logs
+./manage.sh logs backend  # 查看特定服务日志
+
+# 重启服务
+./manage.sh restart
+./manage.sh restart nginx  # 重启特定服务
+
+# 快速更新部署（含 git pull）
+./manage.sh quick
+
+# 数据备份
+./manage.sh backup
+
+# 停止服务
+./manage.sh stop
+
+# 查看帮助
+./manage.sh help
+```
+
+### 部署特点
+- ✅ **支持IP地址直接访问**，无需域名
+- ✅ **自动Git同步**，部署时自动拉取最新代码
+- ✅ 简化配置，只需一个环境文件
+- ✅ 移除MinIO，节省资源
+- ✅ Nginx反向代理和静态资源缓存
+- ✅ 健康检查和自动重启
+- ✅ 数据持久化存储和备份
+
+### 常见问题
+
+**Q: 无法通过IP访问？**
+```bash
+# 检查防火墙
+sudo ufw allow 80
+sudo ufw allow 443
+
+# 检查服务状态
+./manage.sh status
+```
+
+**Q: API请求失败？**
+```bash
+# 测试API健康检查
+curl http://your-server-ip/health
+
+# 检查后端日志
+./manage.sh logs backend
+```
+
+**Q: 如何更新项目？**
+```bash
+# 快速更新（自动git pull + 重新部署）
+./manage.sh quick
 ```
 
 ## 贡献指南
@@ -265,12 +404,13 @@ docker-compose logs -f
 
 ```
 TripSum/
+├── .env.example       # 环境变量配置模板
+├── docker-compose.yml # 生产环境Docker配置
+├── manage.sh          # 生产环境管理脚本
 ├── frontend/          # React前端应用
 ├── backend/           # Express后端服务
-├── database/          # 数据库相关
-├── docker/            # Docker配置
-├── docs/              # 项目文档
-└── scripts/           # 自动化脚本
+├── database/          # 数据库初始化脚本
+└── docker/            # Nginx等Docker配置文件
 ```
 
 ## 贡献指南
@@ -298,7 +438,14 @@ TripSum/
 
 ## 版本历史
 
-### v1.5.0 (2025-08-29) ⚡ 最新版本
+### v1.5.1 (2025-09-01) ⚡ 最新版本
+- **📦 大幅简化**: 从9个配置文件简化为2个核心文件，减少复杂性
+- **🔧 开发环境本地化**: 完全本地开发，无需Docker依赖
+- **🚀 一键生产部署**: 自动Git同步，智能环境检查
+- **🌍 IP直接访问**: 优化CORS和Nginx配置，无需域名
+- **🗑️ 移除冗余**: 删除MinIO和多余部署文档，专注核心功能
+
+### v1.5.0 (2025-08-29)
 - **🏗️ 架构重构**: 完成userId到memberId架构迁移，统一标识体系
 - **💼 管理员中心化结算**: 所有结算通过管理员节点进行，简化债务关系
 - **🚀 API性能优化**: getUserTrips减少90%+数据传输，提升响应速度

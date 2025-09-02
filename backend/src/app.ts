@@ -10,11 +10,21 @@ import routes from './routes'
 
 dotenv.config()
 
+// CORS配置 - 支持IP访问和多域名
+let corsOrigins: (string | RegExp)[] = process.env.CLIENT_URL 
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+  : ['http://localhost:5173']
+
+// 生产环境支持IP访问
+if (process.env.NODE_ENV === 'production') {
+  corsOrigins.push(/^https?:\/\/\d+\.\d+\.\d+\.\d+(:\d+)?$/) // 支持IP访问（http和https）
+}
+
 const app: Express = express()
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: corsOrigins,
     credentials: true,
   },
 })
@@ -22,8 +32,9 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 3000
 
 app.use(helmet())
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: corsOrigins,
   credentials: true,
 }))
 app.use(express.json())
