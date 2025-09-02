@@ -45,8 +45,17 @@ check_dependencies() {
         exit 1
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
+    # 检查新版 docker compose (作为子命令)
+    if docker compose version &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker compose"
+        print_success "检测到 Docker Compose (新版)"
+    # 检查旧版 docker-compose
+    elif command -v docker-compose &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker-compose"
+        print_success "检测到 Docker Compose (旧版)"
+    else
         print_error "Docker Compose 未安装"
+        print_info "请安装 Docker Compose 或升级 Docker 到最新版本"
         exit 1
     fi
     
@@ -109,10 +118,10 @@ deploy() {
     sync_code
     
     print_info "停止现有服务..."
-    docker-compose down 2>/dev/null || true
+    $DOCKER_COMPOSE_CMD down 2>/dev/null || true
     
     print_info "构建并启动服务..."
-    docker-compose up -d --build
+    $DOCKER_COMPOSE_CMD up -d --build
     
     print_info "等待服务启动..."
     sleep 30
@@ -130,8 +139,8 @@ quick_deploy() {
     sync_code
     
     print_info "快速重启服务..."
-    docker-compose down
-    docker-compose up -d --build
+    $DOCKER_COMPOSE_CMD down
+    $DOCKER_COMPOSE_CMD up -d --build
     
     sleep 20
     check_health
@@ -220,9 +229,9 @@ backup() {
 # 查看日志
 logs() {
     if [ -n "$1" ]; then
-        docker-compose logs -f "$1"
+        $DOCKER_COMPOSE_CMD logs -f "$1"
     else
-        docker-compose logs -f
+        $DOCKER_COMPOSE_CMD logs -f
     fi
 }
 
@@ -230,10 +239,10 @@ logs() {
 restart() {
     if [ -n "$1" ]; then
         print_info "重启服务: $1"
-        docker-compose restart "$1"
+        $DOCKER_COMPOSE_CMD restart "$1"
     else
         print_info "重启所有服务..."
-        docker-compose restart
+        $DOCKER_COMPOSE_CMD restart
     fi
     print_success "重启完成"
 }
@@ -241,7 +250,7 @@ restart() {
 # 查看状态
 status() {
     print_info "服务状态："
-    docker-compose ps
+    $DOCKER_COMPOSE_CMD ps
     echo ""
     
     # 检查API
@@ -255,7 +264,7 @@ status() {
 # 停止服务
 stop() {
     print_info "停止所有服务..."
-    docker-compose down
+    $DOCKER_COMPOSE_CMD down
     print_success "服务已停止"
 }
 
