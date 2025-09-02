@@ -1,7 +1,7 @@
 {
   "name": "tripsum-backend",
   "version": "1.0.0",
-  "description": "TripSum Backend Service",
+  "description": "TripSum (旅算) - 智能旅行费用分摊系统后端服务",
   "main": "dist/app.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/app.ts",
