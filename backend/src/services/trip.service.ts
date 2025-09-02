@@ -520,7 +520,7 @@ export class TripService {
       throw new Error('成员不存在或不属于该行程')
     }
 
-    // 计算新的贡献总额 - 使用普通数值计算
+    // 计算新的贡献总额
     const currentContribution = Number(member.contribution || 0)
     const newContribution = currentContribution + contribution
     
@@ -560,7 +560,7 @@ export class TripService {
         throw new Error(`成员 ${memberId} 不存在`)
       }
       
-      // 计算新的贡献总额 - 使用普通数值计算
+      // 计算新的贡献总额
       const currentContribution = Number(member.contribution || 0)
       const newContribution = currentContribution + contribution
       
