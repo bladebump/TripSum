@@ -74,34 +74,23 @@ services:
       - tripsum-network
     command: sh /app/scripts/start.sh
 
-  # 前端服务
-  frontend:
+  # Nginx 服务（包含前端）
+  nginx:
     build:
       context: .
-      dockerfile: ./docker/Dockerfile.frontend
+      dockerfile: ./docker/Dockerfile.nginx
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
-    container_name: tripsum-frontend
-    restart: unless-stopped
-    depends_on:
-      - backend
-    networks:
-      - tripsum-network
-
-  # Nginx 反向代理
-  nginx:
-    image: nginx:alpine
     container_name: tripsum-nginx
     restart: unless-stopped
     depends_on:
       - backend
-      - frontend
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
       - nginx_logs:/var/log/nginx
     networks:
