@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import AmountUtil from './decimal'
 
 dayjs.locale('zh-cn')
 dayjs.extend(relativeTime)
@@ -22,7 +23,7 @@ export const formatRelativeTime = (date: string | Date): string => {
 
 export const formatCurrency = (amount: number | string | null | undefined, currency = 'CNY'): string => {
   if (amount === null || amount === undefined) return '¥0.00'
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  const numAmount = typeof amount === 'string' ? AmountUtil.parseAmount(amount) : amount
   if (isNaN(numAmount)) return '¥0.00'
   
   // 根据货币类型选择符号
@@ -33,8 +34,8 @@ export const formatCurrency = (amount: number | string | null | undefined, curre
     '¥': '¥'
   }[currency] || currency
   
-  // 添加千分位分隔符
-  const formatted = Math.abs(numAmount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  // 使用AmountUtil格式化金额，确保精度
+  const formatted = AmountUtil.format(Math.abs(numAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   return numAmount < 0 ? `-${currencySymbol}${formatted}` : `${currencySymbol}${formatted}`
 }
 

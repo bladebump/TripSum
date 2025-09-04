@@ -5,6 +5,7 @@ import {
   ParticipantDetail,
   CreateExpenseData
 } from '../types/expense.types'
+import AmountUtil from '../utils/decimal'
 
 const prisma = new PrismaClient()
 
@@ -391,11 +392,11 @@ export class ExpenseService {
         ? (p.tripMember.displayName || '虚拟成员')
         : (p.tripMember?.user?.username || '未知用户')
       
-      let shareAmount = p.shareAmount?.toNumber ? p.shareAmount.toNumber() : p.shareAmount
+      let shareAmount = AmountUtil.toNumber(AmountUtil.toDecimal(p.shareAmount))
       if (!shareAmount && p.sharePercentage) {
-        const percentage = p.sharePercentage?.toNumber ? p.sharePercentage.toNumber() : p.sharePercentage
-        const amount = expense.amount?.toNumber ? expense.amount.toNumber() : expense.amount
-        shareAmount = (amount * percentage) / 100
+        const percentage = AmountUtil.toNumber(AmountUtil.toDecimal(p.sharePercentage))
+        const amount = AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
+        shareAmount = AmountUtil.toNumber(AmountUtil.divide(AmountUtil.multiply(amount, percentage), 100))
       }
 
       return {
@@ -407,9 +408,9 @@ export class ExpenseService {
     })
 
     // 计算平均分摊
-    const totalAmount = expense.amount?.toNumber ? expense.amount.toNumber() : expense.amount
+    const totalAmount = AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
     const averageShare = participantDetails.length > 0 
-      ? totalAmount / participantDetails.length 
+      ? AmountUtil.toNumber(AmountUtil.divide(totalAmount, participantDetails.length))
       : 0
 
     // 生成摘要信息

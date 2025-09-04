@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { PrismaClient } from '@prisma/client'
 import { calculationService } from './calculation.service'
+import AmountUtil from '../utils/decimal'
 
 const prisma = new PrismaClient()
 
@@ -135,12 +136,16 @@ export class AISummaryService {
       },
       timeDistribution: statistics.timeDistribution,
       topExpenses: expenses
-        .filter(e => e.amount.toNumber() > 0)
-        .sort((a, b) => b.amount.toNumber() - a.amount.toNumber())
+        .filter(e => AmountUtil.greaterThan(e.amount, 0))
+        .sort((a, b) => {
+          const aAmount = AmountUtil.toDecimal(a.amount)
+          const bAmount = AmountUtil.toDecimal(b.amount)
+          return bAmount.minus(aAmount).toNumber()
+        })
         .slice(0, 5)
         .map(e => ({
           description: e.description,
-          amount: e.amount.toNumber(),
+          amount: AmountUtil.toNumber(AmountUtil.toDecimal(e.amount)),
           category: e.category?.name,
           date: e.expenseDate
         })),

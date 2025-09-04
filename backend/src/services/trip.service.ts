@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { io } from '../app'
+import AmountUtil from '../utils/decimal'
 
 const prisma = new PrismaClient()
 
@@ -101,21 +102,19 @@ export class TripService {
 
     const tripsWithStats = trips.map((trip) => {
       // 计算总支出
-      const totalExpenses = trip.expenses.reduce(
-        (sum, expense) => sum + expense.amount.toNumber(),
-        0
+      const totalExpenses = AmountUtil.toNumber(
+        AmountUtil.sum(trip.expenses.map(e => e.amount))
       )
 
       // 计算总缴纳
-      const totalContributions = trip.members.reduce(
-        (sum, member) => sum + member.contribution.toNumber(),
-        0
+      const totalContributions = AmountUtil.toNumber(
+        AmountUtil.sum(trip.members.map(m => m.contribution))
       )
 
       // 计算基金池支出（isPaidFromFund=true的支出）
-      const fundExpenses = trip.expenses
-        .filter((expense) => expense.isPaidFromFund)
-        .reduce((sum, expense) => sum + expense.amount.toNumber(), 0)
+      const fundExpenses = AmountUtil.toNumber(
+        AmountUtil.sum(trip.expenses.filter(e => e.isPaidFromFund).map(e => e.amount))
+      )
 
       // 基金剩余
       const fundBalance = totalContributions - fundExpenses

@@ -10,6 +10,7 @@ import {
 } from 'antd-mobile'
 import { TripMember, Category } from '@/types'
 import { formatCurrency } from '@/utils/format'
+import AmountUtil from '@/utils/decimal'
 import './ExpenseConfirmDialog.scss'
 
 interface ExpenseConfirmDialogProps {
@@ -105,7 +106,7 @@ const ExpenseConfirmDialog: React.FC<ExpenseConfirmDialogProps> = ({
                     placeholder="0.00"
                     className="amount-value"
                     onChange={(val) => {
-                      const amount = parseFloat(val) || 0
+                      const amount = AmountUtil.parseAmount(val)
                       setCurrentAmount(amount)
                     }}
                   />

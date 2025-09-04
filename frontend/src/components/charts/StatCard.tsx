@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card } from 'antd-mobile'
 import { formatCurrency } from '@/utils/format'
+import AmountUtil from '@/utils/decimal'
 import './StatCard.scss'
 
 interface StatCardProps {
@@ -30,7 +31,7 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const formatValue = () => {
     if (type === 'currency') {
-      return formatCurrency(typeof value === 'string' ? parseFloat(value) : value)
+      return formatCurrency(typeof value === 'string' ? AmountUtil.parseAmount(value) : value)
     }
     return value
   }

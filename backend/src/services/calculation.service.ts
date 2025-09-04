@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { BalanceCalculation, Settlement } from '../types'
+import AmountUtil from '../utils/decimal'
 
 const prisma = new PrismaClient()
 
@@ -44,7 +45,7 @@ export class CalculationService {
         memberId: memberId, // 统一使用memberId
         username: username,
         role: member.role, // 角色信息
-        contribution: member.contribution.toNumber(), // 基金缴纳
+        contribution: AmountUtil.toNumber(AmountUtil.toDecimal(member.contribution)), // 基金缴纳
         totalPaid: 0, // 实际垫付
         totalShare: 0, // 应该分摊
         balance: 0,
@@ -56,12 +57,12 @@ export class CalculationService {
     // 处理所有支出（虚拟成员和真实成员完全一样）
     for (const expense of expenses) {
       // 只计算支出（正数），不计算收入（负数）
-      if (expense.amount.toNumber() > 0) {
+      if (AmountUtil.greaterThan(expense.amount, 0)) {
         // 非基金池支付计入个人垫付（所有成员包括虚拟成员都可以垫付）
         if (!expense.isPaidFromFund && expense.payerMember) {
           const payer = balanceMap.get(expense.payerMember.id)
           if (payer) {
-            payer.totalPaid += expense.amount.toNumber()
+            payer.totalPaid += AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
           }
         }
 
@@ -70,7 +71,7 @@ export class CalculationService {
           if (!participant.tripMemberId) continue // 跳过无效记录
           const member = balanceMap.get(participant.tripMemberId)
           if (member && participant.shareAmount) {
-            member.totalShare += participant.shareAmount.toNumber()
+            member.totalShare += AmountUtil.toNumber(AmountUtil.toDecimal(participant.shareAmount))
           }
         }
       }
@@ -232,25 +233,21 @@ export class CalculationService {
       this.calculateBalances(tripId) // 获取余额计算结果
     ])
 
-    const totalExpenses = expenses.reduce(
-      (sum, exp) => sum + exp.amount.toNumber(),
-      0
+    const totalExpenses = AmountUtil.toNumber(
+      AmountUtil.sum(expenses.map(e => e.amount))
     )
     
     // 计算基金池状态
-    const totalContributions = trip?.members.reduce(
-      (sum, member) => sum + member.contribution.toNumber(),
-      0
-    ) || 0
+    const totalContributions = trip?.members ? AmountUtil.toNumber(
+      AmountUtil.sum(trip.members.map(m => m.contribution))
+    ) : 0
     
-    const fundExpenses = expenses.filter(e => e.isPaidFromFund).reduce(
-      (sum, exp) => sum + exp.amount.toNumber(),
-      0
+    const fundExpenses = AmountUtil.toNumber(
+      AmountUtil.sum(expenses.filter(e => e.isPaidFromFund).map(e => e.amount))
     )
     
-    const memberPaidExpenses = expenses.filter(e => !e.isPaidFromFund).reduce(
-      (sum, exp) => sum + exp.amount.toNumber(),
-      0
+    const memberPaidExpenses = AmountUtil.toNumber(
+      AmountUtil.sum(expenses.filter(e => !e.isPaidFromFund).map(e => e.amount))
     )
 
     // 构建成员财务状态映射
@@ -263,7 +260,7 @@ export class CalculationService {
           : (member.user?.username || 'Unknown'),
         isVirtual: member.isVirtual,
         role: member.role,
-        contribution: member.contribution.toNumber(),
+        contribution: AmountUtil.toNumber(AmountUtil.toDecimal(member.contribution)),
         totalPaid: balance?.totalPaid || 0,
         totalShare: balance?.totalShare || 0,
         balance: balance?.balance || 0,
@@ -294,7 +291,7 @@ export class CalculationService {
       const catId = expense.categoryId || uncategorizedId
       const cat = categoryMap.get(catId)
       if (cat) {
-        cat.amount += expense.amount.toNumber()
+        cat.amount += AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
       }
     }
 
@@ -313,7 +310,7 @@ export class CalculationService {
     for (const expense of expenses) {
       const dateKey = expense.expenseDate.toISOString().split('T')[0]
       const daily = dailyMap.get(dateKey) || { amount: 0, count: 0 }
-      daily.amount += expense.amount.toNumber()
+      daily.amount += AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
       daily.count += 1
       dailyMap.set(dateKey, daily)
     }
@@ -378,10 +375,12 @@ export class CalculationService {
   
   // 新增：计算高级统计指标
   private calculateAdvancedMetrics(expenses: any[], trip: any, dailyExpenses: any[], membersFinancialStatus: any[]) {
-    const validExpenses = expenses.filter(e => e.amount.toNumber() > 0)
+    const validExpenses = expenses.filter(e => AmountUtil.greaterThan(e.amount, 0))
     const totalDays = dailyExpenses.length || 1
     const totalMembers = trip?.members.length || 1
-    const totalAmount = validExpenses.reduce((sum, e) => sum + e.amount.toNumber(), 0)
+    const totalAmount = AmountUtil.toNumber(
+      AmountUtil.sum(validExpenses.map(e => e.amount))
+    )
     
     // 计算每个成员的人均消费
     const memberAverages = membersFinancialStatus.map(m => ({
@@ -417,9 +416,13 @@ export class CalculationService {
       // 单笔平均
       averagePerExpense: totalAmount / (validExpenses.length || 1),
       // 最高单笔
-      maxExpense: Math.max(...validExpenses.map(e => e.amount.toNumber()), 0),
+      maxExpense: AmountUtil.toNumber(
+        AmountUtil.max(validExpenses.map(e => e.amount))
+      ),
       // 最低单笔
-      minExpense: Math.min(...validExpenses.map(e => e.amount.toNumber()).filter(a => a > 0), 0),
+      minExpense: validExpenses.length > 0 ? AmountUtil.toNumber(
+        AmountUtil.min(validExpenses.map(e => e.amount))
+      ) : 0,
       // 消费峰值日
       peakDay: peakDay ? {
         date: peakDay.date,
@@ -448,7 +451,7 @@ export class CalculationService {
     
     for (const expense of expenses) {
       const hour = expense.expenseDate.getHours()
-      const amount = expense.amount.toNumber()
+      const amount = AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
       
       if (hour >= 6 && hour < 12) {
         timeSlots.morning.count++
@@ -465,7 +468,9 @@ export class CalculationService {
       }
     }
     
-    const total = expenses.reduce((sum, e) => sum + e.amount.toNumber(), 0)
+    const total = AmountUtil.toNumber(
+      AmountUtil.sum(expenses.map(e => e.amount))
+    )
     
     return {
       morning: {
@@ -494,7 +499,9 @@ export class CalculationService {
   // 新增：异常消费检测
   private detectAnomalies(expenses: any[], dailyAverage: number) {
     const anomalies = []
-    const amounts = expenses.map(e => e.amount.toNumber()).filter(a => a > 0)
+    const amounts = expenses
+      .map(e => AmountUtil.toNumber(AmountUtil.toDecimal(e.amount)))
+      .filter(a => a > 0)
     
     if (amounts.length === 0) return []
     
@@ -507,7 +514,7 @@ export class CalculationService {
     const threshold = mean + (2 * stdDev)
     
     for (const expense of expenses) {
-      const amount = expense.amount.toNumber()
+      const amount = AmountUtil.toNumber(AmountUtil.toDecimal(expense.amount))
       
       // 异常高额消费
       if (amount > threshold && amount > dailyAverage * 2) {

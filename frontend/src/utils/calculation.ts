@@ -1,12 +1,13 @@
 import { Expense } from '@/types'
+import AmountUtil from './decimal'
 
 export const calculateTotalExpenses = (expenses: Expense[]): number => {
-  return expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  return AmountUtil.sum(expenses.map(e => e.amount))
 }
 
 export const calculateAveragePerPerson = (totalAmount: number, memberCount: number): number => {
   if (memberCount === 0) return 0
-  return totalAmount / memberCount
+  return AmountUtil.divide(totalAmount, memberCount)
 }
 
 export const calculateUserBalance = (
@@ -14,26 +15,28 @@ export const calculateUserBalance = (
   expenses: Expense[],
   memberCount: number
 ): number => {
-  const totalPaid = expenses
-    .filter(expense => expense.payerMemberId === memberId)  // 使用payerMemberId
-    .reduce((sum, expense) => sum + expense.amount, 0)
+  const totalPaid = AmountUtil.sum(
+    expenses
+      .filter(expense => expense.payerMemberId === memberId)  // 使用payerMemberId
+      .map(e => e.amount)
+  )
 
   const totalShare = expenses.reduce((sum, expense) => {
     const participant = expense.participants?.find(p => p.tripMemberId === memberId)  // 使用tripMemberId
     if (participant?.shareAmount) {
-      return sum + participant.shareAmount
+      return AmountUtil.add(sum, participant.shareAmount)
     }
     if (participant?.sharePercentage) {
-      return sum + (expense.amount * participant.sharePercentage / 100)
+      return AmountUtil.add(sum, AmountUtil.divide(AmountUtil.multiply(expense.amount, participant.sharePercentage), 100))
     }
     // 默认平均分摊
     if (expense.participants && expense.participants.length > 0) {
-      return sum + (expense.amount / expense.participants.length)
+      return AmountUtil.add(sum, AmountUtil.divide(expense.amount, expense.participants.length))
     }
-    return sum + (expense.amount / memberCount)
+    return AmountUtil.add(sum, AmountUtil.divide(expense.amount, memberCount))
   }, 0)
 
-  return totalPaid - totalShare
+  return AmountUtil.subtract(totalPaid, totalShare)
 }
 
 export const groupExpensesByDate = (expenses: Expense[]): Map<string, Expense[]> => {

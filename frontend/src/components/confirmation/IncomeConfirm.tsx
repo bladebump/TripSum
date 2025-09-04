@@ -9,6 +9,7 @@ import {
 } from 'antd-mobile'
 import { TripMember } from '@/types'
 import { formatCurrency } from '@/utils/format'
+import AmountUtil from '@/utils/decimal'
 import './ConfirmDialog.scss'
 
 interface IncomeConfirmProps {
@@ -284,7 +285,7 @@ const IncomeConfirm: React.FC<IncomeConfirmProps> = ({
                             onChange={(val) => {
                               setIndividualAmounts({
                                 ...individualAmounts,
-                                [memberId]: parseFloat(val) || 0
+                                [memberId]: AmountUtil.parseAmount(val)
                               })
                             }}
                           />
@@ -339,7 +340,7 @@ const IncomeConfirm: React.FC<IncomeConfirmProps> = ({
                     borderRadius: '12px'
                   }}
                   value={uniformAmount.toString()}
-                  onChange={(val) => setUniformAmount(parseFloat(val) || 0)}
+                  onChange={(val) => setUniformAmount(AmountUtil.parseAmount(val))}
                 />
               </div>
             </div>

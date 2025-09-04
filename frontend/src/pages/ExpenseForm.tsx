@@ -18,6 +18,7 @@ import { ImageUploadItem } from 'antd-mobile/es/components/image-uploader'
 import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useAuthStore } from '@/stores/auth.store'
+import AmountUtil from '@/utils/decimal'
 import aiService from '@/services/ai.service'
 import { getCurrentMemberId } from '@/utils/member'
 import { formatDate } from '@/utils/format'
@@ -167,7 +168,7 @@ const ExpenseForm: React.FC = () => {
       setLoading(true)
       
       const expenseData = {
-        amount: parseFloat(values.amount),
+        amount: AmountUtil.parseAmount(values.amount),
         payerId: values.payerId,
         description: values.description,
         expenseDate: values.expenseDate.toISOString(),
@@ -303,7 +304,7 @@ const ExpenseForm: React.FC = () => {
                           onChange={(val) => {
                             setCustomAmounts({
                               ...customAmounts,
-                              [member.id]: parseFloat(val) || 0
+                              [member.id]: AmountUtil.parseAmount(val)
                             })
                           }}
                         />
