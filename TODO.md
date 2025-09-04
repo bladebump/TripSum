@@ -2,48 +2,6 @@
 
 ## 📋 当前待办任务
 
-### ✅ v1.8.0 金额精度优化 (2025-09-04)
-- [x] **Decimal.js 精度处理** 
-  - ✅ 后端集成 Decimal.js 库
-  - ✅ 创建统一的金额处理工具类
-  - ✅ 重构4个服务文件，移除29处toNumber()调用
-  - ✅ 前端集成 Decimal.js 库
-  - ✅ 更新6处parseFloat()为精确计算
-  - ✅ 确保前后端金额处理一致性
-
-### ✅ v1.7.0 已完成功能
-- [x] **Excel导出功能实现** (2025-09-01)
-  - ✅ 实现完整的5表格Excel导出（总览、支出、基金、成员财务、结算方案）
-  - ✅ 添加后端exceljs服务，支持多工作表和格式化
-  - ✅ 集成前端导出按钮到行程详情页面
-  - ✅ 优化导出数据结构和中文本地化
-
-- [x] **代码优化和清理** (2025-09-01) 
-  - ✅ 清理无用的AI总结PDF导出相关代码
-  - ✅ 移除TripStatistics页面和底部导航标签
-  - ✅ 修复React hooks使用问题和consumptionDate显示
-  - ✅ 优化AI解析逻辑，移除不必要的计算工具调用
-  - ✅ 修复人均金额计算和中文日期显示问题
-
-### 📊 统计功能优化 (优先级: 中)
-- [x] **图表可视化组件** (已实现)
-  - ✅ ExpensePieChart - 支出分类饼图
-  - ✅ TrendLineChart - 时间趋势线图
-  - ✅ MemberBarChart - 成员对比柱状图
-  - ✅ StatCard - 统计指标卡片
-
-### 🤖 AI行程复盘 (优先级: 中)
-- [x] **智能分析功能** (已实现)
-  - ✅ 大模型深度消费分析
-  - ✅ 消费模式和习惯识别
-  - ✅ 个性化消费建议生成
-  
-- [x] **总结报告生成** (已实现)
-  - ✅ 自动行程总结报告生成
-  - ✅ 消费亮点和问题点识别
-  - ✅ 下次旅行优化建议
-  - ✅ HTML格式报告导出
-
 ### 🏗️ userId架构优化 (优先级: 中)
 - [ ] **基于userId_usage_report.md的优化**
   - 继续淡化userId在业务逻辑中的使用
@@ -114,39 +72,7 @@
   - 基金池状态变化通知
   - 在线成员状态显示
 
-## 🐛 已知问题
-
-### ✅ 已解决
-- [x] **Excel导出功能开发** (2025-09-01)
-  - 实现完整的后端Excel导出服务
-  - 集成exceljs库，支持多工作表
-  - 添加前端导出按钮和下载功能
-  - 支持5个工作表：总览、支出明细、基金缴纳、成员财务、结算方案
-  
-- [x] **代码清理和优化** (2025-09-01)
-  - 清理无用PDF导出功能代码
-  - 移除TripStatistics冗余页面
-  - 修复React hooks使用问题
-  - 优化AI解析和日期显示问题
-  
-- [x] **TripDetail页面布局问题** (2025-09-01)
-  - 修复CSS类名冲突（trip-summary → trip-info-card）
-  - 解决Tabs不显示的问题
-  - 优化flex布局传递
-  
-- [x] **操作按钮布局优化** (2025-09-01)
-  - 从4列改为5列网格布局
-  - 5个按钮在一行显示
-  - 优化按钮样式和触摸反馈
-
-### ✅ 已解决 (2025-09-04)
-- [x] **大金额精度问题**
-  - ✅ 集成Decimal.js库处理金额
-  - ✅ 替换所有toNumber()调用为Decimal运算
-  - ✅ 前后端统一金额处理标准
-  - ✅ 添加金额格式化和验证工具类
-
-### ⚠️ 待解决
+## 🐛 待解决问题
   
 - [ ] **移动端样式优化**
   - 在真实设备上测试展开视图
@@ -169,6 +95,7 @@
 - 🎯 目标储蓄计划
 
 ## 🔧 技术债务
+
 1. **代码重构**
    - 抽取重复的参与者计算逻辑
    - 统一错误处理机制
@@ -185,22 +112,27 @@
    - 实现自动化测试流程
 
 ## 📌 重要文件位置
+
 - 后端支出服务: `/backend/src/services/expense.service.ts`
 - 后端计算服务: `/backend/src/services/calculation.service.ts`
 - 后端行程服务: `/backend/src/services/trip.service.ts`
-- **后端导出服务**: `/backend/src/services/export.service.ts` ⭐
+- 后端导出服务: `/backend/src/services/export.service.ts`
+- 后端金额工具: `/backend/src/utils/decimal.ts` ⭐ NEW
 - 前端支出显示: `/frontend/src/pages/TripDetail.tsx`
 - 前端行程Store: `/frontend/src/stores/trip.store.ts`
-- **前端导出服务**: `/frontend/src/services/export.service.ts` ⭐
-- **图表组件**: `/frontend/src/components/charts/` ⭐
+- 前端导出服务: `/frontend/src/services/export.service.ts`
+- 前端金额工具: `/frontend/src/utils/decimal.ts` ⭐ NEW
+- 图表组件: `/frontend/src/components/charts/`
 - 类型定义: `/frontend/src/types/expense.types.ts`, `/frontend/src/types/trip.types.ts`
 
 ## 🏗️ 当前架构说明
+
 - **数据获取流程**: TripDetail页面 → trip.store → 并行调用 getTripDetail + getStatistics API
 - **统计API**: `/trips/:id/statistics` 返回完整的财务统计、成员状态、基金池信息
 - **余额API**: `/trips/:id/balances` 独立的余额计算接口
 - **结算模式**: 管理员中心化结算，所有交易通过管理员节点
 - **标识体系**: memberId为主要业务标识，userId仅用于认证
+- **金额计算**: 全栈Decimal.js精确计算，避免浮点误差
 
 ---
 *最后更新: 2025-09-04*  
