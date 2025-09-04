@@ -51,8 +51,8 @@ export class AmountUtil {
       return 0
     }
     
-    // 移除可能的千位分隔符
-    const cleanValue = value.replace(/,/g, '')
+    // 先trim空格，再移除可能的千位分隔符
+    const cleanValue = value.trim().replace(/,/g, '')
     
     try {
       const decimal = new Decimal(cleanValue)

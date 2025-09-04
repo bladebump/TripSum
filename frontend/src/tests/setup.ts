@@ -8,7 +8,7 @@ afterEach(() => {
 })
 
 // Mock window.matchMedia
-;(Object as any).defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -43,7 +43,7 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
-;(Object as any).defineProperty(window, 'localStorage', {
+Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
   writable: true
 })
