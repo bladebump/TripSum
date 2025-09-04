@@ -214,7 +214,17 @@ Frontend uses Vite environment variables:
 - **UI Interactions**: Comprehensive test scenarios for improved UX patterns
 - 如果要测试运行项目端的话让用户运行，而不是自己运行后台进程
 
-## Recent Improvements (v1.4.0)
+## Recent Improvements
+
+### v1.10.0 - userId架构优化 (2025-09-04)
+- **AI控制器修复**: 正确获取当前用户的memberId
+- **统一数据访问层**: 创建member.service.ts提供转换接口
+- **使用原则明确化**: 
+  - 认证层使用userId（JWT、权限验证）
+  - 业务层使用memberId（费用、成员、结算、AI）
+- **API文档更新**: 添加详细的标识体系使用指南
+
+### v1.4.0 - 基金池模式
 
 ### Fund Management System (基金池模式)
 - **Contribution Tracking**: Added `contribution` field to TripMember for fund pre-collection

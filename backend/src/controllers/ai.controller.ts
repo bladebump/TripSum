@@ -21,9 +21,17 @@ export class AIController {
       // 验证用户是否为旅行成员
       await tripService.getTripDetail(tripId, userId)
       
-      // 当前用户的ID就是userId（这是真实用户的ID）
-      // members中传递的是TripMember.id，需要找对应关系
-      const currentMemberId = userId
+      // 获取当前用户对应的memberId
+      // 需要从行程成员列表中找到userId对应的TripMember.id
+      const tripMembers = await tripService.getTripMembers(tripId, userId)
+      const currentUserMember = tripMembers.find((m: any) => m.userId === userId)
+      
+      if (!currentUserMember) {
+        logger.error('无法找到当前用户的成员信息', { userId, tripId })
+        return sendError(res, '500', '无法找到当前用户的成员信息', 500)
+      }
+      
+      const currentMemberId = currentUserMember.id
       
       const result = await unifiedAIParser.parseUserInput(tripId, text.trim(), members, currentMemberId)
       return sendSuccess(res, result)

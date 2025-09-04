@@ -6,7 +6,7 @@
 - **认证方式**: Bearer Token (JWT)
 - **请求格式**: JSON
 - **响应格式**: JSON
-- **API版本**: v1.9.0 (2025-09-04)
+- **API版本**: v1.10.0 (2025-09-04)
 - **架构特性**: memberId为主、管理员中心化结算
 
 ## API文档结构
@@ -109,9 +109,33 @@ socket.on('settlement-created', (data) => {
 ## 架构说明
 
 ### 标识体系
+
+#### 核心概念
 - **memberId (TripMember.id)**: 主要业务标识，所有成员相关操作使用
 - **userId**: 仅用于JWT认证和关联用户账户
 - **虚拟成员**: 拥有memberId但userId为null
+
+#### 使用原则（v1.10.0更新）
+1. **认证层**：使用userId
+   - JWT token载荷中的用户标识
+   - 登录、注册等认证操作
+   - 权限验证（checkTripPermission）
+
+2. **业务层**：使用memberId  
+   - 所有费用相关操作（创建、更新、删除）
+   - 成员管理（角色更新、移除成员）
+   - 余额计算和结算
+   - AI解析中的成员标识
+
+3. **API参数规范**
+   - 路径参数：`/trips/:id/members/:memberId` 使用memberId
+   - 请求体：`payerId`、`participants[].memberId` 等使用memberId
+   - 认证头：Bearer token中包含userId
+
+4. **数据转换**
+   - 新增`member.service.ts`提供统一的转换接口
+   - `getMemberIdByUserId()`：userId转memberId
+   - `checkAndGetMember()`：验证并获取成员信息
 
 ### 基金池模式
 - **contribution字段**: 记录成员基金缴纳金额
@@ -125,6 +149,7 @@ socket.on('settlement-created', (data) => {
 
 ## 更新历史
 
+- **v1.10.0** (2025-09-04): userId架构优化，统一数据访问层
 - **v1.9.0** (2025-09-04): API文档模块化重构，接口参数优化
 - **v1.8.0** (2025-09-04): Decimal.js集成，金额精度优化  
 - **v1.7.0** (2025-09-01): Excel导出功能
@@ -138,4 +163,4 @@ socket.on('settlement-created', (data) => {
 
 ---
 *最后更新: 2025-09-04*  
-*版本: v1.9.0*
+*版本: v1.10.0*

@@ -2,6 +2,32 @@
 
 所有关于TripSum项目的重要更改都记录在此文件中。
 
+## [1.10.0] - 2025-09-04
+### 🏗️ userId架构优化
+#### 架构改进
+- **AI控制器修复**: 修正parseUserInput中userId到memberId的错误转换
+- **统一数据访问层**: 创建member.service.ts提供统一的成员访问接口
+- **明确使用原则**: 
+  - 认证层使用userId（JWT、登录、权限验证）
+  - 业务层使用memberId（费用、成员管理、结算、AI解析）
+
+#### 新增功能
+- 创建MemberService类，提供以下核心方法：
+  - `getMemberIdByUserId()`: userId到memberId转换
+  - `checkAndGetMember()`: 验证并获取成员信息
+  - `getUserIdToMemberIdMap()`: 批量转换映射
+  - `isValidMember()`: 成员有效性检查
+
+#### 文档更新
+- API_OVERVIEW.md增加详细的标识体系使用指南
+- 明确API参数规范（路径参数、请求体、认证头）
+- 添加数据转换最佳实践
+
+#### 代码优化
+- AI控制器正确获取当前用户的memberId
+- 保持向后兼容，原有基于userId的方法仍可用
+- TypeScript类型检查全部通过
+
 ## [1.9.0] - 2025-09-04
 ### 📚 API文档重构
 #### 文档改进
