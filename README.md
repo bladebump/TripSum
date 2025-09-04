@@ -165,7 +165,14 @@ TripSum/
 
 ## API文档
 
-详细的API文档请查看 [API.md](./docs/API.md)
+API文档已按功能模块拆分，便于查阅和维护：
+
+- [API总览](./docs/API_OVERVIEW.md) - 基础信息、通用规范
+- [认证接口](./docs/API_AUTH.md) - 注册、登录、Token管理
+- [行程管理](./docs/API_TRIP.md) - 行程和成员管理
+- [支出管理](./docs/API_EXPENSE.md) - 费用记录和查询
+- [统计结算](./docs/API_STATISTICS.md) - 统计分析和结算
+- [AI功能](./docs/API_AI.md) - 智能记账和自然语言处理
 
 ## 开发指南
 

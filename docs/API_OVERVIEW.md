@@ -1,0 +1,141 @@
+# TripSum API 总览
+
+## 基础信息
+
+- **Base URL**: `http://localhost:3000/api`
+- **认证方式**: Bearer Token (JWT)
+- **请求格式**: JSON
+- **响应格式**: JSON
+- **API版本**: v1.9.0 (2025-09-04)
+- **架构特性**: memberId为主、管理员中心化结算
+
+## API文档结构
+
+本项目的API文档按功能模块拆分为以下几个部分：
+
+- [API_AUTH.md](./API_AUTH.md) - 认证相关接口
+- [API_TRIP.md](./API_TRIP.md) - 行程管理接口
+- [API_EXPENSE.md](./API_EXPENSE.md) - 支出管理接口
+- [API_STATISTICS.md](./API_STATISTICS.md) - 统计和结算接口
+- [API_AI.md](./API_AI.md) - AI功能接口
+
+## 通用响应格式
+
+### 成功响应
+
+```json
+{
+  "success": true,
+  "data": {},
+  "timestamp": 1708934400000
+}
+```
+
+### 错误响应
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "400",
+    "message": "错误描述"
+  },
+  "timestamp": 1708934400000
+}
+```
+
+## 错误代码
+
+| 代码 | 描述 |
+|------|------|
+| 400 | 请求参数错误 |
+| 401 | 未授权，需要登录 |
+| 403 | 禁止访问，权限不足 |
+| 404 | 资源未找到 |
+| 409 | 冲突，资源已存在 |
+| 422 | 无法处理的实体 |
+| 429 | 请求过于频繁 |
+| 500 | 服务器内部错误 |
+
+## 限流策略
+
+- 普通API: 100次/分钟
+- AI API: 20次/分钟
+- 文件上传: 10次/分钟
+
+超出限制将返回 429 状态码。
+
+## WebSocket 事件
+
+### 连接
+
+```javascript
+const socket = io('http://localhost:3000', {
+  auth: {
+    token: 'jwt_token'
+  }
+})
+```
+
+### 加入行程房间
+
+```javascript
+socket.emit('join-trip', tripId)
+```
+
+### 监听事件
+
+#### 支出更新
+```javascript
+socket.on('expense-updated', (data) => {
+  console.log('支出已更新:', data)
+})
+```
+
+#### 成员变化
+```javascript
+socket.on('member-changed', (data) => {
+  console.log('成员变化:', data)
+})
+```
+
+#### 结算通知
+```javascript
+socket.on('settlement-created', (data) => {
+  console.log('新的结算:', data)
+})
+```
+
+## 架构说明
+
+### 标识体系
+- **memberId (TripMember.id)**: 主要业务标识，所有成员相关操作使用
+- **userId**: 仅用于JWT认证和关联用户账户
+- **虚拟成员**: 拥有memberId但userId为null
+
+### 基金池模式
+- **contribution字段**: 记录成员基金缴纳金额
+- **智能付款识别**: 管理员付款=基金池支付，其他成员=需报销
+- **余额公式**: `balance = contribution + reimbursements - shares`
+
+### 金额计算
+- 所有金额计算使用Decimal.js确保精度
+- API响应中的金额字段为数字类型
+- 前端接收后应使用Decimal.js处理避免精度问题
+
+## 更新历史
+
+- **v1.9.0** (2025-09-04): API文档模块化重构，接口参数优化
+- **v1.8.0** (2025-09-04): Decimal.js集成，金额精度优化  
+- **v1.7.0** (2025-09-01): Excel导出功能
+- **v1.6.0** (2025-09-01): 代码优化和清理
+- **v1.5.0** (2025-08-29): memberId架构优化，管理员中心化结算
+- **v1.4.0** (2025-08-20): 基金池模式，虚拟成员完全统一
+- **v1.3.0** (2025-08-15): AI计算器集成，Function Calling支持
+- **v1.2.0** (2025-08-10): 模块化AI架构，意图识别系统
+- **v1.1.0** (2025-08-05): 虚拟成员支持，非注册用户参与
+- **v1.0.0** (2025-08-01): 正式版本发布
+
+---
+*最后更新: 2025-09-04*  
+*版本: v1.9.0*

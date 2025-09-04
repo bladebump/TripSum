@@ -34,6 +34,17 @@ TripSum (旅算) is a travel expense-splitting application designed for small gr
 - JWT for authentication
 - OpenAI GPT-4 / Claude API for AI features
 
+## API Documentation
+
+API documentation has been modularized for better organization and maintenance:
+
+- **docs/API_OVERVIEW.md** - API overview, common formats, error codes
+- **docs/API_AUTH.md** - Authentication endpoints (register, login, JWT)
+- **docs/API_TRIP.md** - Trip and member management endpoints
+- **docs/API_EXPENSE.md** - Expense recording and management
+- **docs/API_STATISTICS.md** - Statistics, balances, and settlements
+- **docs/API_AI.md** - AI parsing and natural language processing
+
 ## Essential Commands
 
 ### Development Setup
@@ -254,3 +265,4 @@ Frontend uses Vite environment variables:
 ## Version History
 
 For complete version history and changelog, see [CHANGELOG.md](../CHANGELOG.md)
+- 每次需求做完，维护readme.md、todo.md、CHANGELOG.md、CLAUDE.md。
