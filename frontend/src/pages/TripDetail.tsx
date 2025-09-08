@@ -13,7 +13,8 @@ import {
   SwipeAction
 } from 'antd-mobile'
 import { 
-  AddOutline
+  AddOutline,
+  TeamOutline
 } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
 import { useExpenseStore } from '@/stores/expense.store'
@@ -352,6 +353,22 @@ const TripDetail: React.FC = () => {
                   extra={
                     <div>
                       {member.role === 'admin' && <Tag color="primary">管理员</Tag>}
+                      {/* 虚拟成员显示邀请替换按钮 */}
+                      {member.isVirtual && isAdmin && (
+                        <Button
+                          size="mini"
+                          color="primary"
+                          fill="outline"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/trips/${id}/invite?targetMemberId=${member.id}`)
+                          }}
+                          style={{ marginBottom: 8 }}
+                        >
+                          <TeamOutline style={{ marginRight: 4 }} />
+                          邀请替换
+                        </Button>
+                      )}
                       {(() => {
                         const memberStatus = currentTrip.statistics?.membersFinancialStatus?.find(
                           (m: any) => m.memberId === member.id
@@ -481,9 +498,9 @@ const TripDetail: React.FC = () => {
           
           {isAdmin && (
             <>
-              <div className="action-button admin-only" onClick={() => navigate(`/trips/${id}/members/add`)}>
+              <div className="action-button admin-only" onClick={() => navigate(`/trips/${id}/invite`)}>
                 <div className="action-icon">👥</div>
-                <div className="action-text">成员</div>
+                <div className="action-text">邀请</div>
               </div>
               
               <div className="action-button" onClick={() => navigate(`/trips/${id}/summary`)}>

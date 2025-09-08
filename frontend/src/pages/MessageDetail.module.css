@@ -1,0 +1,153 @@
+.container {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.content {
+  padding: 16px;
+}
+
+.messageCard {
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.typeInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.typeIcon {
+  font-size: 20px;
+  color: var(--adm-color-primary);
+}
+
+.typeName {
+  font-size: 14px;
+  color: #666;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.sender {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+.senderIcon {
+  font-size: 24px;
+  color: #999;
+}
+
+.senderName {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.sendTime {
+  font-size: 12px;
+  color: #999;
+  margin-left: auto;
+}
+
+.messageContent {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.8;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+}
+
+.metadata {
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.metaItem:last-child {
+  margin-bottom: 0;
+}
+
+.metaLabel {
+  color: #999;
+  margin-right: 8px;
+  min-width: 80px;
+}
+
+.metaValue {
+  color: #333;
+  flex: 1;
+}
+
+.expires {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff5f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #ff6430;
+}
+
+.expiresIcon {
+  font-size: 16px;
+}
+
+.actions {
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.statusInfo {
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.statusItem {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.statusItem:last-child {
+  margin-bottom: 0;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
+  font-size: 16px;
+  color: #999;
+}

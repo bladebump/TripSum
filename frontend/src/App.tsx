@@ -15,6 +15,10 @@ import TripSummary from './pages/TripSummary'
 import TripStatistics from './pages/TripStatistics'
 import Profile from './pages/Profile'
 import MessageCenter from './pages/MessageCenter'
+import MessageDetail from './pages/MessageDetail'
+import MessagePreferences from './pages/MessagePreferences'
+import InviteMember from './pages/InviteMember'
+import InvitationList from './pages/InvitationList'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
@@ -112,6 +116,14 @@ function App() {
                 }
               />
               <Route
+                path="trips/:id/invite"
+                element={
+                  <PrivateRoute>
+                    <InviteMember />
+                  </PrivateRoute>
+                }
+              />
+              <Route
                 path="profile"
                 element={
                   <PrivateRoute>
@@ -124,6 +136,30 @@ function App() {
                 element={
                   <PrivateRoute>
                     <MessageCenter />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="messages/:id"
+                element={
+                  <PrivateRoute>
+                    <MessageDetail />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="message-preferences"
+                element={
+                  <PrivateRoute>
+                    <MessagePreferences />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="invitations"
+                element={
+                  <PrivateRoute>
+                    <InvitationList />
                   </PrivateRoute>
                 }
               />

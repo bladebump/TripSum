@@ -1,0 +1,62 @@
+.invitationForm {
+  padding: 16px;
+  background: #fff;
+}
+
+.selectedUser {
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userDetails {
+  flex: 1;
+}
+
+.userName {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.userEmail {
+  font-size: 14px;
+  color: #999;
+}
+
+.radioOption {
+  padding: 4px 0;
+}
+
+.radioTitle {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.radioDesc {
+  font-size: 13px;
+  color: #999;
+  line-height: 1.5;
+}
+
+.virtualMemberList {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}

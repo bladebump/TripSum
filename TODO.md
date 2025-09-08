@@ -9,82 +9,24 @@
 - [x] **第二阶段**：后端API开发 - 所有接口已实现
 - [x] **第三阶段**：权限控制 - 路由级权限中间件已配置
 
-详细实现记录请查看：[V2_IMPLEMENTATION_NOTES.md](docs/V2_IMPLEMENTATION_NOTES.md)
+详细实现记录请查看：[V2_IMPLEMENTATION_NOTES.md](./V2_IMPLEMENTATION_NOTES.md)
 
 #### ✅ 已完成阶段（续）
-- [x] **第四阶段（部分）**：前端基础UI开发
+- [x] **第四阶段**：前端UI开发 - 完整实现邀请系统和消息系统前端界面（2025-09-08完成）
   - [x] 类型定义文件（message.types.ts, invitation.types.ts）
   - [x] API服务层（user, invitation, message, socket服务）
   - [x] 消息状态管理store
   - [x] 个人中心页面Profile
   - [x] 消息中心核心功能（MessageCenter, MessageCard, MessageBadge）
-  - [x] 路由配置更新
+  - [x] 邀请系统前端界面（UserSearch, InvitationForm, InvitationCard）
+  - [x] 邀请相关页面（InviteMember, InvitationList）
+  - [x] 消息系统扩展（MessageDetail, MessagePreferences）
+  - [x] UI入口优化（TripDetail邀请入口，TripList消息图标）
+  - [x] 路由配置完善
+
+详细实现记录请查看：[V2_IMPLEMENTATION_NOTES.md](./V2_IMPLEMENTATION_NOTES.md)
 
 #### 🚧 待完成阶段
-
-**第四阶段（续）：前端界面开发**
-
-***待实现文件***
-- [ ] 前端新增文件：
-  ```
-  frontend/src/
-  ├── pages/
-  │   ├── InviteMember.tsx         # 待实现
-  │   ├── InvitationList.tsx       # 待实现
-  │   ├── MessageDetail.tsx        # 待实现
-  │   └── MessagePreferences.tsx   # 待实现
-  ├── components/
-  │   └── invitation/
-  │       ├── UserSearch.tsx        # 待实现
-  │       ├── InvitationForm.tsx    # 待实现
-  │       └── InvitationCard.tsx    # 待实现
-  ```
-
-***邀请系统界面***
-- [ ] 创建InvitationList.tsx我的邀请页面：
-  - 待处理邀请列表
-  - 历史邀请记录
-  - 接受/拒绝操作
-  - 邀请状态显示
-
-- [ ] 创建InviteMember.tsx邀请组件：
-  - 用户搜索框（实时搜索，防抖）
-  - 搜索结果列表（显示头像、用户名、邮箱）
-  - 邀请类型选择（替换虚拟成员/新增成员）
-  - 替换模式：显示虚拟成员列表供选择
-  - 新增模式：直接发送邀请
-  - 邀请留言输入框（可选）
-  - 发送邀请按钮
-
-***消息系统扩展***
-  
-- [ ] 创建MessageDetail.tsx消息详情组件：
-  - 根据消息类型渲染不同内容
-  - 邀请类消息：显示行程信息、邀请详情
-  - 费用类消息：显示相关支出信息
-  - 系统类消息：显示公告内容
-  - 执行操作按钮（基于actions字段）
-  
-- [ ] 创建MessagePreferences.tsx消息偏好设置：
-  - 按消息类型设置接收偏好
-  - 选择接收渠道（站内/邮件/推送）
-  - 设置接收频率
-  - 免打扰时间段设置
-  
-***UI入口优化***
-- [ ] 在顶部导航栏添加消息图标：
-  - 显示未读数量（区分高优先级）
-  - 悬浮显示最新消息预览
-  - 点击进入消息中心
-  
-- [ ] 在TripDetail页面添加邀请入口（管理员可见）：
-  - 虚拟成员卡片上的"邀请替换"按钮
-  - 页面底部的"邀请新成员"按钮
-  
-- [ ] 在TripList页面顶部添加消息图标：
-  - 使用MessageBadge组件
-  - 显示未读数
-  - 点击跳转消息中心
 
 **第五阶段：WebSocket集成（前端）**
 

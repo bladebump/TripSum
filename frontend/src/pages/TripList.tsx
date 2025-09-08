@@ -15,9 +15,10 @@ import {
   PullToRefresh,
   InfiniteScroll
 } from 'antd-mobile'
-import { AddOutline } from 'antd-mobile-icons'
+import { AddOutline, MessageOutline } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
 import { useAuthStore } from '@/stores/auth.store'
+import MessageBadge from '@/components/message/MessageBadge'
 import { formatDate, formatCurrency, getTripStatus, getTripStatusText, getTripStatusColor } from '@/utils/format'
 import Empty from '@/components/common/Empty'
 import Loading from '@/components/common/Loading'
@@ -115,7 +116,19 @@ const TripList: React.FC = () => {
 
   return (
     <div className="trip-list-page">
-      <NavBar backArrow={false}>我的行程</NavBar>
+      <NavBar 
+        backArrow={false}
+        right={
+          <MessageBadge 
+            onClick={() => navigate('/messages')}
+            size="large"
+          >
+            <MessageOutline style={{ fontSize: 20 }} />
+          </MessageBadge>
+        }
+      >
+        我的行程
+      </NavBar>
 
       <PullToRefresh onRefresh={() => loadTrips(1)}>
         <div className="trip-list-content">
