@@ -20,6 +20,11 @@ model User {
   createdVirtualMembers             TripMember[]         @relation("VirtualMemberCreator")
   tripMemberships                   TripMember[]
   createdTrips                      Trip[]               @relation("TripCreator")
+  sentInvitations                   TripInvitation[]     @relation("InvitationSender")
+  receivedInvitations               TripInvitation[]     @relation("InvitationReceiver")
+  sentMessages                      Message[]            @relation("MessageSender")
+  receivedMessages                  Message[]            @relation("MessageRecipient")
+  messagePreferences                MessagePreference[]
 
   @@map("users")
 }
@@ -39,6 +44,7 @@ model Trip {
   expenses    Expense[]
   settlements Settlement[]
   members     TripMember[]
+  invitations TripInvitation[]
   creator     User         @relation("TripCreator", fields: [createdBy], references: [id])
 
   @@map("trips")
@@ -61,6 +67,7 @@ model TripMember {
   paidExpenses       Expense[]
   settlementsFrom    Settlement[]         @relation("SettlementFrom")
   settlementsTo      Settlement[]         @relation("SettlementTo")
+  targetInvitations  TripInvitation[]     @relation("InvitationTarget")
   creator            User?                @relation("VirtualMemberCreator", fields: [createdBy], references: [id])
   trip               Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user               User?                @relation(fields: [userId], references: [id])
@@ -134,4 +141,153 @@ model Settlement {
   trip           Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@map("settlements")
+}
+
+model TripInvitation {
+  id               String                @id @default(uuid())
+  tripId           String                @map("trip_id")
+  invitedUserId    String                @map("invited_user_id")
+  inviteType       InviteType            @map("invite_type")
+  targetMemberId   String?               @map("target_member_id")
+  status           InvitationStatus      @default(PENDING)
+  message          String?
+  createdBy        String                @map("created_by")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  respondedAt      DateTime?             @map("responded_at")
+  expiresAt        DateTime              @map("expires_at")
+  
+  trip             Trip                  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  invitedUser      User                  @relation("InvitationReceiver", fields: [invitedUserId], references: [id])
+  inviter          User                  @relation("InvitationSender", fields: [createdBy], references: [id])
+  targetMember     TripMember?           @relation("InvitationTarget", fields: [targetMemberId], references: [id])
+
+  @@index([invitedUserId, status])
+  @@index([tripId])
+  @@map("trip_invitations")
+}
+
+model Message {
+  id               String                @id @default(uuid())
+  recipientId      String                @map("recipient_id")
+  senderId         String?               @map("sender_id")
+  type             MessageType
+  category         MessageCategory
+  priority         MessagePriority       @default(NORMAL)
+  title            String
+  content          String                @db.Text
+  metadata         Json?
+  actions          Json?
+  relatedEntity    Json?                 @map("related_entity")
+  status           MessageStatus         @default(UNREAD)
+  readAt           DateTime?             @map("read_at")
+  expiresAt        DateTime?             @map("expires_at")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  
+  recipient        User                  @relation("MessageRecipient", fields: [recipientId], references: [id])
+  sender           User?                 @relation("MessageSender", fields: [senderId], references: [id])
+
+  @@index([recipientId, status])
+  @@index([type, category])
+  @@map("messages")
+}
+
+model MessageTemplate {
+  id               String                @id @default(uuid())
+  type             MessageType           @unique
+  locale           String                @default("zh-CN") @db.VarChar(10)
+  titleTemplate    String                @map("title_template")
+  contentTemplate  String                @map("content_template") @db.Text
+  defaultActions   Json?                 @map("default_actions")
+  isActive         Boolean               @default(true) @map("is_active")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  @@unique([type, locale])
+  @@map("message_templates")
+}
+
+model MessagePreference {
+  id               String                @id @default(uuid())
+  userId           String                @map("user_id")
+  messageType      MessageType           @map("message_type")
+  channels         Json                  @default("[\"inApp\"]")
+  enabled          Boolean               @default(true)
+  frequency        NotificationFrequency @default(INSTANT)
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  
+  user             User                  @relation(fields: [userId], references: [id])
+
+  @@unique([userId, messageType])
+  @@map("message_preferences")
+}
+
+enum InviteType {
+  REPLACE
+  ADD
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum MessageType {
+  // 行程相关
+  TRIP_INVITATION
+  TRIP_INVITATION_ACCEPTED
+  TRIP_INVITATION_REJECTED
+  TRIP_MEMBER_JOINED
+  TRIP_MEMBER_LEFT
+  TRIP_DELETED
+  
+  // 费用相关
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  EXPENSE_MENTIONED
+  
+  // 结算相关
+  SETTLEMENT_REMINDER
+  SETTLEMENT_RECEIVED
+  SETTLEMENT_CONFIRMED
+  
+  // 系统相关
+  SYSTEM_ANNOUNCEMENT
+  SYSTEM_MAINTENANCE
+  FEATURE_UPDATE
+  
+  // 其他
+  CUSTOM
+}
+
+enum MessageCategory {
+  SYSTEM
+  TRIP
+  EXPENSE
+  SOCIAL
+  NOTIFICATION
+}
+
+enum MessagePriority {
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
+  DELETED
+}
+
+enum NotificationFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
 }
