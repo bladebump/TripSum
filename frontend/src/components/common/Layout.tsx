@@ -63,11 +63,6 @@ const Layout: React.FC = () => {
       return
     }
     
-    if (key === '/profile') {
-      Toast.show('个人中心功能暂未开放')
-      return
-    }
-    
     navigate(key)
   }
 

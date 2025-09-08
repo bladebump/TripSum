@@ -13,6 +13,8 @@ import Settlement from './pages/Settlement'
 import AddMember from './pages/AddMember'
 import TripSummary from './pages/TripSummary'
 import TripStatistics from './pages/TripStatistics'
+import Profile from './pages/Profile'
+import MessageCenter from './pages/MessageCenter'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
@@ -106,6 +108,22 @@ function App() {
                 element={
                   <PrivateRoute>
                     <TripStatistics />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="messages"
+                element={
+                  <PrivateRoute>
+                    <MessageCenter />
                   </PrivateRoute>
                 }
               />

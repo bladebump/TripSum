@@ -1,0 +1,128 @@
+.message-card {
+  margin-bottom: 12px;
+  transition: all 0.3s;
+  
+  &.unread {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    
+    .message-title {
+      font-weight: 600;
+      color: #333;
+    }
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 60%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 0 2px 2px 0;
+    }
+  }
+  
+  .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    
+    .message-left {
+      display: flex;
+      align-items: flex-start;
+      flex: 1;
+      
+      .message-icon {
+        font-size: 24px;
+        margin-right: 12px;
+        margin-top: 2px;
+        
+        &.invitation {
+          color: #4096ff;
+        }
+        
+        &.expense {
+          color: #52c41a;
+        }
+        
+        &.settlement {
+          color: #faad14;
+        }
+        
+        &.reminder {
+          color: #ff4d4f;
+        }
+        
+        &.system {
+          color: #8c8c8c;
+        }
+      }
+      
+      .message-info {
+        flex: 1;
+        
+        .message-title-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
+          
+          .message-title {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.4;
+          }
+        }
+        
+        .message-meta {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 12px;
+          color: #999;
+          
+          .sender {
+            color: #666;
+          }
+        }
+      }
+    }
+    
+    .status-icon {
+      font-size: 16px;
+      
+      &.read {
+        color: #52c41a;
+      }
+    }
+  }
+  
+  .message-content {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  .message-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    
+    .action-tag {
+      cursor: pointer;
+      
+      &:active {
+        opacity: 0.7;
+      }
+    }
+  }
+}

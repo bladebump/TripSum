@@ -1,6 +1,8 @@
 export * from './user.types'
 export * from './trip.types'
 export * from './expense.types'
+export * from './message.types'
+export * from './invitation.types'
 
 export interface ApiResponse<T = any> {
   success: boolean

@@ -1,0 +1,58 @@
+.message-center-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  
+  .adm-nav-bar-right {
+    .adm-button {
+      padding: 0 8px;
+      font-size: 14px;
+    }
+  }
+  
+  .message-tabs {
+    background: #fff;
+    
+    .adm-tabs-header {
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .adm-tabs-tab-wrapper {
+      padding: 0 16px;
+    }
+  }
+  
+  .select-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    position: sticky;
+    top: 45px;
+    z-index: 10;
+    
+    .adm-checkbox {
+      font-size: 14px;
+    }
+  }
+  
+  .message-list {
+    padding: 12px;
+    min-height: calc(100vh - 45px - 44px);
+    
+    .message-item {
+      display: flex;
+      align-items: flex-start;
+      
+      .message-checkbox {
+        margin-right: 8px;
+        margin-top: 16px;
+      }
+      
+      .message-card-wrapper {
+        flex: 1;
+      }
+    }
+  }
+}
