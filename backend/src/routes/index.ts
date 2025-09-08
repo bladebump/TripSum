@@ -30,7 +30,9 @@ router.use('/invitations', invitationRoutes)
 router.use('/messages', messageRoutes)
 
 // Trip-specific expense routes
-router.post('/trips/:id/expenses', authenticate, upload.single('receipt'), expenseController.createExpense)
+// 创建费用 - 仅管理员
+router.post('/trips/:id/expenses', authenticate, requireAdmin, upload.single('receipt'), expenseController.createExpense)
+// 查看费用列表 - 所有成员可访问
 router.get('/trips/:id/expenses', authenticate, validateQuery(expenseQuerySchema), expenseController.getTripExpenses)
 
 // Statistics and calculation routes

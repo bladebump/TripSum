@@ -52,15 +52,7 @@ export class AIController {
         return sendError(res, '400', '缺少必要参数', 400)
       }
       
-      // 验证用户权限
-      await tripService.getTripDetail(tripId, userId)  // 验证用户是否是成员
-      const members = await tripService.getTripMembers(tripId, userId)
-      const userMember = members.find((m: any) => m.userId === userId)
-      
-      if (userMember?.role !== 'admin') {
-        return sendError(res, '403', '只有管理员可以添加成员', 403)
-      }
-      
+      // 权限已在路由层通过requireAdmin中间件验证
       const result = await unifiedAIParser.handleMemberAddition(tripId, memberNames, userId)
       return sendSuccess(res, result)
     } catch (error: any) {

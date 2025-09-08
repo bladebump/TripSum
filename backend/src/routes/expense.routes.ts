@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { expenseController } from '../controllers/expense.controller'
 import { authenticate } from '../middleware/auth.middleware'
+import { requireAdmin } from '../middleware/permission.middleware'
 
 const router = Router()
 
@@ -33,8 +34,13 @@ const upload = multer({
 
 router.use(authenticate)
 
+// 查看费用详情 - 所有成员可访问
 router.get('/:id', expenseController.getExpenseDetail)
-router.put('/:id', upload.single('receipt'), expenseController.updateExpense)
-router.delete('/:id', expenseController.deleteExpense)
+
+// 更新费用 - 仅管理员
+router.put('/:id', requireAdmin, upload.single('receipt'), expenseController.updateExpense)
+
+// 删除费用 - 仅管理员
+router.delete('/:id', requireAdmin, expenseController.deleteExpense)
 
 export default router
