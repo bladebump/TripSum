@@ -6,7 +6,6 @@ import {
   messageListQuerySchema,
   batchMessageIdsSchema,
   batchOperationSchema,
-  messagePreferencesSchema,
 } from '../validators/message.validator';
 
 const router = Router();

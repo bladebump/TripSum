@@ -34,8 +34,8 @@ export class MessageService {
         title: data.title,
         content: data.content,
         metadata: data.metadata || {},
-        actions: data.actions || [],
-        relatedEntity: data.relatedEntity || null,
+        actions: data.actions as any || [],
+        relatedEntity: data.relatedEntity as any || null,
         expiresAt: data.expiresAt,
       },
       include: {

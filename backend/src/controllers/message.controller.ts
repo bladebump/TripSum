@@ -84,7 +84,8 @@ export class MessageController {
       const { messageIds } = req.body;
 
       if (!Array.isArray(messageIds) || messageIds.length === 0) {
-        return sendError(res, '400', '消息ID列表不能为空', 400);
+        sendError(res, '400', '消息ID列表不能为空', 400);
+        return;
       }
 
       const result = await messageService.batchMarkAsRead(messageIds, userId);
@@ -162,11 +163,13 @@ export class MessageController {
       const { messageIds, operation } = req.body;
 
       if (!Array.isArray(messageIds) || messageIds.length === 0) {
-        return sendError(res, '400', '消息ID列表不能为空', 400);
+        sendError(res, '400', '消息ID列表不能为空', 400);
+        return;
       }
 
       if (!['read', 'archive', 'delete'].includes(operation)) {
-        return sendError(res, '400', '不支持的操作类型', 400);
+        sendError(res, '400', '不支持的操作类型', 400);
+        return;
       }
 
       const result = await messageService.batchOperation(
@@ -217,7 +220,8 @@ export class MessageController {
       const { preferences } = req.body;
 
       if (!Array.isArray(preferences)) {
-        return sendError(res, '400', '偏好设置必须是数组', 400);
+        sendError(res, '400', '偏好设置必须是数组', 400);
+        return;
       }
 
       const result = await messageService.updateUserPreferences(userId, preferences);

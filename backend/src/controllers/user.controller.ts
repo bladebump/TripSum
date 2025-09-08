@@ -13,11 +13,13 @@ export class UserController {
       const { query, tripId, limit = 10 } = req.query;
 
       if (!query || typeof query !== 'string') {
-        return sendError(res, '400', '搜索关键词不能为空', 400);
+        sendError(res, '400', '搜索关键词不能为空', 400);
+        return;
       }
 
       if (query.length < 2) {
-        return sendError(res, '400', '搜索关键词至少需要2个字符', 400);
+        sendError(res, '400', '搜索关键词至少需要2个字符', 400);
+        return;
       }
 
       const users = await userService.searchUsers(

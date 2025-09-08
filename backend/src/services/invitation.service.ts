@@ -371,7 +371,7 @@ export class InvitationService {
         memberName: fullInvitation.invitedUser.username,
         memberIds: memberUserIds,
         isReplacement: result.isReplacement,
-        replacedMemberName: result.targetMemberName,
+        replacedMemberName: result.targetMemberName || undefined,
       });
     }
 
