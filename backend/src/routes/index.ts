@@ -3,12 +3,20 @@ import authRoutes from './auth.routes'
 import tripRoutes from './trip.routes'
 import expenseRoutes from './expense.routes'
 import aiRoutes from './ai.routes'
+import userRoutes from './user.routes'
+import invitationRoutes from './invitation.routes'
+import messageRoutes from './message.routes'
 import { authenticate } from '../middleware/auth.middleware'
+import { requireAdmin } from '../middleware/permission.middleware'
 import { expenseController } from '../controllers/expense.controller'
 import { calculationController } from '../controllers/calculation.controller'
 import { aiController } from '../controllers/ai.controller'
-import { validateQuery } from '../middleware/validation.middleware'
+import { invitationController } from '../controllers/invitation.controller'
+import { messageController } from '../controllers/message.controller'
+import { validate, validateQuery } from '../middleware/validation.middleware'
 import { expenseQuerySchema } from '../validators/expense.validator'
+import { createInvitationSchema, tripInvitationQuerySchema } from '../validators/invitation.validator'
+import { messagePreferencesSchema } from '../validators/message.validator'
 import { upload } from '../middleware/upload.middleware'
 
 const router = Router()
@@ -17,6 +25,9 @@ router.use('/auth', authRoutes)
 router.use('/trips', tripRoutes)
 router.use('/expenses', expenseRoutes)
 router.use('/ai', aiRoutes)
+router.use('/users', userRoutes)
+router.use('/invitations', invitationRoutes)
+router.use('/messages', messageRoutes)
 
 // Trip-specific expense routes
 router.post('/trips/:id/expenses', authenticate, upload.single('receipt'), expenseController.createExpense)
@@ -31,5 +42,13 @@ router.post('/trips/:id/settle', authenticate, calculationController.createSettl
 // AI Summary routes
 router.get('/trips/:id/summary', authenticate, aiController.generateTripSummary)
 router.get('/trips/:id/summary/export', authenticate, aiController.exportTripSummary)
+
+// Trip invitation routes
+router.post('/trips/:id/invitations', authenticate, requireAdmin, validate(createInvitationSchema), invitationController.sendInvitation)
+router.get('/trips/:id/invitations', authenticate, requireAdmin, validateQuery(tripInvitationQuerySchema), invitationController.getTripInvitations)
+
+// Message preferences routes
+router.get('/message-preferences', authenticate, messageController.getPreferences)
+router.put('/message-preferences', authenticate, validate(messagePreferencesSchema), messageController.updatePreferences)
 
 export default router
