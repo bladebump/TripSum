@@ -118,13 +118,13 @@ const UserSearch: React.FC<UserSearchProps> = ({
               key={user.id}
               onClick={() => handleUserSelect(user)}
               prefix={
-                user.avatarUrl ? (
-                  <Avatar src={user.avatarUrl} />
-                ) : (
-                  <Avatar style={{ '--size': '40px' }}>
+                <Avatar 
+                  src={user.avatarUrl || ''} 
+                  style={{ '--size': '40px' }}
+                  fallback={<div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#1890ff', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
                     {getAvatarContent(user)}
-                  </Avatar>
-                )
+                  </div>}
+                />
               }
               description={user.email}
             >

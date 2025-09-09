@@ -3,7 +3,7 @@ import { Card, Tag, Button, Space, Avatar } from 'antd-mobile'
 import { 
   ClockCircleOutline, 
   UserOutline,
-  SwapOutline,
+  RedoOutline,
   AddCircleOutline
 } from 'antd-mobile-icons'
 import { 
@@ -103,7 +103,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({
         {/* 邀请类型 */}
         <div className={styles.infoItem}>
           {invitation.inviteType === InviteType.REPLACE ? (
-            <SwapOutline className={styles.icon} />
+            <RedoOutline className={styles.icon} />
           ) : (
             <AddCircleOutline className={styles.icon} />
           )}

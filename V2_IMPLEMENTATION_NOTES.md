@@ -290,22 +290,123 @@ interface InvitationFormProps {
 - 问题：前端权限控制可能被绕过
 - 解决：后端API已有完整权限验证，前端仅为用户体验优化
 
+### 第五阶段：WebSocket集成 ✅ (完成时间：2025-09-09)
+
+#### 完成内容
+**1. App组件WebSocket初始化**
+- 用户登录后自动连接WebSocket
+- 监听消息事件（new_message、invitation_received、invitation_accepted等）
+- 实时更新未读消息数
+- Toast通知提示新消息和新邀请
+
+**2. 断线重连机制**
+- 页面可见性变化时检查连接状态
+- 网络恢复时自动重连
+- 用户登出时断开连接
+- 连接池管理和状态维护
+
+**3. 消息实时推送**
+- 新消息推送并显示Toast提示
+- 邀请状态变更实时通知
+- 未读数实时更新
+- TripList页面消息图标显示未读数
+
+### 第六阶段：前端权限控制 ✅ (完成时间：2025-09-09)
+
+#### 完成内容
+**1. 权限工具函数 (utils/permission.ts)**
+- 创建了完整的权限判断函数集
+- canCreateExpense、canEditExpense、canDeleteExpense等
+- getPermissionDeniedMessage提供友好的权限提示
+- checkPermissions批量检查权限状态
+
+**2. 记账权限限制**
+- **TripDetail页面**：
+  - 非管理员隐藏"记账"按钮
+  - 非管理员隐藏浮动添加按钮
+  - 支出列表显示权限提示："💡 暂时仅管理员可记账"
+  - 滑动操作权限控制（非管理员无法编辑/删除）
+  
+- **ChatExpense/ExpenseForm页面**：
+  - 权限检查并自动跳转
+  - 显示权限不足提示
+  - 区分创建和编辑权限
+
+**3. 代码质量修复**
+- 修复所有TypeScript编译错误
+- 安装lodash-es依赖
+- 修复Avatar组件fallback属性问题
+- 修复图标引用错误（SwapOutline → RedoOutline等）
+- 项目成功编译并可正常运行
+
+#### 技术实现要点
+- 前端权限控制仅为UX优化，后端已有完整权限验证
+- 使用React Hooks管理WebSocket生命周期
+- 权限判断基于tripStore中的当前成员角色
+- 保持UI整洁，权限控制对用户透明
+
 ## 下一步工作
 
-### 第五阶段：前端权限控制与WebSocket集成
-- 集成WebSocket实时通知
-- 实现断线重连机制
-- 权限控制工具函数
-- 限制非管理员记账权限
-- 添加权限提示
+### 第七阶段：成员管理优化
+- 替换模式的数据处理：
+  - 更新TripMember记录：userId设为真实用户ID，isVirtual改为false
+  - 保留所有历史数据（支出、基金、结算等）
+  - 更新显示名称为真实用户名
+- 新增模式的数据处理：
+  - 创建新的TripMember记录
+  - 设置role为'member'，isVirtual为false
+  - 初始contribution为0
+- 成员列表区分显示：
+  - 真实用户：显示用户名和头像
+  - 虚拟成员：显示"虚拟"标签和"邀请替换"按钮
 
-### 第六阶段：成员管理优化
-- 虚拟成员转换流程
-- 成员退出机制
-- 管理员转让功能
+### 第八阶段：消息系统架构优化
+- 创建MessageService统一消息服务
+- 实现消息队列（Redis/RabbitMQ）
+- 插件式消息处理器
+- 消息钩子系统
+- 安全与性能优化
 
-### 第七阶段：测试与优化
-- 单元测试覆盖
-- 集成测试
-- 性能优化
-- 代码分割优化（当前打包体积较大）
+### 第九阶段：文档更新
+- 更新API文档（API_OVERVIEW.md、API_MESSAGES.md、API_INVITATION.md）
+- 更新项目文档（README.md、CLAUDE.md、CHANGELOG.md）
+- 添加迁移指南
+
+### 第十阶段：部署与发布
+- 合并到develop分支
+- 测试环境部署和验证
+- 创建v2.0.0-rc.1候选版本
+- 生产环境灰度发布
+- 合并到main分支并打tag v2.0.0
+
+## 开发日志
+
+### 2025-09-09 工作记录
+**完成内容：**
+1. ✅ WebSocket集成（第五阶段）
+   - App组件WebSocket初始化和生命周期管理
+   - 实时消息推送和断线重连机制
+   - 未读消息数实时更新
+
+2. ✅ 前端权限控制（第六阶段）
+   - 创建permission.ts权限工具函数
+   - TripDetail页面记账权限限制
+   - ExpenseForm/ChatExpense权限检查
+   - 修复所有TypeScript编译错误
+
+3. ✅ 代码优化规划
+   - 添加前端打包体积优化任务到TODO.md
+   - 添加后端代码结构优化任务
+   - 配置rollup-plugin-visualizer分析工具
+
+**关键文件修改：**
+- `/frontend/src/App.tsx` - WebSocket初始化
+- `/frontend/src/utils/permission.ts` - 权限工具函数
+- `/frontend/src/pages/TripDetail.tsx` - 权限控制UI
+- `/frontend/vite.config.ts` - 打包优化配置
+- `/TODO.md` - 添加代码优化任务
+- `/V2_IMPLEMENTATION_NOTES.md` - 记录完成内容
+
+**下一步计划：**
+- 第七阶段：成员管理优化
+- 实施代码拆分和体积优化

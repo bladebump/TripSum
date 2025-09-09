@@ -1,9 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+      filename: 'dist/stats.html'
+    })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -25,4 +34,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'antd-mobile': ['antd-mobile', 'antd-mobile-icons'],
+          'utils': ['lodash-es', 'dayjs', 'decimal.js'],
+          'charts': ['recharts']
+        }
+      }
+    }
+  }
 })

@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { ConfigProvider } from 'antd-mobile'
+import { ConfigProvider, Toast } from 'antd-mobile'
 import zhCN from 'antd-mobile/es/locales/zh-CN'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -22,10 +23,111 @@ import InvitationList from './pages/InvitationList'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import socketService from './services/socket.service'
+import { useAuthStore } from './stores/auth.store'
+import { useMessageStore } from './stores/message.store'
 import './styles/design-tokens.scss' // 全局导入一次
 import './App.scss'
 
 function App() {
+  const { user, isAuthenticated } = useAuthStore()
+  const { 
+    handleNewMessage, 
+    handleMessageRead, 
+    handleInvitationReceived,
+    fetchUnreadStats 
+  } = useMessageStore()
+
+  // WebSocket连接初始化和事件监听
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      // 连接WebSocket
+      socketService.connect(user.id)
+      
+      // 设置消息事件监听器
+      socketService.on('new_message', (message) => {
+        handleNewMessage(message)
+        // 显示通知提示
+        Toast.show({
+          content: `您有新消息：${message.title}`,
+          position: 'top',
+          duration: 3000
+        })
+      })
+      
+      socketService.on('message_read', (messageId) => {
+        handleMessageRead(messageId)
+      })
+      
+      socketService.on('invitation_received', (invitation) => {
+        handleInvitationReceived(invitation)
+        // 显示邀请通知
+        Toast.show({
+          content: '您收到了新的行程邀请',
+          position: 'top',
+          duration: 3000
+        })
+      })
+      
+      socketService.on('invitation_accepted', () => {
+        // 刷新未读统计
+        fetchUnreadStats()
+        Toast.show({
+          content: '有用户接受了您的邀请',
+          position: 'top',
+          duration: 3000
+        })
+      })
+      
+      socketService.on('invitation_rejected', () => {
+        // 刷新未读统计
+        fetchUnreadStats()
+      })
+
+      // 获取初始未读统计
+      fetchUnreadStats()
+      
+      // 清理函数
+      return () => {
+        socketService.off('new_message', handleNewMessage)
+        socketService.off('message_read', handleMessageRead)
+        socketService.off('invitation_received', handleInvitationReceived)
+        socketService.disconnect()
+      }
+    } else {
+      // 用户未登录或登出时断开连接
+      socketService.disconnect()
+    }
+  }, [isAuthenticated, user?.id])
+
+  // 断线重连处理
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated && user?.id) {
+        // 页面重新可见时检查连接状态
+        if (!socketService.isConnected()) {
+          socketService.reconnect()
+        }
+      }
+    }
+
+    const handleOnline = () => {
+      // 网络恢复时重连
+      if (isAuthenticated && user?.id && !socketService.isConnected()) {
+        socketService.reconnect()
+      }
+    }
+
+    // 监听页面可见性变化和网络状态
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleOnline)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [isAuthenticated, user?.id])
+
   return (
     <ErrorBoundary>
       <ConfigProvider locale={zhCN}>

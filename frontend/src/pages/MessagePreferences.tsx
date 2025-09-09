@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   NavBar, 
-  List, 
   Switch, 
   Checkbox,
   Radio,
@@ -90,7 +89,7 @@ const MessagePreferences: React.FC = () => {
             id: '',
             userId: '',
             messageType: item.type,
-            channels: ['inApp'],
+            channels: ['inApp' as const],
             enabled: true,
             frequency: NotificationFrequency.REAL_TIME
           }

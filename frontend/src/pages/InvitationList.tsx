@@ -20,7 +20,6 @@ const InvitationList: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
 
   const limit = 10
 
@@ -56,7 +55,6 @@ const InvitationList: React.FC = () => {
         setInvitations(prev => [...prev, ...result.invitations])
       }
       
-      setTotal(result.total)
       setHasMore(currentPage < result.totalPages)
       
       if (!isRefresh) {

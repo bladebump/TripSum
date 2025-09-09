@@ -8,66 +8,13 @@
 - [x] **第一阶段**：数据库设计 - 完成所有表结构和迁移
 - [x] **第二阶段**：后端API开发 - 所有接口已实现
 - [x] **第三阶段**：权限控制 - 路由级权限中间件已配置
-
-详细实现记录请查看：[V2_IMPLEMENTATION_NOTES.md](./V2_IMPLEMENTATION_NOTES.md)
-
-#### ✅ 已完成阶段（续）
 - [x] **第四阶段**：前端UI开发 - 完整实现邀请系统和消息系统前端界面（2025-09-08完成）
-  - [x] 类型定义文件（message.types.ts, invitation.types.ts）
-  - [x] API服务层（user, invitation, message, socket服务）
-  - [x] 消息状态管理store
-  - [x] 个人中心页面Profile
-  - [x] 消息中心核心功能（MessageCenter, MessageCard, MessageBadge）
-  - [x] 邀请系统前端界面（UserSearch, InvitationForm, InvitationCard）
-  - [x] 邀请相关页面（InviteMember, InvitationList）
-  - [x] 消息系统扩展（MessageDetail, MessagePreferences）
-  - [x] UI入口优化（TripDetail邀请入口，TripList消息图标）
-  - [x] 路由配置完善
+- [x] **第五阶段**：WebSocket集成 - 实现实时消息推送和断线重连（2025-09-09完成）
+- [x] **第六阶段**：前端权限控制 - 完成记账权限限制和UI优化（2025-09-09完成）
 
 详细实现记录请查看：[V2_IMPLEMENTATION_NOTES.md](./V2_IMPLEMENTATION_NOTES.md)
 
 #### 🚧 待完成阶段
-
-**第五阶段：WebSocket集成（前端）**
-
-***WebSocket集成***
-- [ ] 在App组件初始化Socket连接：
-  - 用户登录后自动连接
-  - 监听消息事件
-  - 更新未读数状态
-  - 处理断线重连
-
-**第六阶段：前端权限控制**
-
-***WebSocket集成***
-- [ ] 扩展现有Socket.io连接：
-  - 添加消息事件监听
-  - 实现消息推送接收
-  - 处理连接断开重连
-  
-- [ ] 消息实时推送事件：
-  ```typescript
-  // 监听事件
-  socket.on('message:new', (message) => {})
-  socket.on('message:update', (message) => {})
-  socket.on('invitation:received', (invitation) => {})
-  socket.on('invitation:accepted', (data) => {})
-  ```
-
-***权限控制更新***
-- [ ] 更新权限判断逻辑：
-  ```typescript
-  canCreateExpense(member): boolean // 只有admin返回true
-  canEditExpense(member): boolean   // 只有admin返回true
-  canDeleteExpense(member): boolean // 只有admin返回true
-  canViewExpense(member): boolean   // admin和member都返回true
-  canExport(member): boolean        // admin和member都返回true
-  ```
-- [ ] 对非管理员隐藏所有记账入口：
-  - 隐藏"记一笔"按钮
-  - 隐藏"AI记账"按钮
-  - 隐藏支出编辑和删除按钮
-- [ ] 为普通成员显示提示："暂时仅管理员可记账"
 
 **第七阶段：成员管理优化**
 - [ ] 替换模式的数据处理：
@@ -300,6 +247,33 @@ refactor(permission): 优化权限检查逻辑
 - [ ] XSS注入防护测试
 - [ ] 敏感信息脱敏测试
 
+### 🎯 代码优化 (优先级: 高 - 2025-09-09添加)
+- [ ] **前端打包体积优化**
+  - 当前打包后文件 1.25MB，需要优化到 500KB 以下
+  - 分析单个文件过大的模块
+  - 检查并移除冗余代码
+  - 实施代码拆分策略：
+    - 路由级别懒加载
+    - 第三方库按需引入
+    - 组件动态导入
+  - 使用 rollup-plugin-visualizer 分析包体积
+  - 配置 manualChunks 优化分包策略
+
+- [ ] **后端代码结构优化**
+  - 大文件拆分（当前最大文件超过600行）：
+    - ai.summary.service.ts (646行) - 拆分成多个专用服务
+    - trip.service.ts (609行) - 分离查询、创建、更新逻辑
+    - calculation.service.ts (554行) - 拆分计算策略
+  - 服务层重构：
+    - 提取公共逻辑到基类
+    - 减少服务间循环依赖
+    - 实施依赖注入模式
+  - 控制器瘦身：
+    - 将业务逻辑移至服务层
+    - 统一错误处理
+  - 移除未使用的依赖
+  - 添加代码质量检查工具（如 madge 检测循环依赖）
+
 ### 🚀 性能优化 (优先级: 低)
 - [ ] **Redis缓存层实现**
   - 为 `calculateBalances` 结果添加缓存
@@ -406,7 +380,7 @@ refactor(permission): 优化权限检查逻辑
 - **数据访问层**: member.service.ts提供统一的成员访问接口
 
 ---
-*最后更新: 2025-09-08*  
-*当前版本: v1.10.0*  
+*最后更新: 2025-09-09*  
+*当前版本: v2.0.0-beta.1*  
 *完整更新历史请查看: [CHANGELOG.md](../CHANGELOG.md)*
-*下次工作重点: v2.0.0 真实用户邀请系统*
+*下次工作重点: v2.0.0 第七阶段 - 成员管理优化*

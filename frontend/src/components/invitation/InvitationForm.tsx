@@ -66,13 +66,13 @@ const InvitationForm: React.FC<InvitationFormProps> = ({
       {/* 选中的用户信息 */}
       <div className={styles.selectedUser}>
         <div className={styles.userInfo}>
-          {selectedUser.avatarUrl ? (
-            <Avatar src={selectedUser.avatarUrl} />
-          ) : (
-            <Avatar style={{ '--size': '48px' }}>
+          <Avatar 
+            src={selectedUser.avatarUrl || ''} 
+            style={{ '--size': '48px' }}
+            fallback={<div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#1890ff', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
               {getUserDisplayName(selectedUser).charAt(0).toUpperCase()}
-            </Avatar>
-          )}
+            </div>}
+          />
           <div className={styles.userDetails}>
             <div className={styles.userName}>{getUserDisplayName(selectedUser)}</div>
             <div className={styles.userEmail}>{selectedUser.email}</div>
@@ -129,9 +129,9 @@ const InvitationForm: React.FC<InvitationFormProps> = ({
                     onClick={() => setTargetMemberId(member.id)}
                     clickable
                     prefix={
-                      <Avatar style={{ '--size': '36px' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#f0f0f0', color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
                         {getAvatarContent(member)}
-                      </Avatar>
+                      </div>
                     }
                     extra={
                       <Radio

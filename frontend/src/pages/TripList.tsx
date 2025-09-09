@@ -15,9 +15,10 @@ import {
   PullToRefresh,
   InfiniteScroll
 } from 'antd-mobile'
-import { AddOutline, MessageOutline } from 'antd-mobile-icons'
+import { AddOutline } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useMessageStore } from '@/stores/message.store'
 import MessageBadge from '@/components/message/MessageBadge'
 import { formatDate, formatCurrency, getTripStatus, getTripStatusText, getTripStatusColor } from '@/utils/format'
 import Empty from '@/components/common/Empty'
@@ -28,6 +29,7 @@ const TripList: React.FC = () => {
   const navigate = useNavigate()
   const { trips, loading, pagination, fetchTrips, createTrip } = useTripStore()
   const { isAuthenticated } = useAuthStore()
+  const { unreadStats } = useMessageStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -120,11 +122,10 @@ const TripList: React.FC = () => {
         backArrow={false}
         right={
           <MessageBadge 
+            count={unreadStats?.total || 0}
             onClick={() => navigate('/messages')}
             size="large"
-          >
-            <MessageOutline style={{ fontSize: 20 }} />
-          </MessageBadge>
+          />
         }
       >
         我的行程

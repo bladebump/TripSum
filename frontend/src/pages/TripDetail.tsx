@@ -22,6 +22,11 @@ import { useAuthStore } from '@/stores/auth.store'
 import { exportService } from '@/services/export.service'
 import { formatDate, formatCurrency, formatDateTime } from '@/utils/format'
 import { isCurrentUserAdmin } from '@/utils/member'
+import { 
+  canCreateExpense, 
+  canEditExpense, 
+  getPermissionDeniedMessage 
+} from '@/utils/permission'
 import Loading from '@/components/common/Loading'
 import Empty from '@/components/common/Empty'
 import './TripDetail.scss'
@@ -119,6 +124,7 @@ const TripDetail: React.FC = () => {
   }
 
   const isAdmin = isCurrentUserAdmin(members, user?.id)
+  const currentMember = members.find(m => m.user?.id === user?.id)
 
   return (
     <div className="trip-detail-page">
@@ -168,11 +174,23 @@ const TripDetail: React.FC = () => {
                 description="点击右下角按钮添加第一笔支出"
               />
             ) : (
+              <>
+                {!canCreateExpense(currentMember) && (
+                  <div style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#fff8f0',
+                    borderBottom: '1px solid #ffe4d0',
+                    fontSize: 14,
+                    color: '#fa8c16'
+                  }}>
+                    💡 {getPermissionDeniedMessage('createExpense')}
+                  </div>
+                )}
               <List>
                 {expenses.map(expense => (
                   <SwipeAction
                     key={expense.id}
-                    rightActions={[
+                    rightActions={canEditExpense(currentMember) ? [
                       {
                         key: 'edit',
                         text: '编辑',
@@ -185,7 +203,7 @@ const TripDetail: React.FC = () => {
                         color: 'danger',
                         onClick: () => handleDeleteExpense(expense.id)
                       }
-                    ]}
+                    ] : []}
                   >
                     <List.Item
                       prefix={
@@ -269,6 +287,7 @@ const TripDetail: React.FC = () => {
                   </SwipeAction>
                 ))}
               </List>
+              </>
             )}
           </div>
         </Tabs.Tab>
@@ -471,10 +490,12 @@ const TripDetail: React.FC = () => {
       {/* 重新设计的操作按钮网格 */}
       <div className="action-buttons-container">
         <div className="action-buttons-grid">
-          <div className="action-button primary" onClick={() => navigate(`/trips/${id}/expense/new`)}>
-            <div className="action-icon">➕</div>
-            <div className="action-text">记账</div>
-          </div>
+          {canCreateExpense(currentMember) && (
+            <div className="action-button primary" onClick={() => navigate(`/trips/${id}/expense/new`)}>
+              <div className="action-icon">➕</div>
+              <div className="action-text">记账</div>
+            </div>
+          )}
           
           <div className="action-button" onClick={() => navigate(`/trips/${id}/dashboard`)}>
             <div className="action-icon">💵</div>
@@ -531,16 +552,18 @@ const TripDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* 简化的浮动按钮，仅用于快速添加支出 */}
-      <FloatingBubble
-        style={{
-          '--initial-position-bottom': '80px',
-          '--initial-position-right': '24px',
-        }}
-        onClick={() => navigate(`/trips/${id}/expense/new`)}
-      >
-        <AddOutline fontSize={28} />
-      </FloatingBubble>
+      {/* 简化的浮动按钮，仅用于快速添加支出 - 仅管理员可见 */}
+      {canCreateExpense(currentMember) && (
+        <FloatingBubble
+          style={{
+            '--initial-position-bottom': '80px',
+            '--initial-position-right': '24px',
+          }}
+          onClick={() => navigate(`/trips/${id}/expense/new`)}
+        >
+          <AddOutline fontSize={28} />
+        </FloatingBubble>
+      )}
     </div>
   )
 }

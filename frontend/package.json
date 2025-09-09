@@ -13,10 +13,12 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@types/lodash-es": "^4.17.12",
     "antd-mobile": "^5.34.0",
     "axios": "^1.6.7",
     "dayjs": "^1.11.10",
     "decimal.js": "^10.6.0",
+    "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",
@@ -39,6 +41,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "jsdom": "^24.0.0",
+    "rollup-plugin-visualizer": "^6.0.3",
     "sass": "^1.70.0",
     "typescript": "^5.3.3",
     "vite": "^5.1.0",

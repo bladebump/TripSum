@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { NavBar, Card, Button, Space, Tag, Dialog, Toast, Avatar } from 'antd-mobile'
 import { 
-  SystemOutline,
+  InformationCircleOutline,
   TeamOutline,
   BillOutline,
   CheckCircleOutline,
@@ -59,7 +59,7 @@ const MessageDetail: React.FC = () => {
   const getMessageIcon = (type: MessageType) => {
     switch (type) {
       case MessageType.SYSTEM:
-        return <SystemOutline className={styles.typeIcon} />
+        return <InformationCircleOutline className={styles.typeIcon} />
       case MessageType.INVITATION:
         return <TeamOutline className={styles.typeIcon} />
       case MessageType.EXPENSE:
@@ -69,7 +69,7 @@ const MessageDetail: React.FC = () => {
       case MessageType.REMINDER:
         return <ClockCircleOutline className={styles.typeIcon} />
       default:
-        return <SystemOutline className={styles.typeIcon} />
+        return <InformationCircleOutline className={styles.typeIcon} />
     }
   }
 

@@ -6,6 +6,7 @@ import {
 } from 'antd-mobile'
 import { useTripStore } from '@/stores/trip.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { canCreateExpense, getPermissionDeniedMessage } from '@/utils/permission'
 import { MemberConfirm, MixedIntentConfirm, IncomeConfirm, ExpenseConfirmDialog } from '@/components/confirmation'
 import { ChatMessages, ChatInput, TripSelector } from '@/components/chat'
 import { useAIChat, useIntentHandlers, useExpenseForm } from '@/hooks/chat'
@@ -16,7 +17,7 @@ const ChatExpense: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { trips, members, currentTrip, fetchTrips, fetchTripDetail } = useTripStore()
-  const {} = useAuthStore()
+  const { user } = useAuthStore()
   
   const [inputValue, setInputValue] = useState('')
 
@@ -72,6 +73,19 @@ const ChatExpense: React.FC = () => {
       loadData()
     }
   }, [tripId])
+
+  // 检查权限
+  useEffect(() => {
+    if (members.length > 0 && user) {
+      const currentMember = members.find(m => m.user?.id === user.id)
+      if (!canCreateExpense(currentMember)) {
+        Toast.show({
+          content: getPermissionDeniedMessage('createExpense'),
+          afterClose: () => navigate(-1)
+        })
+      }
+    }
+  }, [members, user, navigate])
 
   useEffect(() => {
     fetchTrips()

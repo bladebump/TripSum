@@ -21,6 +21,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import AmountUtil from '@/utils/decimal'
 import aiService from '@/services/ai.service'
 import { getCurrentMemberId } from '@/utils/member'
+import { canCreateExpense, canEditExpense, getPermissionDeniedMessage } from '@/utils/permission'
 import { formatDate } from '@/utils/format'
 import { validateAmount } from '@/utils/validation'
 import './ExpenseForm.scss'
@@ -44,6 +45,25 @@ const ExpenseForm: React.FC = () => {
       loadData()
     }
   }, [tripId])
+
+  // 检查权限
+  useEffect(() => {
+    if (members.length > 0 && user) {
+      const currentMember = members.find(m => m.user?.id === user.id)
+      // 新建模式检查创建权限，编辑模式检查编辑权限
+      const hasPermission = expenseId 
+        ? canEditExpense(currentMember) 
+        : canCreateExpense(currentMember)
+      
+      if (!hasPermission) {
+        const action = expenseId ? 'editExpense' : 'createExpense'
+        Toast.show({
+          content: getPermissionDeniedMessage(action),
+          afterClose: () => navigate(-1)
+        })
+      }
+    }
+  }, [members, user, expenseId, navigate])
 
   const loadData = async () => {
     try {
