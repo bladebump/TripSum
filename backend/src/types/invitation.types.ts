@@ -16,6 +16,7 @@ export interface InvitationWithRelations extends TripInvitation {
 
 export interface InvitationListQuery {
   status?: InvitationStatus;
+  type?: 'sent' | 'received';
   page?: number;
   limit?: number;
 }

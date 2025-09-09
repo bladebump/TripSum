@@ -173,7 +173,7 @@ export class MessageController {
       }
 
       const result = await messageService.batchOperation(
-        { messageIds, operation },
+        { action: operation, messageIds },
         userId
       );
       sendSuccess(res, result);

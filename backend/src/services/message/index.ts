@@ -1,0 +1,7 @@
+export { MessageService, messageService } from './core.service'
+export { MessageCrudService, messageCrudService } from './crud.service'
+export { MessageQueryService, messageQueryService } from './query.service'
+export { MessageBatchService, messageBatchService } from './batch.service'
+export { MessagePreferenceService, messagePreferenceService } from './preference.service'
+export { MessageTemplateService, messageTemplateService } from './template.service'
+export * from './types'

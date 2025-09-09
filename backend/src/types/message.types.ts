@@ -4,16 +4,15 @@ import {
   MessageCategory, 
   MessagePriority, 
   MessageStatus,
-  NotificationFrequency,
   User 
 } from '@prisma/client';
 
 export interface CreateMessageDTO {
   recipientId: string;
   senderId?: string;
-  type: MessageType;
-  category: MessageCategory;
-  priority?: MessagePriority;
+  type: string;
+  category?: string;
+  priority?: string;
   title: string;
   content: string;
   metadata?: any;
@@ -59,19 +58,19 @@ export interface MessageListResponse {
 
 export interface UnreadStats {
   total: number;
-  byCategory: Record<MessageCategory, number>;
+  byCategory: Record<string, number>;
   byPriority: {
-    high: number;
-    normal: number;
-    low: number;
+    HIGH: number;
+    NORMAL: number;
+    LOW: number;
   };
+  hasHighPriority: boolean;
 }
 
 export interface MessagePreferenceDTO {
-  messageType: MessageType;
-  channels: ('inApp' | 'email' | 'push')[];
+  type: string;
+  channels: string[];
   enabled: boolean;
-  frequency: NotificationFrequency;
 }
 
 export interface MessageTemplateData {
@@ -88,6 +87,11 @@ export interface SendMessageOptions {
 }
 
 export interface BatchMessageOperation {
-  messageIds: string[];
-  operation: 'read' | 'archive' | 'delete';
+  action: 'read' | 'archive' | 'delete';
+  messageIds?: string[];
+  filters?: {
+    category?: MessageCategory;
+    type?: MessageType;
+    status?: MessageStatus;
+  };
 }
