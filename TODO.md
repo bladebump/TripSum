@@ -14,20 +14,9 @@
 
 详细实现记录请查看：[V2_IMPLEMENTATION_NOTES.md](./V2_IMPLEMENTATION_NOTES.md)
 
-#### 🚧 待完成阶段
+- [x] **第七阶段**：成员管理优化 - 替换模式保留用户名、前端视觉区分、自动刷新机制（2025-09-09完成）
 
-**第七阶段：成员管理优化**
-- [ ] 替换模式的数据处理：
-  - 更新TripMember记录：userId设为真实用户ID，isVirtual改为false
-  - 保留所有历史数据（支出、基金、结算等）
-  - 更新显示名称为真实用户名
-- [ ] 新增模式的数据处理：
-  - 创建新的TripMember记录
-  - 设置role为'member'，isVirtual为false
-  - 初始contribution为0
-- [ ] 成员列表区分显示：
-  - 真实用户：显示用户名和头像
-  - 虚拟成员：显示"虚拟"标签和"邀请替换"按钮
+#### 🚧 待完成阶段
 
 **第八阶段：消息系统架构优化**
 
@@ -259,15 +248,18 @@ refactor(permission): 优化权限检查逻辑
   - 使用 rollup-plugin-visualizer 分析包体积
   - 配置 manualChunks 优化分包策略
 
-- [ ] **后端代码结构优化**
-  - 大文件拆分（当前最大文件超过600行）：
-    - ai.summary.service.ts (646行) - 拆分成多个专用服务
-    - trip.service.ts (609行) - 分离查询、创建、更新逻辑
-    - calculation.service.ts (554行) - 拆分计算策略
+- [x] **后端代码结构优化** (2025-09-09完成)
+  - 大文件拆分（已完成全部6个大型服务文件拆分）：
+    - ✅ ai.summary.service.ts (646行) → 拆分为5个模块
+    - ✅ trip.service.ts (609行) → 拆分为4个模块
+    - ✅ calculation.service.ts (554行) → 拆分为4个模块
+    - ✅ invitation.service.ts (524行) → 拆分为4个模块
+    - ✅ message.service.ts (499行) → 拆分为6个模块
+    - ✅ expense.service.ts (437行) → 拆分为5个模块
   - 服务层重构：
-    - 提取公共逻辑到基类
-    - 减少服务间循环依赖
-    - 实施依赖注入模式
+    - ✅ 采用委托模式保持API兼容性
+    - ✅ 功能模块化，清晰的关注点分离
+    - ✅ 类型定义独立到types.ts文件
   - 控制器瘦身：
     - 将业务逻辑移至服务层
     - 统一错误处理

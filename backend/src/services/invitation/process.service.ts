@@ -67,12 +67,18 @@ export class InvitationProcessService {
 
       if (invitation.inviteType === InviteType.REPLACE && invitation.targetMemberId) {
         // 替换模式：更新现有虚拟成员
+        // 获取真实用户信息
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { username: true },
+        })
+        
         const updatedMember = await tx.tripMember.update({
           where: { id: invitation.targetMemberId },
           data: {
             userId,
             isVirtual: false,
-            displayName: null, // 清除虚拟成员的显示名称
+            displayName: user?.username || null, // 保留真实用户名作为displayName
           },
         })
         memberId = updatedMember.id

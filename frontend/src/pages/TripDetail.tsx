@@ -213,7 +213,11 @@ const TripDetail: React.FC = () => {
                       }
                       description={
                         <div>
-                          <div>{expense.payerMember?.isVirtual ? (expense.payerMember?.displayName || '虚拟成员') : (expense.payerMember?.user?.username || '未知用户')} 付款 · {formatDateTime(expense.expenseDate)}</div>
+                          <div>
+                            {!expense.payerMember?.isVirtual && expense.payerMember?.user 
+                              ? expense.payerMember.user.username 
+                              : (expense.payerMember?.displayName || '未知用户')} 付款 · {formatDateTime(expense.expenseDate)}
+                          </div>
                           {expense.description && <div className="expense-desc">{expense.description}</div>}
                           {expense.participantsSummary && (
                             <div className="expense-participants" style={{ 
@@ -307,15 +311,23 @@ const TripDetail: React.FC = () => {
                     <List.Item
                       key={member.id}
                       prefix={
-                        <div className="member-avatar">
+                        <div className="member-avatar" style={{ 
+                          backgroundColor: member.isVirtual ? '#e6e6e6' : '#1677ff',
+                          color: member.isVirtual ? '#666' : '#fff'
+                        }}>
                           {member.isVirtual 
-                            ? (member.displayName?.[0] || '虚').toUpperCase()
+                            ? '虚'
                             : (member.user?.username?.[0] || 'U').toUpperCase()}
                         </div>
                       }
                       description={
                         <div>
-                          <div>{member.isVirtual ? '虚拟成员' : member.user?.email}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {member.isVirtual && (
+                              <Tag color="default" fill="outline" style={{ fontSize: 12 }}>虚拟</Tag>
+                            )}
+                            <span>{member.isVirtual ? '暂未注册用户' : (member.user?.email || '已注册用户')}</span>
+                          </div>
                           <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
                             缴纳时间: {new Date().toLocaleDateString()}
                           </div>
@@ -327,7 +339,9 @@ const TripDetail: React.FC = () => {
                         </div>
                       }
                     >
-                      {member.isVirtual ? (member.displayName || '虚拟成员') : (member.user?.username || '未知用户')}
+                      {!member.isVirtual && member.user 
+                        ? member.user.username 
+                        : (member.displayName || '虚拟成员')}
                     </List.Item>
                   ))}
               </List>
@@ -353,15 +367,27 @@ const TripDetail: React.FC = () => {
                 <React.Fragment key={member.id}>
                 <List.Item
                   prefix={
-                    <div className="member-avatar">
+                    <div className="member-avatar" style={{ 
+                      backgroundColor: member.isVirtual ? '#e6e6e6' : '#1677ff',
+                      color: member.isVirtual ? '#666' : '#fff'
+                    }}>
                       {member.isVirtual 
-                        ? (member.displayName?.[0] || '虚').toUpperCase()
+                        ? '虚'
                         : (member.user?.username?.[0] || 'U').toUpperCase()}
                     </div>
                   }
                   description={
                     <div>
-                      {member.isVirtual ? '虚拟成员' : member.user?.email}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {member.isVirtual ? (
+                          <>
+                            <Tag color="default" fill="outline" style={{ fontSize: 12 }}>虚拟</Tag>
+                            <span style={{ color: '#999' }}>暂未注册用户</span>
+                          </>
+                        ) : (
+                          <span>{member.user?.email || '已注册用户'}</span>
+                        )}
+                      </div>
                       {member.contribution && Number(member.contribution) > 0 && (
                         <div style={{ marginTop: 4 }}>
                           基金缴纳: {formatCurrency(member.contribution)}
@@ -410,9 +436,10 @@ const TripDetail: React.FC = () => {
                   }
                   onClick={() => setExpandedMemberId(expandedMemberId === member.id ? null : member.id)}
                 >
-                  {member.isVirtual 
-                    ? `${member.displayName || '虚拟成员'} (虚拟)` 
-                    : (member.user?.username || '未知用户')}
+                  {/* 优化成员名称显示：真实用户显示username，虚拟成员显示displayName */}
+                  {!member.isVirtual && member.user 
+                    ? member.user.username 
+                    : (member.displayName || '虚拟成员')}
                 </List.Item>
                 {expandedMemberId === member.id && (() => {
                   const memberStatus = currentTrip.statistics?.membersFinancialStatus?.find(

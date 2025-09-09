@@ -104,6 +104,7 @@ export interface AcceptInvitationResult {
   memberId: string
   isReplacement: boolean
   message: string
+  targetMemberName?: string  // 替换模式时被替换的虚拟成员名称
 }
 
 // 用户搜索结果

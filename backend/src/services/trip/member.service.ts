@@ -315,6 +315,30 @@ export class TripMemberService {
 
     return updatedMembers
   }
+
+  /**
+   * 获取成员的显示名称
+   * 真实用户优先使用 username，虚拟成员使用 displayName
+   */
+  getMemberDisplayName(member: any): string {
+    // 如果是真实用户（非虚拟成员）
+    if (!member.isVirtual && member.user) {
+      return member.user.username || member.displayName || '未知用户'
+    }
+    // 如果是虚拟成员
+    return member.displayName || '虚拟成员'
+  }
+
+  /**
+   * 批量获取成员显示名称
+   */
+  getMembersDisplayNames(members: any[]): Map<string, string> {
+    const namesMap = new Map<string, string>()
+    members.forEach(member => {
+      namesMap.set(member.id, this.getMemberDisplayName(member))
+    })
+    return namesMap
+  }
 }
 
 export const tripMemberService = new TripMemberService()

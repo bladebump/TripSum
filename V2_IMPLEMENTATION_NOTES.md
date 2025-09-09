@@ -345,20 +345,60 @@ interface InvitationFormProps {
 - 权限判断基于tripStore中的当前成员角色
 - 保持UI整洁，权限控制对用户透明
 
-## 下一步工作
+### 第七阶段：成员管理优化 ✅ (完成时间：2025-09-09)
 
-### 第七阶段：成员管理优化
-- 替换模式的数据处理：
-  - 更新TripMember记录：userId设为真实用户ID，isVirtual改为false
-  - 保留所有历史数据（支出、基金、结算等）
-  - 更新显示名称为真实用户名
-- 新增模式的数据处理：
-  - 创建新的TripMember记录
-  - 设置role为'member'，isVirtual为false
-  - 初始contribution为0
-- 成员列表区分显示：
-  - 真实用户：显示用户名和头像
-  - 虚拟成员：显示"虚拟"标签和"邀请替换"按钮
+#### 完成内容
+**1. 后端数据处理优化**
+- **替换模式优化**：
+  - 修改`invitation/process.service.ts`，保留真实用户名作为displayName
+  - 获取User表中的username并更新到TripMember.displayName
+  - 确保所有历史数据（支出、基金、结算）完整保留
+  
+- **新增模式验证**：
+  - 确认role默认为'member'
+  - 确认isVirtual默认为false
+  - 确认contribution默认为0（数据库schema默认值）
+  
+- **成员信息获取优化**：
+  - 在`trip/member.service.ts`添加getMemberDisplayName方法
+  - 真实用户优先返回username，虚拟成员返回displayName
+  - 提供批量获取成员显示名称的接口
+
+**2. 前端成员列表显示优化**
+- **视觉区分**：
+  - 虚拟成员头像：灰色背景(#e6e6e6)，深色文字(#666)，显示"虚"字
+  - 真实用户头像：蓝色背景(#1677ff)，白色文字，显示用户名首字母
+  
+- **标签标识**：
+  - 虚拟成员添加灰色"虚拟"标签(Tag组件)
+  - 虚拟成员描述显示"暂未注册用户"
+  - 真实用户显示邮箱地址
+  
+- **名称显示逻辑**：
+  - 真实用户：优先显示user.username
+  - 虚拟成员：显示displayName
+  - 支出列表、基金缴纳列表统一使用相同逻辑
+
+**3. 替换后自动刷新机制**
+- **InvitationList页面优化**：
+  - 接受邀请成功后，根据邀请类型处理
+  - 替换模式：显示"已成功替换虚拟成员 [名称]"提示
+  - 调用fetchTripDetail刷新行程详情和成员列表
+  - 延迟1.5秒后自动跳转到行程详情页
+  - 新增模式也自动刷新并跳转
+
+**4. 类型定义完善**
+- 修复import语句错误（使用具名导入）
+- 添加targetMemberName到AcceptInvitationResult类型
+- 确保前后端类型定义一致
+
+#### 技术实现要点
+- 保持memberId不变确保数据连续性
+- 使用事务处理确保数据一致性
+- 前端使用条件渲染区分真实用户和虚拟成员
+- 自动刷新和跳转提升用户体验
+
+## 下一步工作
 
 ### 第八阶段：消息系统架构优化
 - 创建MessageService统一消息服务

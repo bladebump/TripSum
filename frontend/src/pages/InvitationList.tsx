@@ -9,10 +9,12 @@ import {
   InvitationListQuery 
 } from '@/types/invitation.types'
 import Loading from '@/components/common/Loading'
+import { useTripStore } from '@/stores/trip.store'
 import styles from './InvitationList.module.css'
 
 const InvitationList: React.FC = () => {
   const navigate = useNavigate()
+  const { fetchTripDetail } = useTripStore()
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
   const [invitations, setInvitations] = useState<InvitationWithRelations[]>([])
   const [loading, setLoading] = useState(false)
@@ -88,6 +90,9 @@ const InvitationList: React.FC = () => {
 
     if (!result) return
 
+    // 获取邀请详情，用于后续导航
+    const invitation = invitations.find(inv => inv.id === invitationId)
+    
     setActionLoading(invitationId)
     try {
       const acceptResult = await invitationService.acceptInvitation(invitationId)
@@ -97,18 +102,34 @@ const InvitationList: React.FC = () => {
         icon: 'success'
       })
       
-      // 刷新列表
-      await loadInvitations(true)
-      
-      // 如果是替换模式，提示用户
-      if (acceptResult.isReplacement) {
+      // 如果是替换模式，刷新行程详情并跳转
+      if (acceptResult.isReplacement && invitation?.tripId) {
+        // 刷新行程详情，包括成员列表
+        await fetchTripDetail(invitation.tripId)
+        
+        // 显示成功提示
+        Toast.show({
+          content: `已成功替换虚拟成员 ${acceptResult.targetMemberName || ''}`,
+          duration: 3000,
+          icon: 'success'
+        })
+        
+        // 延迟后跳转到行程详情页
         setTimeout(() => {
-          Toast.show({
-            content: '您已成功替换虚拟成员',
-            duration: 3000
-          })
-        }, 1000)
+          navigate(`/trips/${invitation.tripId}`)
+        }, 1500)
+      } else {
+        // 如果是新增模式，也刷新并跳转
+        if (invitation?.tripId) {
+          await fetchTripDetail(invitation.tripId)
+          setTimeout(() => {
+            navigate(`/trips/${invitation.tripId}`)
+          }, 1000)
+        }
       }
+      
+      // 刷新邀请列表
+      await loadInvitations(true)
     } catch (error: any) {
       console.error('接受邀请失败:', error)
       Toast.show({
