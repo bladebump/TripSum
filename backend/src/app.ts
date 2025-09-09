@@ -106,7 +106,7 @@ io.on('connection', (socket) => {
   })
 })
 
-export { io }
+export { io, app }
 
 // 启动服务器
 async function startServer() {
@@ -139,4 +139,7 @@ process.on('SIGTERM', async () => {
   })
 })
 
-startServer()
+// 只在非测试环境下启动服务器
+if (process.env.NODE_ENV !== 'test') {
+  startServer()
+}

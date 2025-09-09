@@ -2,13 +2,52 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
-  testMatch: [
-    '**/__tests__/**/*.+(ts|tsx|js)',
-    '**/?(*.)+(spec|test).+(ts|tsx|js)'
+  projects: [
+    // 单元测试配置
+    {
+      displayName: 'unit',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/tests/unit/**/*.test.ts'],
+      setupFilesAfterEnv: ['<rootDir>/tests/setupUnit.ts'],
+      transform: {
+        '^.+\\.(ts|tsx)$': 'ts-jest'
+      },
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1'
+      },
+      globals: {
+        'ts-jest': {
+          tsconfig: {
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true
+          }
+        }
+      }
+    },
+    // 集成测试配置
+    {
+      displayName: 'integration',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/tests/integration/**/*.test.ts'],
+      setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+      transform: {
+        '^.+\\.(ts|tsx)$': 'ts-jest'
+      },
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1'
+      },
+      globals: {
+        'ts-jest': {
+          tsconfig: {
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true
+          }
+        }
+      }
+    }
   ],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
-  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
@@ -16,18 +55,5 @@ module.exports = {
     '!src/types/**'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
-  },
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  testTimeout: 10000,
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true
-      }
-    }
-  }
+  coverageReporters: ['text', 'lcov', 'html']
 }
