@@ -7,6 +7,8 @@ import { Server } from 'socket.io'
 import logger from './utils/logger'
 import errorHandler from './middleware/error.middleware'
 import routes from './routes'
+import { connectRedis } from './config/redis'
+import { queueManager } from './queues'
 
 dotenv.config()
 
@@ -106,7 +108,35 @@ io.on('connection', (socket) => {
 
 export { io }
 
-httpServer.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`)
-  logger.info(`Environment: ${process.env.NODE_ENV}`)
+// 启动服务器
+async function startServer() {
+  try {
+    // 连接Redis
+    await connectRedis()
+    
+    // 启动队列
+    await queueManager.startAll()
+    logger.info('All queues started successfully')
+    
+    // 启动HTTP服务器
+    httpServer.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`)
+      logger.info(`Environment: ${process.env.NODE_ENV}`)
+    })
+  } catch (error) {
+    logger.error('Failed to start server:', error)
+    process.exit(1)
+  }
+}
+
+// 优雅关闭
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM signal received: closing HTTP server')
+  httpServer.close(async () => {
+    await queueManager.closeAll()
+    logger.info('HTTP server and queues closed')
+    process.exit(0)
+  })
 })
+
+startServer()
