@@ -49,7 +49,7 @@ const ExpenseForm: React.FC = () => {
   // 检查权限
   useEffect(() => {
     if (members.length > 0 && user) {
-      const currentMember = members.find(m => m.user?.id === user.id)
+      const currentMember = members.find(m => m.userId === user.id)
       // 新建模式检查创建权限，编辑模式检查编辑权限
       const hasPermission = expenseId 
         ? canEditExpense(currentMember) 
@@ -84,9 +84,11 @@ const ExpenseForm: React.FC = () => {
       return
     }
 
+
     setAiLoading(true)
     try {
       const parseResult = await aiService.parseUserInput(tripId!, description)
+      
       
       if (parseResult.intent.intent !== 'expense') {
         Toast.show('无法识别为支出信息')

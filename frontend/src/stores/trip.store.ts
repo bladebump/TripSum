@@ -87,9 +87,9 @@ export const useTripStore = create<TripState>((set, get) => ({
       const membersFromStats = statistics.membersFinancialStatus?.map((member: any) => ({
         id: member.memberId,
         userId: member.userId,
-        username: member.username,
+        username: member.memberName,  // 修复：使用后端返回的 memberName 字段
         isVirtual: member.isVirtual,
-        displayName: member.isVirtual ? member.username : undefined,
+        displayName: member.isVirtual ? member.memberName : undefined,  // 修复：使用 memberName
         role: member.role,
         contribution: member.contribution,
         balance: member.balance,
@@ -98,7 +98,7 @@ export const useTripStore = create<TripState>((set, get) => ({
         isActive: true,
         tripId,
         joinDate: new Date().toISOString(),  // 添加默认的 joinDate
-        user: member.isVirtual ? undefined : { username: member.username } as any
+        user: member.isVirtual ? undefined : { username: member.memberName } as any  // 修复：使用 memberName
       })) || []
       
       set({ 

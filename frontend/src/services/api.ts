@@ -6,6 +6,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 class ApiClient {
   private instance: AxiosInstance
+  private isRefreshing = false
+  private refreshQueue: Array<(token: string) => void> = []
 
   constructor() {
     this.instance = axios.create({
@@ -38,34 +40,88 @@ class ApiClient {
         return response
       },
       async (error: AxiosError<ApiResponse>) => {
+        const originalConfig = error.config as any
+        
+        // Prevent infinite loops - mark if this request has been refreshed
+        if (originalConfig?._isRetry) {
+          return Promise.reject(error)
+        }
+        
         if (error.response?.status === 401) {
-          // Don't handle auth errors for login/register endpoints
-          const isAuthEndpoint = error.config?.url?.includes('/auth/login') || 
-                                error.config?.url?.includes('/auth/register')
+          // Don't handle auth errors for login/register/refresh endpoints
+          const isAuthEndpoint = originalConfig?.url?.includes('/auth/login') || 
+                                originalConfig?.url?.includes('/auth/register') ||
+                                originalConfig?.url?.includes('/auth/refresh')
+          
+          const refreshToken = localStorage.getItem('refreshToken')
+          
           
           if (isAuthEndpoint) {
-            // Let login/register handle their own 401 errors
+            // Let auth endpoints handle their own 401 errors
             return Promise.reject(error)
           }
           
-          const refreshToken = localStorage.getItem('refreshToken')
-          if (refreshToken && !error.config?.url?.includes('/auth/refresh')) {
+          if (refreshToken) {
+            // If already refreshing, queue this request
+            if (this.isRefreshing) {
+              return new Promise((resolve) => {
+                this.refreshQueue.push((token: string) => {
+                  if (originalConfig) {
+                    originalConfig.headers.Authorization = `Bearer ${token}`
+                    resolve(this.instance.request(originalConfig))
+                  }
+                })
+              })
+            }
+            
+            // Start refreshing
+            this.isRefreshing = true
+            
+            
             try {
-              const { data } = await this.post<ApiResponse<{ token: string; refreshToken: string }>>(
-                '/auth/refresh',
-                { refreshToken }
+              // Use direct axios call to avoid interceptor recursion
+              const { data } = await axios.post<ApiResponse<{ token: string; refreshToken: string }>>(
+                `${API_BASE_URL}/auth/refresh`,
+                { refreshToken },
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                  }
+                }
               )
+              
+              
               if (data.success && data.data) {
+                
                 localStorage.setItem('token', data.data.token)
                 localStorage.setItem('refreshToken', data.data.refreshToken)
                 
-                if (error.config) {
-                  error.config.headers.Authorization = `Bearer ${data.data.token}`
-                  return this.instance.request(error.config)
+                
+                // Process queued requests
+                this.refreshQueue.forEach(callback => callback(data.data!.token))
+                this.refreshQueue = []
+                
+                // Retry original request
+                if (originalConfig) {
+                  // Ensure headers object exists and is properly set
+                  if (!originalConfig.headers) {
+                    originalConfig.headers = {}
+                  }
+                  originalConfig.headers['Authorization'] = `Bearer ${data.data!.token}`
+                  originalConfig._isRetry = true  // Mark as retry to prevent loops
+                  
+                  return this.instance.request(originalConfig)
                 }
+              } else {
+                throw new Error('Refresh failed')
               }
             } catch (refreshError) {
+              // Clear queue on refresh failure
+              this.refreshQueue = []
               this.handleAuthError()
+              return Promise.reject(refreshError)
+            } finally {
+              this.isRefreshing = false
             }
           } else {
             this.handleAuthError()

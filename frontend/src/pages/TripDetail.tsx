@@ -124,7 +124,7 @@ const TripDetail: React.FC = () => {
   }
 
   const isAdmin = isCurrentUserAdmin(members, user?.id)
-  const currentMember = members.find(m => m.user?.id === user?.id)
+  const currentMember = members.find(m => m.userId === user?.id)
 
   return (
     <div className="trip-detail-page">

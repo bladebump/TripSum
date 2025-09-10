@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   NavBar,
@@ -34,12 +34,22 @@ const MessageCenter: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectMode, setSelectMode] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  
+  // 防重复调用
+  const loadingRef = useRef(false)
 
-  useEffect(() => {
-    loadMessages(1)
-  }, [activeTab])
-
-  const loadMessages = async (page: number = 1) => {
+  // 使用 useCallback 优化 loadMessages 函数，移除会导致函数重创建的依赖
+  const loadMessages = useCallback(async (page: number = 1, tab?: string) => {
+    // 防止重复调用
+    if (loadingRef.current) {
+      console.log('MessageCenter: 防止重复调用 loadMessages')
+      return
+    }
+    
+    loadingRef.current = true
+    const currentTab = tab || activeTab
+    console.log(`MessageCenter: 开始加载消息 - activeTab: ${currentTab}, page: ${page}`)
+    
     try {
       const query: MessageListQuery = {
         page,
@@ -47,28 +57,42 @@ const MessageCenter: React.FC = () => {
       }
 
       // 根据tab设置筛选条件
-      switch (activeTab) {
+      switch (currentTab) {
         case 'unread':
           query.status = MessageStatus.UNREAD
           break
         case 'invitation':
-          query.type = MessageType.INVITATION
+          query.type = MessageType.TRIP_INVITATION
           break
         case 'system':
-          query.type = MessageType.SYSTEM
+          query.type = MessageType.SYSTEM_ANNOUNCEMENT
           break
       }
 
       await fetchMessages(query)
       
-      // 更新hasMore状态
-      if (page >= messagePagination.totalPages) {
+      // 更新hasMore状态 - 直接获取最新的分页信息
+      const currentPagination = messagePagination
+      if (page >= currentPagination.totalPages) {
         setHasMore(false)
       }
+      
+      console.log(`MessageCenter: 消息加载完成`)
     } catch (error) {
+      console.error('MessageCenter: 加载消息失败:', error)
       Toast.show('加载消息失败')
+    } finally {
+      loadingRef.current = false
     }
-  }
+  }, [fetchMessages]) // 只依赖fetchMessages
+
+  // 添加 useEffect 处理 activeTab 变化
+  useEffect(() => {
+    console.log(`MessageCenter: activeTab 变化: ${activeTab}`)
+    // 重置状态
+    setHasMore(true)
+    loadMessages(1, activeTab)
+  }, [activeTab]) // 移除loadMessages依赖
 
   const loadMore = async () => {
     const nextPage = messagePagination.page + 1

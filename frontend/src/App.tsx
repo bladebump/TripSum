@@ -1,28 +1,31 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, Toast } from 'antd-mobile'
 import zhCN from 'antd-mobile/es/locales/zh-CN'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import TripList from './pages/TripList'
-import TripDetail from './pages/TripDetail'
-import ExpenseForm from './pages/ExpenseForm'
-import ChatExpense from './pages/ChatExpense'
-import MemberDashboard from './pages/MemberDashboard'
-import Settlement from './pages/Settlement'
-import AddMember from './pages/AddMember'
-import TripSummary from './pages/TripSummary'
-import TripStatistics from './pages/TripStatistics'
-import Profile from './pages/Profile'
-import MessageCenter from './pages/MessageCenter'
-import MessageDetail from './pages/MessageDetail'
-import MessagePreferences from './pages/MessagePreferences'
-import InviteMember from './pages/InviteMember'
-import InvitationList from './pages/InvitationList'
 import Layout from './components/common/Layout'
 import PrivateRoute from './components/common/PrivateRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import PageLoading from './components/common/PageLoading'
+
+// 懒加载页面组件
+const Home = lazy(() => import('./pages/Home'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const TripList = lazy(() => import('./pages/TripList'))
+const TripDetail = lazy(() => import('./pages/TripDetail'))
+const ExpenseForm = lazy(() => import('./pages/ExpenseForm'))
+const ChatExpense = lazy(() => import('./pages/ChatExpense'))
+const MemberDashboard = lazy(() => import('./pages/MemberDashboard'))
+const Settlement = lazy(() => import('./pages/Settlement'))
+const AddMember = lazy(() => import('./pages/AddMember'))
+const TripSummary = lazy(() => import('./pages/TripSummary'))
+const TripStatistics = lazy(() => import('./pages/TripStatistics'))
+const Profile = lazy(() => import('./pages/Profile'))
+const MessageCenter = lazy(() => import('./pages/MessageCenter'))
+const MessageDetail = lazy(() => import('./pages/MessageDetail'))
+const MessagePreferences = lazy(() => import('./pages/MessagePreferences'))
+const InviteMember = lazy(() => import('./pages/InviteMember'))
+const InvitationList = lazy(() => import('./pages/InvitationList'))
 import socketService from './services/socket.service'
 import { useAuthStore } from './stores/auth.store'
 import { useMessageStore } from './stores/message.store'
@@ -132,9 +135,10 @@ function App() {
     <ErrorBoundary>
       <ConfigProvider locale={zhCN}>
         <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
+          <Suspense fallback={<PageLoading />}>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Home />} />
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route
@@ -265,9 +269,10 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </Suspense>
         </Router>
       </ConfigProvider>
     </ErrorBoundary>

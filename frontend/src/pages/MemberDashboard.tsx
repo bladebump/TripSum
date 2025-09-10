@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { NavBar, Card, List, ProgressBar, Tag } from 'antd-mobile'
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { useExpenseStore } from '@/stores/expense.store'
 import { useTripStore } from '@/stores/trip.store'
 import tripService from '@/services/trip.service'
 import { formatCurrency } from '@/utils/format'
 import Loading from '@/components/common/Loading'
+import { CategoryPieChart, BalanceBarChart } from '@/components/charts/LazyMemberCharts'
 import './MemberDashboard.scss'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
@@ -122,40 +122,12 @@ const MemberDashboard: React.FC = () => {
 
         {pieData.length > 0 && (
           <Card title="支出分类" className="chart-card">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={70}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieData.map((_: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
+            <CategoryPieChart data={pieData} colors={COLORS} />
           </Card>
         )}
 
         <Card title="资金流向" className="chart-card">
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Bar dataKey="contribution" fill="#82CA9D" name="基金缴纳" />
-              <Bar dataKey="paid" fill="#0088FE" name="实际垫付" />
-              <Bar dataKey="share" fill="#00C49F" name="应该分摊" />
-            </BarChart>
-          </ResponsiveContainer>
+          <BalanceBarChart data={barData} />
         </Card>
 
         <Card title="结算建议" className="debt-card">

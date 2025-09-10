@@ -58,15 +58,26 @@ const MessageDetail: React.FC = () => {
   // 获取消息类型图标
   const getMessageIcon = (type: MessageType) => {
     switch (type) {
-      case MessageType.SYSTEM:
+      case MessageType.SYSTEM_ANNOUNCEMENT:
+      case MessageType.SYSTEM_MAINTENANCE:
+      case MessageType.FEATURE_UPDATE:
         return <InformationCircleOutline className={styles.typeIcon} />
-      case MessageType.INVITATION:
+      case MessageType.TRIP_INVITATION:
+      case MessageType.TRIP_INVITATION_ACCEPTED:
+      case MessageType.TRIP_INVITATION_REJECTED:
         return <TeamOutline className={styles.typeIcon} />
-      case MessageType.EXPENSE:
+      case MessageType.EXPENSE_CREATED:
+      case MessageType.EXPENSE_UPDATED:
+      case MessageType.EXPENSE_DELETED:
+      case MessageType.EXPENSE_MENTIONED:
         return <BillOutline className={styles.typeIcon} />
-      case MessageType.SETTLEMENT:
+      case MessageType.SETTLEMENT_REMINDER:
+      case MessageType.SETTLEMENT_RECEIVED:
+      case MessageType.SETTLEMENT_CONFIRMED:
         return <CheckCircleOutline className={styles.typeIcon} />
-      case MessageType.REMINDER:
+      case MessageType.TRIP_MEMBER_JOINED:
+      case MessageType.TRIP_MEMBER_LEFT:
+      case MessageType.TRIP_DELETED:
         return <ClockCircleOutline className={styles.typeIcon} />
       default:
         return <InformationCircleOutline className={styles.typeIcon} />
@@ -102,7 +113,7 @@ const MessageDetail: React.FC = () => {
     setActionLoading(true)
     try {
       // 特殊处理邀请接受/拒绝操作
-      if (message?.type === MessageType.INVITATION && message.relatedEntity) {
+      if (message?.type === MessageType.TRIP_INVITATION && message.relatedEntity) {
         const invitationId = message.relatedEntity.id
         
         if (action.type === 'accept') {
@@ -147,7 +158,7 @@ const MessageDetail: React.FC = () => {
 
     // 根据消息类型渲染不同的元数据
     switch (message.type) {
-      case MessageType.INVITATION:
+      case MessageType.TRIP_INVITATION:
         return (
           <div className={styles.metadata}>
             <div className={styles.metaItem}>
@@ -171,7 +182,8 @@ const MessageDetail: React.FC = () => {
           </div>
         )
       
-      case MessageType.EXPENSE:
+      case MessageType.EXPENSE_CREATED:
+      case MessageType.EXPENSE_UPDATED:
         return (
           <div className={styles.metadata}>
             <div className={styles.metaItem}>
@@ -187,7 +199,9 @@ const MessageDetail: React.FC = () => {
           </div>
         )
       
-      case MessageType.SETTLEMENT:
+      case MessageType.SETTLEMENT_REMINDER:
+      case MessageType.SETTLEMENT_RECEIVED:
+      case MessageType.SETTLEMENT_CONFIRMED:
         return (
           <div className={styles.metadata}>
             <div className={styles.metaItem}>
@@ -243,11 +257,22 @@ const MessageDetail: React.FC = () => {
             <div className={styles.typeInfo}>
               {getMessageIcon(message.type)}
               <span className={styles.typeName}>
-                {message.type === MessageType.SYSTEM && '系统消息'}
-                {message.type === MessageType.INVITATION && '邀请通知'}
-                {message.type === MessageType.EXPENSE && '费用通知'}
-                {message.type === MessageType.SETTLEMENT && '结算通知'}
-                {message.type === MessageType.REMINDER && '提醒'}
+                {(message.type === MessageType.SYSTEM_ANNOUNCEMENT || 
+                  message.type === MessageType.SYSTEM_MAINTENANCE ||
+                  message.type === MessageType.FEATURE_UPDATE) && '系统消息'}
+                {(message.type === MessageType.TRIP_INVITATION ||
+                  message.type === MessageType.TRIP_INVITATION_ACCEPTED ||
+                  message.type === MessageType.TRIP_INVITATION_REJECTED) && '邀请通知'}
+                {(message.type === MessageType.EXPENSE_CREATED ||
+                  message.type === MessageType.EXPENSE_UPDATED ||
+                  message.type === MessageType.EXPENSE_DELETED ||
+                  message.type === MessageType.EXPENSE_MENTIONED) && '费用通知'}
+                {(message.type === MessageType.SETTLEMENT_REMINDER ||
+                  message.type === MessageType.SETTLEMENT_RECEIVED ||
+                  message.type === MessageType.SETTLEMENT_CONFIRMED) && '结算通知'}
+                {(message.type === MessageType.TRIP_MEMBER_JOINED ||
+                  message.type === MessageType.TRIP_MEMBER_LEFT ||
+                  message.type === MessageType.TRIP_DELETED) && '提醒'}
               </span>
             </div>
             <Tag color={getPriorityColor(message.priority)} fill='outline'>

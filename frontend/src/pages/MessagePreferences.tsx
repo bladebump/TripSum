@@ -33,29 +33,29 @@ const MessagePreferences: React.FC = () => {
   // 消息类型配置
   const messageTypes: PreferenceItem[] = [
     {
-      type: MessageType.SYSTEM,
+      type: MessageType.SYSTEM_ANNOUNCEMENT,
       label: '系统消息',
       description: '系统公告、维护通知等'
     },
     {
-      type: MessageType.INVITATION,
+      type: MessageType.TRIP_INVITATION,
       label: '邀请通知',
       description: '行程邀请、成员加入等'
     },
     {
-      type: MessageType.EXPENSE,
+      type: MessageType.EXPENSE_CREATED,
       label: '费用通知',
       description: '新增支出、费用变更等'
     },
     {
-      type: MessageType.SETTLEMENT,
+      type: MessageType.SETTLEMENT_REMINDER,
       label: '结算通知',
       description: '结算提醒、收款确认等'
     },
     {
-      type: MessageType.REMINDER,
+      type: MessageType.TRIP_MEMBER_JOINED,
       label: '提醒消息',
-      description: '定期账单、活动提醒等'
+      description: '成员加入、行程变更等'
     }
   ]
 

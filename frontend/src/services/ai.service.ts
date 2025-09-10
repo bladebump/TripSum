@@ -38,8 +38,8 @@ interface AddMembersResult {
 
 class AIService {
   async parseUserInput(tripId: string, text: string, members?: any[]): Promise<ParseResult> {
-    const { data } = await api.post<ApiResponse<ParseResult>>('/ai/parse', {
-      tripId,
+    // 使用新的统一路由格式
+    const { data } = await api.post<ApiResponse<ParseResult>>(`/trips/${tripId}/ai/parse`, {
       text,
       members: members?.map(m => ({
         id: m.id,  // TripMember.id
@@ -58,8 +58,8 @@ class AIService {
   // 所有解析功能已整合到 parseUserInput 统一处理
 
   async addMembers(tripId: string, memberNames: string[]): Promise<AddMembersResult> {
-    const { data } = await api.post<ApiResponse<AddMembersResult>>('/ai/add-members', {
-      tripId,
+    // 使用新的统一路由格式
+    const { data } = await api.post<ApiResponse<AddMembersResult>>(`/trips/${tripId}/ai/members`, {
       memberNames,
     })
     if (data.success && data.data) {

@@ -78,8 +78,15 @@ export const useMessageStore = create<MessageState>((set) => ({
     set({ messageLoading: true })
     try {
       const response = await messageService.getMessages(query)
+      
+      const { messages: currentMessages } = get()
+      const isFirstPage = !query?.page || query.page === 1
+      
+      // 如果是第一页，直接替换；如果是分页，则追加
+      const newMessages = isFirstPage ? response.messages : [...currentMessages, ...response.messages]
+      
       set({
-        messages: response.messages,
+        messages: newMessages,
         messagePagination: {
           page: response.page,
           limit: query?.limit || 20,

@@ -77,7 +77,7 @@ const ChatExpense: React.FC = () => {
   // 检查权限
   useEffect(() => {
     if (members.length > 0 && user) {
-      const currentMember = members.find(m => m.user?.id === user.id)
+      const currentMember = members.find(m => m.userId === user.id)
       if (!canCreateExpense(currentMember)) {
         Toast.show({
           content: getPermissionDeniedMessage('createExpense'),

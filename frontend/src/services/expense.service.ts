@@ -57,10 +57,10 @@ class ExpenseService {
     throw new Error('获取支出详情失败')
   }
 
-  async updateExpense(expenseId: string, expenseData: Partial<CreateExpenseData>, receipt?: File): Promise<Expense> {
+  async updateExpense(tripId: string, expenseId: string, expenseData: Partial<CreateExpenseData>, receipt?: File): Promise<Expense> {
     if (receipt) {
       const { data } = await api.uploadFile<ApiResponse<Expense>>(
-        `/expenses/${expenseId}`,
+        `/trips/${tripId}/expenses/${expenseId}`,
         receipt,
         expenseData
       )
@@ -68,7 +68,7 @@ class ExpenseService {
         return transformExpenseData(data.data)
       }
     } else {
-      const { data } = await api.put<ApiResponse<Expense>>(`/expenses/${expenseId}`, expenseData)
+      const { data } = await api.put<ApiResponse<Expense>>(`/trips/${tripId}/expenses/${expenseId}`, expenseData)
       if (data.success && data.data) {
         return transformExpenseData(data.data)
       }
@@ -76,8 +76,8 @@ class ExpenseService {
     throw new Error('更新支出失败')
   }
 
-  async deleteExpense(expenseId: string): Promise<void> {
-    const { data } = await api.delete<ApiResponse>(`/expenses/${expenseId}`)
+  async deleteExpense(tripId: string, expenseId: string): Promise<void> {
+    const { data } = await api.delete<ApiResponse>(`/trips/${tripId}/expenses/${expenseId}`)
     if (!data.success) {
       throw new Error('删除支出失败')
     }

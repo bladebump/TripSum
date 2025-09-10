@@ -37,7 +37,22 @@ class SocketService {
       return
     }
 
-    const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || ''
+    // 修复Socket连接URL逻辑
+    let socketUrl = ''
+    const apiUrl = import.meta.env.VITE_API_URL
+    
+    if (apiUrl?.startsWith('http')) {
+      // 完整URL模式: http://localhost:3000/api -> http://localhost:3000
+      socketUrl = apiUrl.replace('/api', '')
+    } else if (apiUrl?.startsWith('/api')) {
+      // 相对路径模式: /api -> http://localhost:3000 (开发环境)
+      socketUrl = 'http://localhost:3000'
+    } else {
+      // 备用默认值
+      socketUrl = 'http://localhost:3000'
+    }
+    
+    console.log('Socket connecting to:', socketUrl)
     
     this.socket = io(socketUrl, {
       auth: {
@@ -47,6 +62,8 @@ class SocketService {
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: this.reconnectDelay,
+      timeout: 20000, // 20秒连接超时
+      forceNew: true,
     })
 
     this.setupEventHandlers()

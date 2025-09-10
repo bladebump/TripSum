@@ -276,3 +276,4 @@ Frontend uses Vite environment variables:
 
 For complete version history and changelog, see [CHANGELOG.md](../CHANGELOG.md)
 - 每次需求做完，维护readme.md、todo.md、CHANGELOG.md、CLAUDE.md。
+- 在修复bug的时候，不要进行临时修复，彻查相关问题，直接做更高更优雅的修复。也不考虑向前向后兼容。

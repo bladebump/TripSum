@@ -20,8 +20,8 @@ interface ExpenseState {
   setPagination: (pagination: any) => void
   fetchExpenses: (tripId: string, params?: any) => Promise<void>
   createExpense: (tripId: string, data: CreateExpenseData, receipt?: File) => Promise<void>
-  updateExpense: (expenseId: string, data: Partial<CreateExpenseData>, receipt?: File) => Promise<void>
-  deleteExpense: (expenseId: string) => Promise<void>
+  updateExpense: (tripId: string, expenseId: string, data: Partial<CreateExpenseData>, receipt?: File) => Promise<void>
+  deleteExpense: (tripId: string, expenseId: string) => Promise<void>
   fetchBalances: (tripId: string) => Promise<void>
   calculateSettlement: (tripId: string) => Promise<void>
   createSettlements: (tripId: string, settlements: any[]) => Promise<void>
@@ -75,10 +75,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     }
   },
 
-  updateExpense: async (expenseId, data, receipt) => {
+  updateExpense: async (tripId, expenseId, data, receipt) => {
     set({ loading: true })
     try {
-      const updatedExpense = await expenseService.updateExpense(expenseId, data, receipt)
+      const updatedExpense = await expenseService.updateExpense(tripId, expenseId, data, receipt)
       const { expenses } = get()
       set({
         expenses: expenses.map(e => e.id === expenseId ? updatedExpense : e),
@@ -90,10 +90,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     }
   },
 
-  deleteExpense: async (expenseId) => {
+  deleteExpense: async (tripId, expenseId) => {
     set({ loading: true })
     try {
-      await expenseService.deleteExpense(expenseId)
+      await expenseService.deleteExpense(tripId, expenseId)
       const { expenses } = get()
       set({
         expenses: expenses.filter(e => e.id !== expenseId),

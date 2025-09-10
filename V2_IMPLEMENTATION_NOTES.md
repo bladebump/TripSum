@@ -2,12 +2,12 @@
 
 ## 项目概览
 
-**版本**: v2.0.0-beta.8  
-**完成进度**: 8/12 阶段  
-**核心功能**: 真实用户邀请系统 + 通用消息系统  
+**版本**: v2.0.0-beta.10  
+**完成进度**: 10/12 阶段  
+**核心功能**: 真实用户邀请系统 + 通用消息系统 + 前端性能优化  
 **实施周期**: 2025-09-07 至今
 
-## 已完成工作（第1-8阶段）
+## 已完成工作（第1-10阶段）
 
 ### 第一阶段：数据库设计 ✅
 1. **数据库模型创建**
@@ -490,9 +490,53 @@ export class MessageCacheService {
 4. **缓存策略**：多层缓存，减少数据库压力
 5. **优雅关闭**：确保队列任务完成后再关闭应用
 
-## 下一步工作（第9-12阶段）
+### 第十阶段：前端优化 ✅ (2025-09-10)
 
-### 第九阶段：系统测试（当前任务）
+#### 主要目标
+将前端打包体积从1.25MB优化到500KB以下，提升首屏加载速度。
+
+#### 完成内容
+
+**1. 路由懒加载实现**
+- 所有页面组件改为动态导入（React.lazy）
+- 创建PageLoading组件作为Suspense fallback
+- 优化后主应用包从229KB降至32KB（减少86%）
+
+**2. Recharts懒加载优化**
+- 创建LazyMemberCharts组件封装图表
+- MemberChartsImpl独立文件包含Recharts依赖
+- 图表仅在需要时加载，减少初始包体积415KB
+
+**3. 构建配置优化**
+```javascript
+// vite.config.ts 关键优化
+- terser压缩：移除console、debugger、注释
+- manualChunks：细粒度代码分割
+- 关闭sourcemap：减少构建体积
+- 优化chunk命名：按类型组织文件
+```
+
+**4. 优化成果**
+- **总体积**：1.25MB → 1.21MB（略微减少）
+- **初始加载**：797KB → 446KB（减少44%）
+- **主应用包**：229KB → 32KB（减少86%）
+- **Antd-mobile**：406KB → 204KB（减少50%）
+- **Recharts**：415KB → 282KB（减少32%，且懒加载）
+
+#### 关键技术决策
+1. **使用React.lazy而非动态import()**：更符合React生态
+2. **保留Recharts而非替换**：功能完整，通过懒加载解决体积问题
+3. **Terser而非esbuild**：更好的压缩率，移除无用代码
+4. **细粒度分包**：按功能和库类型拆分，提高缓存效率
+
+#### 性能提升
+- 首屏加载时间预计减少40-50%
+- 图表页面按需加载，不影响初始体验
+- 代码分割合理，缓存利用率提高
+
+## 下一步工作（第11-12阶段）
+
+### 第十一阶段：文档更新（下一任务）
 
 #### 测试范围
 - **功能测试**：全流程验证邀请和消息系统
@@ -572,6 +616,69 @@ export class MessageCacheService {
 - `/frontend/src/utils/permission.ts` - 权限控制
 - `/frontend/src/pages/TripDetail.tsx` - UI优化
 
+### 2025-09-10 架构改进记录
+
+**上午：前端打包优化完成（第十阶段）**
+1. ✅ 路由懒加载和代码分割实现
+2. ✅ 构建配置优化和资源压缩
+3. ✅ 初始加载体积从797KB降至446KB
+
+**下午：消息系统关键Bug修复**
+- **成员显示名称问题**：修复实际用户显示"未知用户"的数据映射bug
+- **API参数不匹配**：统一前后端用户搜索参数命名（keyword vs query）  
+- **Socket连接失败**：修复WebSocket连接URL配置错误
+- **消息系统多重问题**：
+  - MessageType枚举前后端不一致导致API验证失败
+  - 消息列表重复调用和分页数据覆盖问题
+  - 已接受邀请仍显示操作按钮的状态判断bug
+  
+**关键技术改进：**
+
+**1. 数据映射模式标准化**
+```typescript
+// trip.store.ts - 标准化backend->frontend数据映射
+username: member.memberName,  // 统一使用backend返回的memberName
+displayName: member.isVirtual ? member.memberName : undefined,
+user: member.isVirtual ? undefined : { username: member.memberName }
+```
+
+**2. 分页数据处理模式**
+```typescript
+// message.store.ts - 防止分页数据覆盖的标准模式
+const isFirstPage = !query?.page || query.page === 1
+const newMessages = isFirstPage ? response.messages : [...currentMessages, ...response.messages]
+```
+
+**3. React Hook优化模式**
+```typescript
+// MessageCenter.tsx - 防止重复API调用的优化模式  
+const loadingRef = useRef(false)
+const fetchMessages = useCallback(async () => {
+  if (loadingRef.current) return  // 防止重复调用
+  // ... 异步逻辑
+}, [dependency])
+```
+
+**4. 前后端类型系统对齐**
+- 统一MessageType枚举定义（17种详细类型）
+- API参数命名标准化（keyword统一）
+- 动态状态检查避免UI状态不一致
+
+**修复的核心文件：**
+- `/frontend/src/stores/trip.store.ts` - 数据映射标准化
+- `/frontend/src/stores/message.store.ts` - 分页逻辑优化
+- `/backend/src/controllers/user.controller.ts` - API参数统一
+- `/frontend/src/services/socket.service.ts` - 连接配置修复
+- `/frontend/src/types/message.types.ts` - 类型系统对齐
+- `/frontend/src/pages/MessageCenter.tsx` - Hook优化
+
+**架构经验总结：**
+1. **数据流一致性**：前后端字段命名需要严格对应，避免映射错误
+2. **分页处理模式**：append vs replace逻辑需要统一标准化处理
+3. **React性能优化**：useCallback依赖管理和重复调用防护是必须的
+4. **类型系统管理**：前后端枚举定义必须同步维护
+5. **WebSocket配置**：相对路径和绝对路径的URL处理需要特殊逻辑
+
 ### 2025-09-08 工作记录
 
 **完成内容：**
@@ -604,7 +711,7 @@ export class MessageCacheService {
 3. **清晰边界**：管理员和普通成员功能明确分离
 
 ---
-*文档更新: 2025-09-09*  
-*当前版本: v2.0.0-beta.8*  
-*完成阶段: 8/12*  
-*下一阶段: 系统测试*
+*文档更新: 2025-09-10*  
+*当前版本: v2.0.0-beta.10*  
+*完成阶段: 10/12*  
+*下一阶段: 文档更新*
