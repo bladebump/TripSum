@@ -11,7 +11,7 @@ export class InvitationController {
    */
   async sendInvitation(req: AuthenticatedRequest, res: Response) {
     try {
-      const tripId = req.params.id;
+      const tripId = req.context!.tripId!;
       const userId = req.userId!;
       
       // 权限已在中间件中验证（requireAdmin）
@@ -150,7 +150,7 @@ export class InvitationController {
    */
   async getTripInvitations(req: AuthenticatedRequest, res: Response) {
     try {
-      const tripId = req.params.id;
+      const tripId = req.context!.tripId!;
       const { status } = req.query;
 
       // 权限已在中间件中验证（requireAdmin）

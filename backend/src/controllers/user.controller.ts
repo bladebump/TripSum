@@ -10,20 +10,20 @@ export class UserController {
    */
   async searchUsers(req: AuthenticatedRequest, res: Response) {
     try {
-      const { query, tripId, limit = 10 } = req.query;
+      const { keyword, tripId, limit = 10 } = req.query;
 
-      if (!query || typeof query !== 'string') {
+      if (!keyword || typeof keyword !== 'string') {
         sendError(res, '400', '搜索关键词不能为空', 400);
         return;
       }
 
-      if (query.length < 2) {
-        sendError(res, '400', '搜索关键词至少需要2个字符', 400);
+      if (keyword.length < 1) {
+        sendError(res, '400', '搜索关键词不能为空', 400);
         return;
       }
 
       const users = await userService.searchUsers(
-        query,
+        keyword,
         tripId as string | undefined,
         Number(limit)
       );

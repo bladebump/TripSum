@@ -7,7 +7,7 @@ export class ExpenseController {
   async createExpense(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       
       let expenseData = req.body
       
@@ -29,7 +29,7 @@ export class ExpenseController {
   async getTripExpenses(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       const { page = 1, limit = 20, startDate, endDate, categoryId, payerId } = req.query
       
       const filters: any = {}
@@ -65,7 +65,7 @@ export class ExpenseController {
   async updateExpense(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id } = req.params
+      const expenseId = req.context!.expenseId!
       
       let expenseData = req.body
       
@@ -77,7 +77,7 @@ export class ExpenseController {
         expenseData.participants = JSON.parse(expenseData.participants)
       }
       
-      const expense = await expenseService.updateExpense(id, userId, expenseData)
+      const expense = await expenseService.updateExpense(expenseId, userId, expenseData)
       sendSuccess(res, expense)
     } catch (error: any) {
       sendError(res, '403', error.message, 403)
@@ -87,8 +87,8 @@ export class ExpenseController {
   async deleteExpense(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id } = req.params
-      const result = await expenseService.deleteExpense(id, userId)
+      const expenseId = req.context!.expenseId!
+      const result = await expenseService.deleteExpense(expenseId, userId)
       sendSuccess(res, result)
     } catch (error: any) {
       sendError(res, '403', error.message, 403)

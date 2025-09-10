@@ -67,6 +67,7 @@ export class StatisticsService {
       const balance = balances.find(b => b.memberId === member.id)
       return {
         memberId: member.id,
+        userId: member.userId,  // 添加userId字段，用于前端初始映射
         memberName: member.isVirtual 
           ? (member.displayName || '虚拟成员')
           : (member.user?.username || 'Unknown'),

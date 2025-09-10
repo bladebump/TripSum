@@ -1,5 +1,15 @@
 import { Request } from 'express'
-import { User, TripMember } from '@prisma/client'
+import { User, TripMember, Trip, Expense } from '@prisma/client'
+
+export interface RequestContext {
+  tripId?: string
+  trip?: Trip
+  tripMember?: TripMember | null
+  tripMemberId?: string | null
+  memberRole?: string | null
+  expense?: Expense
+  expenseId?: string
+}
 
 export interface AuthenticatedRequest extends Request {
   user?: User
@@ -7,6 +17,7 @@ export interface AuthenticatedRequest extends Request {
   tripMember?: TripMember
   tripMemberId?: string
   memberRole?: string
+  context?: RequestContext
 }
 
 export interface JwtPayload {

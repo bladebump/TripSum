@@ -8,7 +8,7 @@ export class CalculationController {
   async getStatistics(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       
       await tripService.getTripDetail(tripId, userId)
       
@@ -22,7 +22,7 @@ export class CalculationController {
   async getBalances(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       
       await tripService.getTripDetail(tripId, userId)
       
@@ -36,7 +36,7 @@ export class CalculationController {
   async calculateSettlement(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       
       await tripService.getTripDetail(tripId, userId)
       
@@ -59,7 +59,7 @@ export class CalculationController {
   async createSettlements(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       const { settlements } = req.body
       
       await tripService.getTripDetail(tripId, userId)

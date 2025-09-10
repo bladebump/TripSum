@@ -1,4 +1,4 @@
-import { PrismaClient, MessageStatus } from '@prisma/client'
+import { PrismaClient, MessageStatus, MessageType } from '@prisma/client'
 import { CreateMessageDTO } from '../../types/message.types'
 
 const prisma = new PrismaClient()
@@ -53,6 +53,25 @@ export class MessageCrudService {
 
     if (message.recipientId !== userId) {
       throw new Error('无权查看此消息')
+    }
+
+    // 如果是邀请消息，检查关联邀请的状态，动态过滤操作按钮
+    if (message.type === MessageType.TRIP_INVITATION && message.relatedEntity) {
+      const invitationId = (message.relatedEntity as any).id
+      if (invitationId) {
+        const invitation = await prisma.tripInvitation.findUnique({
+          where: { id: invitationId },
+          select: { status: true },
+        })
+
+        // 如果邀请已被处理（非待处理状态），清空操作按钮
+        if (invitation && invitation.status !== 'PENDING') {
+          return {
+            ...message,
+            actions: [], // 清空操作按钮
+          }
+        }
+      }
     }
 
     return message

@@ -14,6 +14,7 @@ export const authenticate = async (
   try {
     const authHeader = req.headers.authorization
     
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       sendError(res, '401', '未提供认证令牌', 401)
       return

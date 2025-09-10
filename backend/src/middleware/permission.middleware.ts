@@ -44,18 +44,16 @@ export const checkPermission = (permission: Permission) => {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<any> => {
     try {
       const userId = req.userId;
-      const tripId = req.params.id || req.params.tripId;
+      const tripId = req.context?.tripId;
       
       if (!userId) {
         return sendError(res, '401', '未授权访问', 401);
       }
       
       if (!tripId) {
-        // 如果不是行程相关的权限检查，直接通过
-        return next();
+        return sendError(res, '400', '缺少行程上下文', 400);
       }
       
-      // 获取用户在行程中的角色
       const tripMember = await prisma.tripMember.findFirst({
         where: {
           tripId,
@@ -68,16 +66,14 @@ export const checkPermission = (permission: Permission) => {
         return sendError(res, '403', '您不是该行程的成员', 403);
       }
       
-      // 检查角色是否有权限
       const allowedRoles = PERMISSIONS[permission];
       if (!allowedRoles.includes(tripMember.role as any)) {
         return sendError(res, '403', '您没有执行此操作的权限', 403);
       }
       
-      // 将成员信息附加到请求对象
-      req.tripMember = tripMember;
-      req.tripMemberId = tripMember.id;
-      req.memberRole = tripMember.role;
+      req.context!.tripMember = tripMember;
+      req.context!.tripMemberId = tripMember.id;
+      req.context!.memberRole = tripMember.role;
       
       next();
     } catch (error) {
@@ -96,10 +92,14 @@ export const requireAdmin = async (
 ): Promise<any> => {
   try {
     const userId = req.userId;
-    const tripId = req.params.id || req.params.tripId;
+    const tripId = req.context?.tripId;
     
-    if (!userId || !tripId) {
+    if (!userId) {
       return sendError(res, '401', '未授权访问', 401);
+    }
+    
+    if (!tripId) {
+      return sendError(res, '400', '缺少行程上下文', 400);
     }
     
     const tripMember = await prisma.tripMember.findFirst({
@@ -115,9 +115,9 @@ export const requireAdmin = async (
       return sendError(res, '403', '需要管理员权限', 403);
     }
     
-    req.tripMember = tripMember;
-    req.tripMemberId = tripMember.id;
-    req.memberRole = 'admin';
+    req.context!.tripMember = tripMember;
+    req.context!.tripMemberId = tripMember.id;
+    req.context!.memberRole = 'admin';
     
     next();
   } catch (error) {
@@ -135,10 +135,14 @@ export const requireMember = async (
 ): Promise<any> => {
   try {
     const userId = req.userId;
-    const tripId = req.params.id || req.params.tripId;
+    const tripId = req.context?.tripId;
     
-    if (!userId || !tripId) {
+    if (!userId) {
       return sendError(res, '401', '未授权访问', 401);
+    }
+    
+    if (!tripId) {
+      return sendError(res, '400', '缺少行程上下文', 400);
     }
     
     const tripMember = await prisma.tripMember.findFirst({
@@ -153,9 +157,9 @@ export const requireMember = async (
       return sendError(res, '403', '您不是该行程的成员', 403);
     }
     
-    req.tripMember = tripMember;
-    req.tripMemberId = tripMember.id;
-    req.memberRole = tripMember.role;
+    req.context!.tripMember = tripMember;
+    req.context!.tripMemberId = tripMember.id;
+    req.context!.memberRole = tripMember.role;
     
     next();
   } catch (error) {

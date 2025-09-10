@@ -1,15 +1,34 @@
 import { Request, Response, NextFunction } from 'express'
 import { ObjectSchema } from 'joi'
+import { AuthenticatedRequest } from '../types'
 import { sendError } from '../utils/response'
 
 export const validate = (schema: ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    console.log('验证请求体:', JSON.stringify(req.body))
     const { error } = schema.validate(req.body)
     
     if (error) {
       const message = error.details[0].message
-      console.error('验证失败:', message, '请求体:', req.body)
+      sendError(res, '400', message, 400)
+      return
+    }
+    
+    next()
+  }
+}
+
+export const validateWithContext = (schema: ObjectSchema) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    // 合并context数据和请求体进行验证
+    const dataToValidate = {
+      ...req.body,
+      ...(req.context || {})
+    }
+    
+    const { error } = schema.validate(dataToValidate)
+    
+    if (error) {
+      const message = error.details[0].message
       sendError(res, '400', message, 400)
       return
     }

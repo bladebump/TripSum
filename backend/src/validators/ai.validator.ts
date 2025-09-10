@@ -1,7 +1,6 @@
 import Joi from 'joi'
 
 export const parseUserInputSchema = Joi.object({
-  tripId: Joi.string().uuid().required(),
   text: Joi.string().min(1).max(500).required(),
   members: Joi.array().items(
     Joi.object({
@@ -19,7 +18,6 @@ export const parseUserInputSchema = Joi.object({
 })
 
 export const addMembersSchema = Joi.object({
-  tripId: Joi.string().uuid().required(),
   memberNames: Joi.array().items(
     Joi.string().min(1).max(20).required()
   ).min(1).max(10).required(),

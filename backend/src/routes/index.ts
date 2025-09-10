@@ -1,13 +1,12 @@
 import { Router } from 'express'
 import authRoutes from './auth.routes'
 import tripRoutes from './trip.routes'
-import expenseRoutes from './expense.routes'
-import aiRoutes from './ai.routes'
 import userRoutes from './user.routes'
 import invitationRoutes from './invitation.routes'
 import messageRoutes from './message.routes'
 import { authenticate } from '../middleware/auth.middleware'
 import { requireAdmin } from '../middleware/permission.middleware'
+import { setupTripContext, setupExpenseContext } from '../middleware/context.middleware'
 import { expenseController } from '../controllers/expense.controller'
 import { calculationController } from '../controllers/calculation.controller'
 import { aiController } from '../controllers/ai.controller'
@@ -17,37 +16,38 @@ import { validate, validateQuery } from '../middleware/validation.middleware'
 import { expenseQuerySchema } from '../validators/expense.validator'
 import { createInvitationSchema, tripInvitationQuerySchema } from '../validators/invitation.validator'
 import { messagePreferencesSchema } from '../validators/message.validator'
+import { parseUserInputSchema, addMembersSchema } from '../validators/ai.validator'
 import { upload } from '../middleware/upload.middleware'
 
 const router = Router()
 
 router.use('/auth', authRoutes)
 router.use('/trips', tripRoutes)
-router.use('/expenses', expenseRoutes)
-router.use('/ai', aiRoutes)
 router.use('/users', userRoutes)
 router.use('/invitations', invitationRoutes)
 router.use('/messages', messageRoutes)
 
-// Trip-specific expense routes
-// 创建费用 - 仅管理员
-router.post('/trips/:id/expenses', authenticate, requireAdmin, upload.single('receipt'), expenseController.createExpense)
-// 查看费用列表 - 所有成员可访问
-router.get('/trips/:id/expenses', authenticate, validateQuery(expenseQuerySchema), expenseController.getTripExpenses)
+// Expense routes
+router.post('/trips/:tripId/expenses', authenticate, setupTripContext, requireAdmin, upload.single('receipt'), expenseController.createExpense)
+router.get('/trips/:tripId/expenses', authenticate, setupTripContext, validateQuery(expenseQuerySchema), expenseController.getTripExpenses)
+router.put('/trips/:tripId/expenses/:expenseId', authenticate, setupTripContext, setupExpenseContext, requireAdmin, upload.single('receipt'), expenseController.updateExpense)
+router.delete('/trips/:tripId/expenses/:expenseId', authenticate, setupTripContext, setupExpenseContext, requireAdmin, expenseController.deleteExpense)
 
 // Statistics and calculation routes
-router.get('/trips/:id/statistics', authenticate, calculationController.getStatistics)
-router.get('/trips/:id/balances', authenticate, calculationController.getBalances)
-router.post('/trips/:id/calculate', authenticate, calculationController.calculateSettlement)
-router.post('/trips/:id/settle', authenticate, calculationController.createSettlements)
+router.get('/trips/:tripId/statistics', authenticate, setupTripContext, calculationController.getStatistics)
+router.get('/trips/:tripId/balances', authenticate, setupTripContext, calculationController.getBalances)
+router.post('/trips/:tripId/calculate', authenticate, setupTripContext, calculationController.calculateSettlement)
+router.post('/trips/:tripId/settle', authenticate, setupTripContext, calculationController.createSettlements)
 
-// AI Summary routes
-router.get('/trips/:id/summary', authenticate, aiController.generateTripSummary)
-router.get('/trips/:id/summary/export', authenticate, aiController.exportTripSummary)
+// AI routes
+router.post('/trips/:tripId/ai/parse', authenticate, setupTripContext, requireAdmin, validate(parseUserInputSchema), aiController.parseUserInput)
+router.post('/trips/:tripId/ai/members', authenticate, setupTripContext, requireAdmin, validate(addMembersSchema), aiController.addMembers)
+router.get('/trips/:tripId/summary', authenticate, setupTripContext, aiController.generateTripSummary)
+router.get('/trips/:tripId/summary/export', authenticate, setupTripContext, aiController.exportTripSummary)
 
-// Trip invitation routes
-router.post('/trips/:id/invitations', authenticate, requireAdmin, validate(createInvitationSchema), invitationController.sendInvitation)
-router.get('/trips/:id/invitations', authenticate, requireAdmin, validateQuery(tripInvitationQuerySchema), invitationController.getTripInvitations)
+// Invitation routes
+router.post('/trips/:tripId/invitations', authenticate, setupTripContext, requireAdmin, validate(createInvitationSchema), invitationController.sendInvitation)
+router.get('/trips/:tripId/invitations', authenticate, setupTripContext, requireAdmin, validateQuery(tripInvitationQuerySchema), invitationController.getTripInvitations)
 
 // Message preferences routes
 router.get('/message-preferences', authenticate, messageController.getPreferences)

@@ -1,6 +1,7 @@
 import { Response } from 'express'
 import { AuthenticatedRequest } from '../types'
 import { tripService } from '../services/trip.service'
+import { memberService } from '../services/member.service'
 import { unifiedAIParser } from '../services/ai.unified.parser'
 import { aiSummaryService } from '../services/ai.summary.service'
 import { sendSuccess, sendError } from '../utils/response'
@@ -10,28 +11,22 @@ export class AIController {
   async parseUserInput(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { tripId, text, members } = req.body
+      const tripId = req.context!.tripId!
+      const { text, members } = req.body
       
-      logger.info('parseUserInput请求:', { tripId, text, membersCount: members?.length })
-      
-      if (!tripId || !text) {
+      if (!text) {
         return sendError(res, '400', '缺少必要参数', 400)
       }
       
-      // 验证用户是否为旅行成员
       await tripService.getTripDetail(tripId, userId)
       
-      // 获取当前用户对应的memberId
-      // 需要从行程成员列表中找到userId对应的TripMember.id
-      const tripMembers = await tripService.getTripMembers(tripId, userId)
-      const currentUserMember = tripMembers.find((m: any) => m.userId === userId)
+      // 使用memberService获取当前用户对应的memberId
+      const currentMemberId = await memberService.getMemberIdByUserId(userId, tripId)
       
-      if (!currentUserMember) {
+      if (!currentMemberId) {
         logger.error('无法找到当前用户的成员信息', { userId, tripId })
         return sendError(res, '500', '无法找到当前用户的成员信息', 500)
       }
-      
-      const currentMemberId = currentUserMember.id
       
       const result = await unifiedAIParser.parseUserInput(tripId, text.trim(), members, currentMemberId)
       return sendSuccess(res, result)
@@ -46,9 +41,10 @@ export class AIController {
   async addMembers(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { tripId, memberNames } = req.body
+      const tripId = req.context!.tripId!
+      const { memberNames } = req.body
       
-      if (!tripId || !Array.isArray(memberNames)) {
+      if (!Array.isArray(memberNames)) {
         return sendError(res, '400', '缺少必要参数', 400)
       }
       
@@ -65,7 +61,7 @@ export class AIController {
   async generateTripSummary(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       
       // 验证用户权限
       await tripService.getTripDetail(tripId, userId)
@@ -81,7 +77,7 @@ export class AIController {
   async exportTripSummary(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!
-      const { id: tripId } = req.params
+      const tripId = req.context!.tripId!
       
       // 验证用户权限
       await tripService.getTripDetail(tripId, userId)
