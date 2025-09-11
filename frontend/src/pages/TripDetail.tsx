@@ -70,7 +70,7 @@ const TripDetail: React.FC = () => {
       content: '确定要删除这条支出记录吗？',
       onConfirm: async () => {
         try {
-          await deleteExpense(expenseId)
+          await deleteExpense(id!, expenseId)
           Toast.show('删除成功')
         } catch (error) {
           Toast.show('删除失败')

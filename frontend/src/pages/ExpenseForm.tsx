@@ -201,7 +201,7 @@ const ExpenseForm: React.FC = () => {
       const receipt = fileList[0] && 'file' in fileList[0] ? (fileList[0] as any).file as File : undefined
 
       if (expenseId) {
-        await updateExpense(expenseId, expenseData, receipt)
+        await updateExpense(tripId!, expenseId, expenseData, receipt)
         Toast.show('更新成功')
       } else {
         await createExpense(tripId!, expenseData, receipt)

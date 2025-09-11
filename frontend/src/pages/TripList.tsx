@@ -81,7 +81,7 @@ const TripList: React.FC = () => {
       const values = form.getFieldsValue()
       
       setCreateLoading(true)
-      const trip = await createTrip({
+      await createTrip({
         name: values.name,
         description: values.description,
         startDate: values.startDate.toISOString(),
