@@ -1,6 +1,6 @@
 {
   "name": "tripsum-backend",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0",
   "description": "TripSum (旅算) - 智能旅行费用分摊系统后端服务",
   "main": "dist/app.js",
   "scripts": {
