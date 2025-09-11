@@ -6,8 +6,8 @@
 - **认证方式**: Bearer Token (JWT)
 - **请求格式**: JSON
 - **响应格式**: JSON
-- **API版本**: v1.10.0 (2025-09-04)
-- **架构特性**: memberId为主、管理员中心化结算
+- **API版本**: v2.0.0 (2025-09-11)
+- **架构特性**: memberId为主、管理员中心化结算、真实用户邀请系统、消息通知体系
 
 ## API文档结构
 
@@ -18,6 +18,8 @@
 - [API_EXPENSE.md](./API_EXPENSE.md) - 支出管理接口
 - [API_STATISTICS.md](./API_STATISTICS.md) - 统计和结算接口
 - [API_AI.md](./API_AI.md) - AI功能接口
+- [API_MESSAGES.md](./API_MESSAGES.md) - 消息系统接口 (v2.0.0新增)
+- [API_INVITATION.md](./API_INVITATION.md) - 邀请系统接口 (v2.0.0新增)
 
 ## 通用响应格式
 
@@ -77,30 +79,97 @@ const socket = io('http://localhost:3000', {
 })
 ```
 
-### 加入行程房间
+### 身份认证
 
 ```javascript
+socket.emit('auth', userId)
+```
+
+### 房间管理
+
+```javascript
+// 加入行程房间
 socket.emit('join-trip', tripId)
+
+// 离开行程房间
+socket.emit('leave-trip', tripId)
+
+// 加入用户房间（接收个人消息）
+socket.emit('join-user', userId)
 ```
 
 ### 监听事件
 
-#### 支出更新
+#### 消息相关事件
 ```javascript
-socket.on('expense-updated', (data) => {
-  console.log('支出已更新:', data)
+// 新消息通知
+socket.on('new_message', (message) => {
+  console.log('收到新消息:', message)
+})
+
+// 消息已读通知
+socket.on('message_read', (messageId) => {
+  console.log('消息已读:', messageId)
+})
+
+// 未读数更新
+socket.on('unread-count', (count) => {
+  console.log('未读消息数:', count)
 })
 ```
 
-#### 成员变化
+#### 邀请相关事件
 ```javascript
-socket.on('member-changed', (data) => {
-  console.log('成员变化:', data)
+// 收到邀请通知
+socket.on('invitation_received', (invitation) => {
+  console.log('收到新邀请:', invitation)
+})
+
+// 邀请被接受
+socket.on('invitation_accepted', (data) => {
+  console.log('邀请已被接受:', data)
+})
+
+// 邀请被拒绝
+socket.on('invitation_rejected', (invitationId) => {
+  console.log('邀请已被拒绝:', invitationId)
 })
 ```
 
-#### 结算通知
+#### 行程相关事件
 ```javascript
+// 支出更新
+socket.on('expense-created', (expense) => {
+  console.log('新支出:', expense)
+})
+
+socket.on('expense-updated', (expense) => {
+  console.log('支出已更新:', expense)
+})
+
+socket.on('expense-deleted', (data) => {
+  console.log('支出已删除:', data.expenseId)
+})
+
+// 成员变化
+socket.on('member-added', (member) => {
+  console.log('新成员加入:', member)
+})
+
+socket.on('member-removed', (member) => {
+  console.log('成员已移除:', member)
+})
+
+socket.on('member-role-updated', (member) => {
+  console.log('成员角色更新:', member)
+})
+
+// 基金缴纳更新
+socket.on('member-contribution-updated', (data) => {
+  console.log('成员基金缴纳更新:', data)
+})
+
+// 结算通知
 socket.on('settlement-created', (data) => {
   console.log('新的结算:', data)
 })
@@ -142,6 +211,21 @@ socket.on('settlement-created', (data) => {
 - **智能付款识别**: 管理员付款=基金池支付，其他成员=需报销
 - **余额公式**: `balance = contribution + reimbursements - shares`
 
+### 权限管理体系 (v2.0.0新增)
+- **角色类型**: admin（管理员）、member（普通成员）
+- **管理员专属功能**:
+  - 添加/移除成员
+  - 发送邀请
+  - 更新成员角色
+  - 删除行程
+  - AI记账功能
+  - 批量更新基金缴纳
+- **普通成员功能**:
+  - 查看行程信息
+  - 查看费用记录
+  - 查看个人余额
+  - 接收邀请通知
+
 ### 金额计算
 - 所有金额计算使用Decimal.js确保精度
 - API响应中的金额字段为数字类型
@@ -149,6 +233,7 @@ socket.on('settlement-created', (data) => {
 
 ## 更新历史
 
+- **v2.0.0** (2025-09-11): 真实用户邀请系统、消息中心、权限管理体系
 - **v1.10.0** (2025-09-04): userId架构优化，统一数据访问层
 - **v1.9.0** (2025-09-04): API文档模块化重构，接口参数优化
 - **v1.8.0** (2025-09-04): Decimal.js集成，金额精度优化  
@@ -162,5 +247,5 @@ socket.on('settlement-created', (data) => {
 - **v1.0.0** (2025-08-01): 正式版本发布
 
 ---
-*最后更新: 2025-09-04*  
-*版本: v1.10.0*
+*最后更新: 2025-09-11*  
+*版本: v2.0.0*

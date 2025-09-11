@@ -101,12 +101,23 @@ export class AmountUtil {
   }
 
   /**
-   * 比较两个金额是否相等
+   * 比较两个金额是否相等（精确比较）
    */
   static equals(a: PrismaDecimal | number, b: PrismaDecimal | number): boolean {
     const decimalA = this.toDecimal(a)
     const decimalB = this.toDecimal(b)
     return decimalA.equals(decimalB)
+  }
+
+  /**
+   * 比较两个金额是否相等（带容差）
+   * @param tolerance 容差值，默认0.01（1分钱）
+   */
+  static equalsWithTolerance(a: PrismaDecimal | number, b: PrismaDecimal | number, tolerance: number = 0.01): boolean {
+    const decimalA = this.toDecimal(a)
+    const decimalB = this.toDecimal(b)
+    const diff = decimalA.minus(decimalB).abs()
+    return diff.lessThanOrEqualTo(tolerance)
   }
 
   /**

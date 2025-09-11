@@ -69,7 +69,8 @@ export class ExpenseValidationService {
       participants.map(p => p.shareAmount || 0)
     )
     
-    if (!AmountUtil.equals(totalShare, totalAmount)) {
+    // 使用容差比较，允许0.01元的误差（处理浮点数精度问题）
+    if (!AmountUtil.equalsWithTolerance(totalShare, totalAmount, 0.01)) {
       throw new Error('分摊金额总和必须等于支出金额')
     }
 

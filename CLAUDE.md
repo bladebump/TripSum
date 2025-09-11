@@ -2,11 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# 用户需求
+- 如果要测试运行项目端的话让用户运行，而不是自己运行后台进程
+- 每次需求做完，维护readme.md、todo.md、CHANGELOG.md、CLAUDE.md。
+- 在修复bug的时候，不要进行临时修复，彻查相关问题，直接做更高更优雅的修复。也不考虑向前向后兼容。
+
 ## Project Overview
 
 TripSum (旅算) is a travel expense-splitting application designed for small groups. It helps friends easily record shared expenses during trips and uses intelligent algorithms to calculate settlement amounts, achieving zero-sum settlement.
 
-### Key Features Implemented
+### Key Features Implemented (v2.0.0)
+- **Real User Invitation System**: Complete invitation workflow with ADD/REPLACE modes
+- **Message Center**: Unified notification system with batch operations and preferences
+- **Fine-grained Permissions**: Admin vs member role separation with specific feature access
+- **Message Queue Architecture**: Bull + Redis for async message processing
+- **WebSocket Integration**: Real-time notifications for messages, invitations, and updates
 - **Fund Contribution Mode**: Pre-collection fund management with member contributions tracking
 - **Smart Expense Recording**: Natural language AI parsing with calculator tool integration
 - **Virtual Member Support**: Add non-registered users to trip calculations
@@ -31,6 +41,7 @@ TripSum (旅算) is a travel expense-splitting application designed for small gr
 - Prisma ORM with PostgreSQL 15
 - Redis 7 for caching and sessions
 - Socket.io for real-time communication
+- Bull for message queue (v2.0.0)
 - JWT for authentication
 - OpenAI GPT-4 / Claude API for AI features
 
@@ -38,12 +49,14 @@ TripSum (旅算) is a travel expense-splitting application designed for small gr
 
 API documentation has been modularized for better organization and maintenance:
 
-- **docs/API_OVERVIEW.md** - API overview, common formats, error codes
+- **docs/API_OVERVIEW.md** - API overview, common formats, error codes, WebSocket events
 - **docs/API_AUTH.md** - Authentication endpoints (register, login, JWT)
-- **docs/API_TRIP.md** - Trip and member management endpoints
+- **docs/API_TRIP.md** - Trip and member management endpoints with permissions
 - **docs/API_EXPENSE.md** - Expense recording and management
 - **docs/API_STATISTICS.md** - Statistics, balances, and settlements
 - **docs/API_AI.md** - AI parsing and natural language processing
+- **docs/API_MESSAGES.md** - Message system endpoints (v2.0.0)
+- **docs/API_INVITATION.md** - Invitation system endpoints (v2.0.0)
 
 ## Essential Commands
 
@@ -143,6 +156,10 @@ Key models:
 - **ExpenseParticipant** - Expense sharing details
 - **Settlement** - Calculated settlement transactions
 - **Category** - Expense categories
+- **TripInvitation** - Invitation records with status tracking (v2.0.0)
+- **Message** - User notifications and system messages (v2.0.0)
+- **MessageTemplate** - Predefined message templates (v2.0.0)
+- **MessagePreference** - User notification preferences (v2.0.0)
 
 ### API Architecture
 - RESTful API with `/api` prefix
@@ -156,12 +173,37 @@ Frontend uses Zustand stores:
 - **authStore** - User authentication state, tokens
 - **tripStore** - Current trip data, members, expenses
 - **expenseStore** - Expense form state, calculations
+- **messageStore** - Message list, unread counts, preferences (v2.0.0)
 
 ### Real-time Features
 Socket.io implementation for:
 - Live expense updates
 - Member join/leave notifications
 - Balance recalculations
+- Message notifications (v2.0.0)
+- Invitation updates (v2.0.0)
+- Unread count sync (v2.0.0)
+
+### Message System Architecture (v2.0.0)
+- **Message Queue**: Bull + Redis for async processing
+- **Handler Pattern**: 13 specialized message handlers
+- **Factory Service**: Creates messages based on type
+- **Dispatcher Service**: Routes messages to handlers
+- **Cache Service**: Redis caching for unread counts
+- **Message Handlers**:
+  1. SystemMessageHandler - System notifications
+  2. InvitationMessageHandler - Invitation notifications
+  3. ExpenseCreatedHandler - New expense alerts
+  4. ExpenseUpdatedHandler - Expense update notifications
+  5. ExpenseDeletedHandler - Expense deletion alerts
+  6. MemberJoinedHandler - Member join notifications
+  7. MemberLeftHandler - Member leave notifications
+  8. MemberRoleChangedHandler - Role change alerts
+  9. TripUpdatedHandler - Trip update notifications
+  10. TripDeletedHandler - Trip deletion alerts
+  11. SettlementCreatedHandler - Settlement notifications
+  12. ContributionUpdatedHandler - Fund contribution updates
+  13. ReminderMessageHandler - Scheduled reminders
 
 ## Environment Configuration
 
@@ -212,9 +254,17 @@ Frontend uses Vite environment variables:
 - **Manual Testing**: Development servers for end-to-end workflows
 - **AI Features**: Test plans documented for member addition and mixed intents
 - **UI Interactions**: Comprehensive test scenarios for improved UX patterns
-- 如果要测试运行项目端的话让用户运行，而不是自己运行后台进程
 
 ## Recent Improvements
+
+### v2.0.0 - 真实用户邀请系统 (2025-09-11)
+- **邀请系统**: 完整的ADD/REPLACE模式邀请流程
+- **消息中心**: 统一通知管理，批量操作，偏好设置
+- **权限管理**: 管理员与成员角色分离，细粒度权限控制
+- **消息队列**: Bull + Redis异步处理，13个专门处理器
+- **WebSocket增强**: 实时推送消息、邀请、费用变更
+- **前端优化**: 打包体积减少44%，懒加载优化
+- **Bug修复**: 12个核心Bug修复，包括消息系统、邀请功能、费用验证
 
 ### v1.10.0 - userId架构优化 (2025-09-04)
 - **AI控制器修复**: 正确获取当前用户的memberId
@@ -275,5 +325,3 @@ Frontend uses Vite environment variables:
 ## Version History
 
 For complete version history and changelog, see [CHANGELOG.md](../CHANGELOG.md)
-- 每次需求做完，维护readme.md、todo.md、CHANGELOG.md、CLAUDE.md。
-- 在修复bug的时候，不要进行临时修复，彻查相关问题，直接做更高更优雅的修复。也不考虑向前向后兼容。

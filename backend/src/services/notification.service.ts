@@ -9,16 +9,18 @@ export class NotificationService {
    */
   async sendInvitationNotification(data: {
     recipientId: string;
+    inviterId: string;
     inviterName: string;
     tripName: string;
     invitationId: string;
     message?: string;
   }) {
-    const { recipientId, inviterName, tripName, invitationId, message } = data;
+    const { recipientId, inviterId, inviterName, tripName, invitationId, message } = data;
 
     // 创建站内消息
     const createdMessage = await messageService.createMessage({
       recipientId,
+      senderId: inviterId,
       type: MessageType.TRIP_INVITATION,
       category: 'TRIP',
       priority: MessagePriority.HIGH,

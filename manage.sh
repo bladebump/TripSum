@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 PROJECT_NAME="TripSum"
-VERSION="v1.5.0"
+VERSION="v2.0.0"
 
 print_header() {
     echo ""

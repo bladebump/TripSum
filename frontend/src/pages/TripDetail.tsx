@@ -556,11 +556,6 @@ const TripDetail: React.FC = () => {
                 <div className="action-text">复盘</div>
               </div>
               
-              <div className="action-button" onClick={() => navigate(`/trips/${id}/edit`)}>
-                <div className="action-icon">✏️</div>
-                <div className="action-text">编辑</div>
-              </div>
-              
               <div className="action-button danger" onClick={handleDeleteTrip}>
                 <div className="action-icon">🗑️</div>
                 <div className="action-text">删除</div>

@@ -78,6 +78,7 @@ export class InvitationCreateService {
     // 发送邀请通知
     await notificationService.sendInvitationNotification({
       recipientId: data.invitedUserId,
+      inviterId: createdBy,
       inviterName: invitation.inviter.username,
       tripName: invitation.trip.name,
       message: invitation.message || undefined,

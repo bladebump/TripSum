@@ -42,13 +42,11 @@ const MessageCenter: React.FC = () => {
   const loadMessages = useCallback(async (page: number = 1, tab?: string) => {
     // 防止重复调用
     if (loadingRef.current) {
-      console.log('MessageCenter: 防止重复调用 loadMessages')
       return
     }
     
     loadingRef.current = true
     const currentTab = tab || activeTab
-    console.log(`MessageCenter: 开始加载消息 - activeTab: ${currentTab}, page: ${page}`)
     
     try {
       const query: MessageListQuery = {
@@ -77,9 +75,7 @@ const MessageCenter: React.FC = () => {
         setHasMore(false)
       }
       
-      console.log(`MessageCenter: 消息加载完成`)
     } catch (error) {
-      console.error('MessageCenter: 加载消息失败:', error)
       Toast.show('加载消息失败')
     } finally {
       loadingRef.current = false
@@ -88,7 +84,6 @@ const MessageCenter: React.FC = () => {
 
   // 添加 useEffect 处理 activeTab 变化
   useEffect(() => {
-    console.log(`MessageCenter: activeTab 变化: ${activeTab}`)
     // 重置状态
     setHasMore(true)
     loadMessages(1, activeTab)

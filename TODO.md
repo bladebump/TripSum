@@ -91,7 +91,7 @@
 
 ### 🚧 待完成阶段（第11-12阶段）
 
-#### 第十阶段：前端优化和Bug修复 ✅ (2025-09-10)
+#### 第十阶段：前端优化和Bug修复 ✅ (2025-09-11)
 
 - [x] **打包体积优化**（成果：初始加载797KB → 446KB）：
   - 使用rollup-plugin-visualizer分析包体积
@@ -119,22 +119,31 @@
   - 分页数据覆盖问题（数据追加逻辑修复）
   - 邀请已处理仍显示操作按钮（动态状态检查）
 
+- [x] **核心Bug修复**（2025-09-11）：
+  - 修复message.store.ts的get未定义错误（Zustand store参数缺失）
+  - 清理多个文件的debug console.log语句（TripList、trip.store、MessageCenter）
+  - 修复邀请消息在消息中心仍显示操作按钮（后端query.service.ts状态检查）
+  - 修复senderId为null问题（notification服务传递inviterId）
+  - 修复浮点数精度验证错误（Decimal.js增加容差比较）
+  - 改进AddMember页面支持真实用户邀请（集成UserSearch和InvitationForm）
+  - 移除TripDetail页面未实现的编辑按钮
+
 **优化成果**：
 - 主应用包：229KB → 32KB（减少86%）
 - Antd-mobile：406KB → 204KB（减少50%）  
 - Recharts：415KB → 282KB（减少32%，且懒加载）
 - 初始加载：797KB → 446KB（减少44%）
-- **修复5个关键Bug**：影响消息中心、Socket连接、邀请功能的核心问题
+- **修复12个关键Bug**：涵盖消息系统、邀请功能、费用验证等核心模块
 
-#### 第十一阶段：文档更新
+#### 第十一阶段：文档更新 ✅ (2025-09-11)
 
-- [ ] **API文档更新**：
+- [x] **API文档更新**：
   - 更新API_OVERVIEW.md（v2.0.0版本说明、认证和权限部分）
   - 创建API_MESSAGES.md（消息系统API、WebSocket事件）
   - 创建API_INVITATION.md（邀请系统API、邀请流程）
   - 更新API_TRIP.md（邀请相关接口、权限说明）
 
-- [ ] **项目文档更新**：
+- [x] **项目文档更新**：
   - 更新README.md（v2.0.0新功能、技术栈更新）
   - 更新CLAUDE.md（消息系统架构、数据库模型）
   - 更新CHANGELOG.md（v2.0.0变更记录、迁移指南）
@@ -208,7 +217,7 @@ refactor(module): 代码重构
 - **类型定义**: `/frontend/src/types/`
 
 ---
-*最后更新: 2025-09-10*  
-*当前版本: v2.0.0-beta.10*  
-*完成进度: 10/12阶段*  
-*下次工作: 第十一阶段 - 文档更新*
+*最后更新: 2025-09-11*  
+*当前版本: v2.0.0*  
+*完成进度: 11/12阶段*  
+*下次工作: 第十二阶段 - 部署与发布*

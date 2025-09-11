@@ -47,6 +47,32 @@ export class MessageQueryService {
       prisma.message.count({ where }),
     ])
 
+    // 检查邀请类型消息的状态并清空已处理邀请的actions
+    const invitationMessages = messages.filter(m => m.type === 'TRIP_INVITATION' && m.relatedEntity)
+    if (invitationMessages.length > 0) {
+      const invitationIds = invitationMessages
+        .map(m => (m.relatedEntity as any).id)
+        .filter(Boolean)
+      
+      if (invitationIds.length > 0) {
+        const invitations = await prisma.tripInvitation.findMany({
+          where: { id: { in: invitationIds } },
+          select: { id: true, status: true }
+        })
+        
+        // 清空已处理邀请的actions
+        messages.forEach(msg => {
+          if (msg.type === 'TRIP_INVITATION' && msg.relatedEntity) {
+            const invitationId = (msg.relatedEntity as any).id
+            const invitation = invitations.find(inv => inv.id === invitationId)
+            if (invitation && invitation.status !== 'PENDING') {
+              msg.actions = []
+            }
+          }
+        })
+      }
+    }
+
     return {
       messages,
       total,

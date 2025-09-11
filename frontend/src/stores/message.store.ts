@@ -57,7 +57,7 @@ interface MessageState {
   reset: () => void
 }
 
-export const useMessageStore = create<MessageState>((set) => ({
+export const useMessageStore = create<MessageState>((set, get) => ({
   // 初始状态
   messages: [],
   unreadStats: null,

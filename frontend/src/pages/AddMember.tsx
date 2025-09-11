@@ -5,25 +5,24 @@ import {
   Tabs,
   Input,
   Button,
-  List,
   Tag,
   Toast,
   Space,
-  Divider
+  Divider,
+  Steps
 } from 'antd-mobile'
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons'
 import { useTripStore } from '@/stores/trip.store'
 import { useAuthStore } from '@/stores/auth.store'
 import aiService from '@/services/ai.service'
+import invitationService from '@/services/invitation.service'
+import UserSearch from '@/components/invitation/UserSearch'
+import InvitationForm from '@/components/invitation/InvitationForm'
+import { UserSearchResult, CreateInvitationDTO } from '@/types/invitation.types'
+import { TripMember } from '@/types/trip.types'
 import { isCurrentUserAdmin } from '@/utils/member'
 import Loading from '@/components/common/Loading'
 import './AddMember.scss'
-
-interface ParsedMember {
-  displayName: string
-  confidence: number
-  selected: boolean
-}
 
 const AddMember: React.FC = () => {
   const { id: tripId } = useParams<{ id: string }>()
@@ -31,12 +30,15 @@ const AddMember: React.FC = () => {
   const { currentTrip, members, fetchTripDetail } = useTripStore()
   const { user } = useAuthStore()
   
-  const [activeTab, setActiveTab] = useState('manual')
-  const [textInput, setTextInput] = useState('')
+  const [activeTab, setActiveTab] = useState('virtual')
   const [manualMembers, setManualMembers] = useState<string[]>([''])
-  const [parsedMembers, setParsedMembers] = useState<ParsedMember[]>([])
   const [loading, setLoading] = useState(false)
-  const [parsing, setParsing] = useState(false)
+  
+  // 邀请用户相关状态
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null)
+  const [virtualMembers, setVirtualMembers] = useState<TripMember[]>([])
+  const [existingUserIds, setExistingUserIds] = useState<string[]>([])
+  const [submitLoading, setSubmitLoading] = useState(false)
 
   useEffect(() => {
     if (tripId && !currentTrip) {
@@ -44,6 +46,27 @@ const AddMember: React.FC = () => {
       fetchTripDetail(tripId)
     }
   }, [tripId, currentTrip, fetchTripDetail])
+
+  // 处理成员数据（用于邀请功能）
+  useEffect(() => {
+    if (members) {
+      // 获取虚拟成员
+      const virtuals = members.filter(m => m.isVirtual)
+      setVirtualMembers(virtuals)
+
+      // 获取已存在的用户ID（用于搜索时排除）
+      const userIds = members
+        .filter(m => !m.isVirtual && m.userId)
+        .map(m => m.userId!)
+      
+      // 添加当前用户ID到排除列表
+      if (user?.id) {
+        userIds.push(user.id)
+      }
+      
+      setExistingUserIds(userIds)
+    }
+  }, [members, user])
 
   const isAdmin = isCurrentUserAdmin(members, user?.id)
 
@@ -60,6 +83,7 @@ const AddMember: React.FC = () => {
     )
   }
 
+  // 虚拟成员相关方法
   const addManualMember = () => {
     setManualMembers([...manualMembers, ''])
   }
@@ -87,66 +111,13 @@ const AddMember: React.FC = () => {
     await addMembers(validMembers)
   }
 
-  const handleTextParse = async () => {
-    if (!textInput.trim()) {
-      Toast.show('请输入文本内容')
-      return
-    }
-
-    setParsing(true)
-    try {
-      const result = await aiService.parseUserInput(tripId!, textInput.trim())
-      
-      if (result.confidence < 0.3 || result.intent.intent !== 'member') {
-        Toast.show('无法识别有效的成员信息，请尝试更明确的描述')
-        return
-      }
-
-      const membersWithSelection = result.data.members.map((member: any) => ({
-        ...member,
-        selected: true
-      }))
-      
-      setParsedMembers(membersWithSelection)
-      
-      if (membersWithSelection.length === 0) {
-        Toast.show('没有识别到具体的成员姓名')
-      } else {
-        Toast.show(`识别到 ${membersWithSelection.length} 个成员`)
-      }
-    } catch (error) {
-      Toast.show('解析失败，请重试')
-    } finally {
-      setParsing(false)
-    }
-  }
-
-  const toggleMemberSelection = (index: number) => {
-    const updated = [...parsedMembers]
-    updated[index].selected = !updated[index].selected
-    setParsedMembers(updated)
-  }
-
-  const handleConfirmParsed = async () => {
-    const selectedMembers = parsedMembers
-      .filter(m => m.selected)
-      .map(m => m.displayName)
-    
-    if (selectedMembers.length === 0) {
-      Toast.show('请至少选择一个成员')
-      return
-    }
-
-    await addMembers(selectedMembers)
-  }
-
   const addMembers = async (memberNames: string[]) => {
     setLoading(true)
     try {
       const result = await aiService.addMembers(tripId!, memberNames)
       
       if (result.success) {
-        let message = `成功添加 ${result.added.length} 个成员`
+        let message = `成功添加 ${result.added.length} 个虚拟成员`
         
         if (result.failed.length > 0) {
           message += `，${result.failed.length} 个失败`
@@ -163,8 +134,6 @@ const AddMember: React.FC = () => {
         
         // 清空输入
         setManualMembers([''])
-        setTextInput('')
-        setParsedMembers([])
         
         // 如果全部成功，返回上一页
         if (result.failed.length === 0 && result.validation.duplicates.length === 0) {
@@ -176,9 +145,44 @@ const AddMember: React.FC = () => {
         Toast.show('添加失败')
       }
     } catch (error) {
-      Toast.show('添加成员失败')
+      Toast.show('添加虚拟成员失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 邀请用户相关方法
+  const handleUserSelect = (user: UserSearchResult) => {
+    setSelectedUser(user)
+  }
+
+  const handleInvitationSubmit = async (invitation: CreateInvitationDTO) => {
+    if (!tripId) return
+
+    setSubmitLoading(true)
+    try {
+      await invitationService.sendInvitation(tripId, invitation)
+      
+      Toast.show({
+        content: '邀请已发送',
+        icon: 'success'
+      })
+      
+      // 清空选中的用户
+      setSelectedUser(null)
+      
+      // 返回上一页
+      setTimeout(() => {
+        navigate(`/trips/${tripId}`)
+      }, 1000)
+    } catch (error: any) {
+      console.error('发送邀请失败:', error)
+      Toast.show({
+        content: error.message || '发送邀请失败',
+        icon: 'fail'
+      })
+    } finally {
+      setSubmitLoading(false)
     }
   }
 
@@ -207,9 +211,12 @@ const AddMember: React.FC = () => {
       <Divider />
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <Tabs.Tab title="手动添加" key="manual">
+        <Tabs.Tab title="虚拟成员" key="virtual">
           <div className="tab-content">
-            <div className="section-title">成员姓名</div>
+            <div className="section-title">添加虚拟成员</div>
+            <p className="section-desc">
+              虚拟成员用于记录未注册用户的费用，如朋友、家人等
+            </p>
             
             {manualMembers.map((member, index) => (
               <div key={index} className="member-input-row">
@@ -246,74 +253,46 @@ const AddMember: React.FC = () => {
                 loading={loading}
                 block
               >
-                确认添加成员
+                确认添加虚拟成员
               </Button>
             </Space>
           </div>
         </Tabs.Tab>
 
-        <Tabs.Tab title="文本解析" key="text">
+        <Tabs.Tab title="邀请用户" key="invite">
           <div className="tab-content">
-            <div className="section-title">智能文本解析</div>
-            <p className="section-desc">
-              输入包含成员信息的文本，AI会自动识别姓名
-            </p>
-
-            <Input
-              placeholder="例如：添加张三、李四、王五 或 和小明小红一起"
-              value={textInput}
-              onChange={setTextInput}
-            />
-
-            <Button
-              color="primary"
-              onClick={handleTextParse}
-              loading={parsing}
-              disabled={!textInput.trim()}
-              block
-              style={{ marginTop: 16 }}
-            >
-              解析成员信息
-            </Button>
-
-            {parsedMembers.length > 0 && (
+            {!selectedUser ? (
               <>
-                <div className="section-title" style={{ marginTop: 24 }}>
-                  识别结果 (点击可选择/取消)
-                </div>
+                <div className="section-title">搜索并邀请用户</div>
+                <p className="section-desc">
+                  邀请已注册的用户加入行程，他们将收到邀请通知
+                </p>
                 
-                <List>
-                  {parsedMembers.map((member, index) => (
-                    <List.Item
-                      key={index}
-                      onClick={() => toggleMemberSelection(index)}
-                      prefix={
-                        <input
-                          type="checkbox"
-                          checked={member.selected}
-                          onChange={() => toggleMemberSelection(index)}
-                        />
-                      }
-                      extra={
-                        <Tag color={member.confidence > 0.7 ? 'success' : 'warning'}>
-                          {Math.round(member.confidence * 100)}%
-                        </Tag>
-                      }
-                    >
-                      {member.displayName}
-                    </List.Item>
-                  ))}
-                </List>
+                <UserSearch
+                  onSelect={handleUserSelect}
+                  excludeUserIds={existingUserIds}
+                />
+              </>
+            ) : (
+              <>
+                {/* 步骤指示器 */}
+                <div style={{ marginBottom: 20 }}>
+                  <Steps
+                    current={1}
+                    direction='horizontal'
+                  >
+                    <Steps.Step title='搜索用户' />
+                    <Steps.Step title='发送邀请' />
+                  </Steps>
+                </div>
 
-                <Button
-                  color="primary"
-                  onClick={handleConfirmParsed}
-                  loading={loading}
-                  block
-                  style={{ marginTop: 16 }}
-                >
-                  确认添加选中成员
-                </Button>
+                <InvitationForm
+                  selectedUser={selectedUser}
+                  virtualMembers={virtualMembers}
+                  onSubmit={handleInvitationSubmit}
+                  onCancel={() => setSelectedUser(null)}
+                  loading={submitLoading}
+                />
               </>
             )}
           </div>
